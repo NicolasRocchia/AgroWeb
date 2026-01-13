@@ -1,26 +1,27 @@
 ﻿@{
     ViewData["Title"] = "Login";
+    Layout = "_LayoutLogin";
 }
 
-<h2>Login</h2>
+<div class="login-card">
+    <h2>Bienvenido</h2>
+    <p class="subtitle">Ingresa tus credenciales para continuar</p>
 
-@if (ViewBag.Error != null)
-{
-    <div class="alert alert-danger">@ViewBag.Error</div>
-}
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger">@ViewBag.Error</div>
+    }
 
-<form method="post">
-    @Html.AntiForgeryToken()
-
-    <div class="mb-3">
-        <label class="form-label">Email</label>
-        <input name="email" type="email" class="form-control" required />
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Password</label>
-        <input name="password" type="password" class="form-control" required />
-    </div>
-
-    <button type="submit" class="btn btn-primary">Ingresar</button>
-</form>
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input name="email" type="email" class="form-control" placeholder="tu@email.com" required />
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Contraseña</label>
+            <input name="password" type="password" class="form-control" placeholder="••••••••" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Ingresar</button>
+    </form>
+</div>

@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - AGROCONNECT</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="login-page">
+    <header>
+        <nav class="navbar-custom">
+            <div class="container-fluid">
+                <div class="navbar-collapse-custom">
+                    <a class="navbar-brand-custom" asp-controller="Home" asp-action="Index">
+                        <span class="navbar-brand-icon">🌾</span>
+                        <span>AGROCONNECT</span>
+                    </a>
+                    <ul class="navbar-nav-custom">
+                        <li>
+                            <a class="nav-link-custom" asp-controller="Home" asp-action="Index">Inicio</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+    <footer>
+        <div class="container">
+            <p style="margin: 0;">🌾 AGROCONNECT - Sistema de Gestión de Recetas Fitosanitarias</p>
+            <p style="margin: 5px 0 0 0; opacity: 0.7; font-size: 0.85rem;">© @DateTime.Now.Year - Todos los derechos reservados</p>
+        </div>
+    </footer>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

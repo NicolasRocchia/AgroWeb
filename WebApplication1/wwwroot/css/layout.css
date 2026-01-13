@@ -1,0 +1,280 @@
+/* ============================================
+   ARCHIVO: layout.css
+   Estilos para el Layout Principal (_Layout.cshtml)
+   ============================================ */
+
+/* Reset Global */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f7fa;
+    min-height: 100vh;
+}
+
+/* ============================================
+   NAVBAR MODERNA
+   ============================================ */
+
+.navbar-custom {
+    background: white;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+    padding: 15px 0;
+    position: relative;
+}
+
+.navbar-brand-custom {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #667eea;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+    .navbar-brand-custom:hover {
+        color: #764ba2;
+        transform: scale(1.05);
+    }
+
+.navbar-brand-icon {
+    font-size: 28px;
+}
+
+.nav-link-custom {
+    color: #666;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 10px 16px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+    .nav-link-custom:hover {
+        color: #667eea;
+        background: #f8f9ff;
+    }
+
+    .nav-link-custom.active {
+        color: white;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+/* Botón de Login en Navbar */
+.btn-login {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    margin-left: 10px;
+}
+
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+
+.login-icon {
+    font-size: 16px;
+}
+
+.container-fluid {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.navbar-nav-custom {
+    display: flex;
+    gap: 5px;
+    list-style: none;
+    align-items: center;
+}
+
+.navbar-collapse-custom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Botón Hamburguesa (Oculto en Desktop) */
+.navbar-toggler {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    z-index: 1001;
+}
+
+.hamburger {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+    .hamburger span {
+        width: 28px;
+        height: 3px;
+        background: #667eea;
+        border-radius: 3px;
+        transition: all 0.3s ease;
+    }
+
+/* Animación del Hamburguesa cuando está abierto */
+.navbar-toggler.active .hamburger span:nth-child(1) {
+    transform: rotate(45deg) translate(8px, 8px);
+}
+
+.navbar-toggler.active .hamburger span:nth-child(2) {
+    opacity: 0;
+}
+
+.navbar-toggler.active .hamburger span:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -7px);
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+
+footer {
+    background: #2d3748;
+    color: white;
+    padding: 40px 20px;
+    text-align: center;
+    margin-top: 60px;
+}
+
+    footer .container p:first-child {
+        margin-bottom: 10px;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    footer .container p:nth-child(2) {
+        opacity: 0.8;
+        margin-bottom: 15px;
+    }
+
+    footer .container p:last-child {
+        opacity: 0.6;
+        font-size: 14px;
+    }
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .navbar-custom {
+        padding: 12px 0;
+    }
+
+    .navbar-toggler {
+        display: block;
+    }
+
+    .navbar-collapse-custom {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .navbar-nav-custom {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 280px;
+        height: 100vh;
+        background: white;
+        flex-direction: column;
+        padding: 80px 20px 20px;
+        box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+        transition: right 0.3s ease;
+        z-index: 1000;
+        gap: 0;
+    }
+
+        .navbar-nav-custom.active {
+            right: 0;
+        }
+
+        .navbar-nav-custom li {
+            width: 100%;
+        }
+
+    .nav-link-custom {
+        width: 100%;
+        text-align: left;
+        padding: 14px 16px;
+        margin-bottom: 5px;
+        font-size: 16px;
+    }
+
+    .btn-login {
+        width: 100%;
+        justify-content: center;
+        margin-left: 0;
+        margin-top: 20px;
+        padding: 14px 24px;
+    }
+
+    .navbar-brand-custom {
+        font-size: 20px;
+    }
+
+    .navbar-brand-icon {
+        font-size: 24px;
+    }
+
+    /* Overlay cuando el menú está abierto */
+    .navbar-nav-custom.active::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 280px;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: -1;
+    }
+
+    footer {
+        padding: 30px 20px;
+        margin-top: 40px;
+    }
+
+        footer .container p:first-child {
+            font-size: 16px;
+        }
+
+        footer .container p:nth-child(2) {
+            font-size: 14px;
+        }
+
+        footer .container p:last-child {
+            font-size: 12px;
+        }
+}
+
+@media (min-width: 769px) {
+    .navbar-nav-custom li {
+        margin: 0;
+    }
+}

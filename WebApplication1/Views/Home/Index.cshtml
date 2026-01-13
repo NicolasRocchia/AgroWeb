@@ -1,8 +1,104 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "AGROCONNECT - Gestión de Recetas Fitosanitarias";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="hero-section">
+    <div class="hero-content">
+        <div class="logo-container">
+            <span class="logo-icon">🌾</span>
+            <h1 class="logo-text">AGROCONNECT</h1>
+        </div>
+        <p class="hero-subtitle">Sistema de Gestión de Recetas Fitosanitarias</p>
+        <p class="hero-description">
+            Plataforma integral para la carga, gestión y aprobación de recetas fitosanitarias.
+            Conectando agricultores, asesores y municipios en un solo lugar.
+        </p>
+    </div>
 </div>
+
+<div class="features-section">
+    <div class="container">
+        <h2 class="section-title">¿Qué puedes hacer en AGROCONNECT?</h2>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📤</div>
+                <h3>Subir Recetas</h3>
+                <p>Carga archivos PDF de recetas fitosanitarias de forma rápida y segura. El sistema procesa automáticamente toda la información.</p>
+                <a asp-controller="RecipeView" asp-action="Upload" class="feature-btn">
+                    Subir Receta <span>→</span>
+                </a>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3>Consultar Recetas</h3>
+                <p>Accede al historial completo de recetas cargadas. Busca por número RFD, fecha, solicitante o cualquier otro criterio.</p>
+                <a asp-controller="RecipeView" asp-action="Index" class="feature-btn">
+                    Ver Recetas <span>→</span>
+                </a>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">✅</div>
+                <h3>Aprobar Aplicaciones</h3>
+                <p>Los municipios pueden revisar y aprobar las solicitudes de aplicación de productos fitosanitarios en sus jurisdicciones.</p>
+                <a asp-controller="RecipeView" asp-action="Approvals" class="feature-btn">
+                    Gestionar <span>→</span>
+                </a>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>API Documentada</h3>
+                <p>Integra AGROCONNECT con tus sistemas mediante nuestra API REST completa y documentada con Swagger.</p>
+                <a href="/swagger" class="feature-btn" target="_blank">
+                    Ver API <span>→</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="info-section">
+    <div class="container">
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-number">🌱</div>
+                <h3>Para Agricultores</h3>
+                <p>Gestiona tus recetas fitosanitarias digitalmente. Carga PDFs y accede a toda la información procesada automáticamente.</p>
+            </div>
+
+            <div class="info-card">
+                <div class="info-number">👨‍🔬</div>
+                <h3>Para Asesores</h3>
+                <p>Realiza el seguimiento de las recetas emitidas. Sistema integrado con el registro de asesores fitosanitarios.</p>
+            </div>
+
+            <div class="info-card">
+                <div class="info-number">🏛️</div>
+                <h3>Para Municipios</h3>
+                <p>Controla las aplicaciones en tu jurisdicción. Revisa puntos sensibles, lotes y condiciones de aplicación en tiempo real.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="cta-section">
+    <div class="cta-content">
+        <h2>¿Listo para comenzar?</h2>
+        <p>Digitaliza tu gestión de recetas fitosanitarias hoy mismo</p>
+        <div class="cta-buttons">
+            <a asp-controller="RecipeView" asp-action="Upload" class="btn-primary-large">
+                📤 Subir Primera Receta
+            </a>
+            <a href="/swagger" class="btn-secondary-large" target="_blank">
+                📚 Ver Documentación
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/home.css">
+}

@@ -1,22 +1,384 @@
-html {
-  font-size: 14px;
+/* ============================================
+   ARCHIVO: site.css
+   Estilos para AGROCONNECT
+   ============================================ */
+
+:root {
+    --primary-color: #667eea;
+    --primary-dark: #764ba2;
+    --secondary-color: #f8fafc;
+    --text-color: #1e293b;
+    --text-gray: #666;
+    --border-color: #e2e8f0;
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-  margin-bottom: 60px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f7fa;
+    min-height: 100vh;
+    color: var(--text-color);
+}
+
+    /* ============================================
+   ESTILOS ESPECÍFICOS PARA PÁGINA DE LOGIN
+   ============================================ */
+
+    body.login-page {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        display: flex;
+        flex-direction: column;
+    }
+
+.login-page header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-sm);
+}
+
+.login-page .navbar-custom {
+    background: transparent;
+    box-shadow: none;
+    padding: 0.75rem 0;
+}
+
+.login-page .navbar-brand-custom {
+    color: var(--primary-color);
+}
+
+    .login-page .navbar-brand-custom:hover {
+        color: var(--primary-dark);
+    }
+
+.login-page .nav-link-custom {
+    color: var(--text-gray);
+}
+
+    .login-page .nav-link-custom:hover {
+        color: var(--primary-color);
+        background: rgba(102, 126, 234, 0.1);
+    }
+
+/* ============================================
+   CONTENEDOR PRINCIPAL (SOLO LOGIN)
+   ============================================ */
+
+.login-page .container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem 1rem;
+}
+
+.login-page main {
+    width: 100%;
+    max-width: 440px;
+    padding-bottom: 0 !important;
+    margin: auto;
+    transform: translateY(-8%);
+}
+
+/* ============================================
+   TARJETA DE LOGIN
+   ============================================ */
+
+.login-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem 2rem;
+    box-shadow: var(--shadow-lg);
+    animation: slideUp 0.5s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.login-card h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+    text-align: center;
+}
+
+.login-card .subtitle {
+    text-align: center;
+    color: #64748b;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+}
+
+/* ============================================
+   ALERTAS
+   ============================================ */
+
+.alert {
+    border-radius: 12px;
+    border: none;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-10px);
+    }
+
+    75% {
+        transform: translateX(10px);
+    }
+}
+
+.alert-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* ============================================
+   FORMULARIOS
+   ============================================ */
+
+.login-card .form-label {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    display: block;
+    width: 100%;
+}
+
+.login-card .form-control {
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: var(--secondary-color);
+    width: 100%;
+}
+
+    .login-card .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        background: white;
+        outline: none;
+    }
+
+.login-card .mb-3 {
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================
+   BOTONES
+   ============================================ */
+
+.login-card .btn-primary,
+.login-card button[type="submit"] {
+    width: 100%;
+    padding: 0.875rem;
+    font-weight: 600;
+    font-size: 1rem;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+    .login-card .btn-primary:hover,
+    .login-card button[type="submit"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        background: linear-gradient(135deg, var(--primary-dark), #4338ca);
+    }
+
+    .login-card .btn-primary:active,
+    .login-card button[type="submit"]:active {
+        transform: translateY(0);
+    }
+
+/* ============================================
+   FOOTER (SOLO LOGIN)
+   ============================================ */
+
+.login-page footer {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    padding: 0.75rem 0;
+    text-align: center;
+    color: #64748b;
+    font-size: 0.9rem;
+    border-top: 1px solid rgba(226, 232, 240, 0.3);
+}
+
+    .login-page footer .container {
+        display: block;
+        padding: 0 1rem;
+    }
+
+    .login-page footer a {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s ease;
+    }
+
+        .login-page footer a:hover {
+            color: var(--primary-dark);
+        }
+
+/* ============================================
+   NAVBAR PARA TODAS LAS PÁGINAS
+   ============================================ */
+
+.navbar-custom {
+    background: white;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+    padding: 15px 0;
+}
+
+.navbar-brand-custom {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #667eea;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+    .navbar-brand-custom:hover {
+        color: #764ba2;
+        transform: scale(1.05);
+    }
+
+.navbar-brand-icon {
+    font-size: 28px;
+}
+
+.nav-link-custom {
+    color: #666;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+    .nav-link-custom:hover {
+        color: #667eea;
+        background: #f8f9ff;
+    }
+
+    .nav-link-custom.active {
+        color: white;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+.container-fluid {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.navbar-nav-custom {
+    display: flex;
+    gap: 10px;
+    list-style: none;
+    align-items: center;
+}
+
+.navbar-collapse-custom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* ============================================
+   RESPONSIVE (LOGIN)
+   ============================================ */
+
+@media (max-width: 768px) {
+    .login-page .login-card {
+        padding: 1.75rem 1.5rem;
+        margin: 0 1rem;
+    }
+
+    .login-card h2 {
+        font-size: 1.75rem;
+    }
+
+    .login-page .navbar-brand-custom {
+        font-size: 1.25rem;
+    }
+
+    .login-page .container {
+        padding: 0.5rem;
+    }
+
+    .login-page main {
+        transform: translateY(-5%);
+    }
+
+    .login-page header {
+        background: rgba(255, 255, 255, 0.98);
+    }
+
+    .login-page .navbar-custom {
+        padding: 0.65rem 0;
+    }
+
+    .login-page footer {
+        font-size: 0.85rem;
+        padding: 0.65rem 0;
+    }
+}
+
+/* ============================================
+   RESPONSIVE GENERAL
+   ============================================ */
+
+@media (max-width: 768px) {
+    .navbar-collapse-custom {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .navbar-brand-custom {
+        font-size: 1.25rem;
+    }
+
+    .navbar-brand-icon {
+        font-size: 24px;
+    }
 }

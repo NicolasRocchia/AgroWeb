@@ -1,5 +1,6 @@
 using WebAgroConnect.Configs;
 using Microsoft.Extensions.Options;
+using WebApplication1.Logic;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +15,9 @@ builder.Services.AddHttpClient("AgroApi", (sp, client) =>
     var opt = sp.GetRequiredService<IOptions<ApiOptions>>().Value;
     client.BaseAddress = new Uri(opt.BaseUrl);
     client.Timeout = TimeSpan.FromSeconds(60);
-});
+})
+.AddHttpMessageHandler<ApiAuthHandler>();
+
 
 var app = builder.Build();
 
