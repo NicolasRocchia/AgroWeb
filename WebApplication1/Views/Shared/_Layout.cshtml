@@ -17,19 +17,20 @@
                         <span class="navbar-brand-icon">🌾</span>
                         <span>AGROCONNECT</span>
                     </a>
-                    <ul class="navbar-nav-custom">
-                        <li>
-                            <a class="nav-link-custom" asp-controller="Home" asp-action="Index">Inicio</a>
-                        </li>
-                        <li>
-                            <a class="nav-link-custom" asp-controller="RecipeView" asp-action="Upload">Subir Receta</a>
-                        </li>
-                        <li>
-                            <a class="nav-link-custom" asp-controller="RecipeView" asp-action="Index">Consultar</a>
-                        </li>
-                        <li>
-                            <a class="nav-link-custom" href="/swagger" target="_blank">API Docs</a>
-                        </li>
+
+                    <button class="navbar-toggler" type="button" id="navbarToggler">
+                        <div class="hamburger">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </button>
+
+                    <ul class="navbar-nav-custom" id="navbarMenu">
+                        <li><a class="nav-link-custom" asp-controller="Home" asp-action="Index">Inicio</a></li>
+                        <li><a class="nav-link-custom" asp-controller="RecipeView" asp-action="Upload">Subir Receta</a></li>
+                        <li><a class="nav-link-custom" asp-controller="RecipeView" asp-action="Index">Consultar</a></li>
+                        <li><a class="nav-link-custom" href="/swagger" target="_blank">API Docs</a></li>
                         <li>
                             <a class="btn-login" asp-controller="Account" asp-action="Login">
                                 <span class="login-icon">🔐</span>
@@ -53,6 +54,35 @@
             <p>© @DateTime.Now.Year - Todos los derechos reservados</p>
         </div>
     </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggler = document.getElementById('navbarToggler');
+            const menu = document.getElementById('navbarMenu');
+
+            if (toggler && menu) {
+                toggler.addEventListener('click', function() {
+                    menu.classList.toggle('active');
+                    toggler.classList.toggle('active');
+                });
+
+                const links = menu.querySelectorAll('.nav-link-custom, .btn-login');
+                links.forEach(link => {
+                    link.addEventListener('click', function() {
+                        menu.classList.remove('active');
+                        toggler.classList.remove('active');
+                    });
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (!menu.contains(e.target) && !toggler.contains(e.target)) {
+                        menu.classList.remove('active');
+                        toggler.classList.remove('active');
+                    }
+                });
+            }
+        });
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
