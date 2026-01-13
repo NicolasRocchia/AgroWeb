@@ -38,7 +38,7 @@
 
 .logo-container {
     display: flex;
-    flex-direction: column; /* ?? Agregar esta línea */
+    flex-direction: column; 
     align-items: center;
     justify-content: center;
     gap: 15px;
