@@ -1,0 +1,594 @@
+﻿/* ============================================
+   ARCHIVO: recipe-detail.css
+   Estilos Mobile-Friendly para Vista de Detalle
+   ============================================ */
+
+/* Header Sticky */
+.detail-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 16px 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.detail-header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.back-button {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 15px;
+}
+
+    .back-button:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+.detail-title {
+    flex: 1;
+    font-size: 28px;
+    margin: 0;
+    font-weight: 700;
+}
+
+.detail-meta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Contenedor Principal */
+.detail-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px 20px;
+    min-height: calc(100vh - 200px);
+}
+
+/* Secciones */
+.detail-section {
+    background: white;
+    border-radius: 15px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.section-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.section-icon {
+    font-size: 24px;
+}
+
+/* Grid de Información */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 10px;
+    transition: all 0.3s;
+}
+
+    .info-item:hover {
+        background: #f1f5f9;
+    }
+
+.info-label {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    font-size: 16px;
+    color: #1e293b;
+    font-weight: 600;
+}
+
+    .info-value.empty {
+        color: #94a3b8;
+        font-style: italic;
+    }
+
+/* Card Content */
+.card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+    .card-content p {
+        margin: 0;
+        padding: 10px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+        .card-content p:last-child {
+            border-bottom: none;
+        }
+
+    .card-content strong {
+        color: #64748b;
+        font-weight: 600;
+        display: inline-block;
+        min-width: 120px;
+    }
+
+/* Lista de Productos */
+.products-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.product-card {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s;
+    background: white;
+}
+
+    .product-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+    }
+
+.product-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.product-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.product-dose {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.product-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.product-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.detail-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.detail-value {
+    font-size: 14px;
+    color: #475569;
+}
+
+/* Lista de Lotes */
+.lots-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.lot-card {
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s;
+}
+
+    .lot-card:hover {
+        border-color: #667eea;
+        background: white;
+    }
+
+.lot-header {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lot-icon {
+    font-size: 20px;
+}
+
+.lot-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* Acciones Sticky en Footer */
+.detail-actions {
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding: 16px 20px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    gap: 12px;
+    border-radius: 15px 15px 0 0;
+    margin-top: 24px;
+    z-index: 90;
+}
+
+.btn-action {
+    flex: 1;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+    }
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+    }
+
+.btn-secondary {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+    .btn-secondary:hover {
+        background: #667eea;
+        color: white;
+    }
+
+/* Timeline (para historial) */
+.timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    padding-left: 30px;
+}
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e2e8f0;
+    }
+
+.timeline-item {
+    position: relative;
+}
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -26px;
+        top: 5px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #667eea;
+        border: 3px solid white;
+        box-shadow: 0 0 0 2px #667eea;
+    }
+
+.timeline-content {
+    background: #f8fafc;
+    padding: 16px;
+    border-radius: 10px;
+}
+
+.timeline-date {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.timeline-text {
+    font-size: 14px;
+    color: #475569;
+}
+
+/* MOBILE RESPONSIVE */
+@media (max-width: 768px) {
+    /* Header más compacto */
+    .detail-header {
+        padding: 12px 16px;
+    }
+
+    .detail-header-content {
+        gap: 12px;
+    }
+
+    .back-button {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+
+    .detail-title {
+        font-size: 20px;
+        width: 100%;
+        order: 2;
+    }
+
+    .detail-meta {
+        width: 100%;
+        order: 3;
+    }
+
+    /* Contenedor con menos padding */
+    .detail-container {
+        padding: 16px 12px;
+    }
+
+    /* Secciones más compactas */
+    .detail-section {
+        padding: 20px 16px;
+        border-radius: 12px;
+        margin-bottom: 16px;
+    }
+
+    .section-title {
+        font-size: 18px;
+        margin-bottom: 16px;
+    }
+
+    /* Info grid en columna */
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .info-item {
+        padding: 10px;
+    }
+
+    /* Productos más compactos */
+    .product-card {
+        padding: 16px;
+    }
+
+    .product-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .product-name {
+        font-size: 16px;
+    }
+
+    .product-dose {
+        font-size: 13px;
+        padding: 5px 14px;
+    }
+
+    .product-details {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    /* Lotes en columna */
+    .lots-container {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .lot-card {
+        padding: 14px;
+    }
+
+    /* Acciones en columna en móviles muy pequeños */
+    .detail-actions {
+        padding: 12px 16px;
+        gap: 10px;
+    }
+
+    /* Timeline más compacta */
+    .timeline {
+        padding-left: 25px;
+    }
+
+    .timeline-content {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .detail-title {
+        font-size: 18px;
+    }
+
+    .section-title {
+        font-size: 16px;
+    }
+
+    .detail-actions {
+        flex-direction: column;
+    }
+
+    .btn-action {
+        width: 100%;
+    }
+}
+
+/* Touch Devices - Optimizaciones */
+@media (hover: none) and (pointer: coarse) {
+    /* Touch targets mínimos */
+    .back-button,
+    .btn-action {
+        min-height: 44px;
+    }
+
+    /* Eliminar hover effects */
+    .product-card:hover,
+    .lot-card:hover,
+    .info-item:hover {
+        transform: none;
+    }
+
+    /* Feedback táctil con active */
+    .btn-action:active {
+        opacity: 0.7;
+        transform: scale(0.98);
+    }
+
+    .back-button:active {
+        opacity: 0.8;
+    }
+
+    .product-card:active,
+    .lot-card:active {
+        background: #f8fafc;
+    }
+}
+
+/* Loading State (opcional) */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f1f5f9;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Empty State */
+.empty-state-detail {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon-large {
+    font-size: 80px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state-detail h3 {
+    font-size: 22px;
+    color: #64748b;
+    margin-bottom: 12px;
+}
+
+.empty-state-detail p {
+    font-size: 16px;
+    color: #94a3b8;
+}

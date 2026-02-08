@@ -1,0 +1,498 @@
+﻿@model WebApplication1.Models.Recipes.RecipeDetailViewModel
+@{
+    ViewData["Title"] = $"Receta RFD #{Model.Recipe.RfdNumber}";
+}
+
+<!-- Header Sticky -->
+<div class="detail-header">
+    <div class="detail-header-content">
+        <a asp-action="Index" class="back-button">
+            ← Volver al Listado
+        </a>
+        <h1 class="detail-title">
+            RFD #@Model.Recipe.RfdNumber
+        </h1>
+        <div class="detail-meta">
+            @{
+                var statusClass = Model.Recipe.Status?.ToLower() switch
+                {
+                    "draft" => "status-draft",
+                    "pending" => "status-pending",
+                    "approved" => "status-approved",
+                    "rejected" => "status-rejected",
+                    "expired" => "status-expired",
+                    _ => "status-draft"
+                };
+            }
+            <span class="status-badge @statusClass">
+                @Model.Recipe.Status
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Contenido Principal -->
+<div class="detail-container">
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div>
+                <strong>Error:</strong> @ViewBag.Error
+            </div>
+        </div>
+    }
+
+    <!-- Información General -->
+    <section class="detail-section">
+        <h2 class="section-title">
+            <span class="section-icon">📄</span> Información General
+        </h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">ID de Receta</span>
+                <span class="info-value">#@Model.Recipe.Id</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Fecha de Emisión</span>
+                <span class="info-value">@Model.Recipe.IssueDate.ToString("dd/MM/yyyy")</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Inicio Posible</span>
+                <span class="info-value @(Model.Recipe.PossibleStartDate == null ? "empty" : "")">
+                    @(Model.Recipe.PossibleStartDate?.ToString("dd/MM/yyyy") ?? "No especificado")
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Fecha Recomendada</span>
+                <span class="info-value @(Model.Recipe.RecommendedDate == null ? "empty" : "")">
+                    @(Model.Recipe.RecommendedDate?.ToString("dd/MM/yyyy") ?? "No especificada")
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Fecha de Vencimiento</span>
+                <span class="info-value @(Model.Recipe.ExpirationDate == null ? "empty" : "")">
+                    @(Model.Recipe.ExpirationDate?.ToString("dd/MM/yyyy") ?? "No especificado")
+                </span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Tipo de Aplicación</span>
+                <span class="info-value">@(Model.Recipe.ApplicationType ?? "No especificado")</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Cultivo</span>
+                <span class="info-value">@(Model.Recipe.Crop ?? "No especificado")</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Superficie Unitaria</span>
+                <span class="info-value">
+                    @(Model.Recipe.UnitSurfaceHa.HasValue ? $"{Model.Recipe.UnitSurfaceHa:N2} ha" : "No especificada")
+                </span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Diagnóstico y Tratamiento -->
+    @if (!string.IsNullOrEmpty(Model.Recipe.Diagnosis) || !string.IsNullOrEmpty(Model.Recipe.Treatment))
+    {
+        <section class="detail-section">
+            <h2 class="section-title">
+                <span class="section-icon">🔬</span> Diagnóstico y Tratamiento
+            </h2>
+            <div class="card-content">
+                @if (!string.IsNullOrEmpty(Model.Recipe.Diagnosis))
+                {
+                    <p><strong>Diagnóstico:</strong></p>
+                    <p style="white-space: pre-wrap; margin-left: 20px;">@Model.Recipe.Diagnosis</p>
+                }
+                @if (!string.IsNullOrEmpty(Model.Recipe.Treatment))
+                {
+                    <p><strong>Tratamiento:</strong></p>
+                    <p style="white-space: pre-wrap; margin-left: 20px;">@Model.Recipe.Treatment</p>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Solicitante -->
+    <section class="detail-section">
+        <h2 class="section-title">
+            <span class="section-icon">👤</span> Solicitante
+        </h2>
+        <div class="card-content">
+            <p><strong>Razón Social:</strong> @Model.Recipe.Requester.LegalName</p>
+            <p><strong>CUIT:</strong> @Model.Recipe.Requester.TaxId</p>
+            @if (!string.IsNullOrEmpty(Model.Recipe.Requester.Address))
+            {
+                <p><strong>Dirección:</strong> @Model.Recipe.Requester.Address</p>
+            }
+            @if (!string.IsNullOrEmpty(Model.Recipe.Requester.Contact))
+            {
+                <p><strong>Contacto:</strong> @Model.Recipe.Requester.Contact</p>
+            }
+        </div>
+    </section>
+
+    <!-- Asesor -->
+    <section class="detail-section">
+        <h2 class="section-title">
+            <span class="section-icon">👨‍🔬</span> Asesor Fitosanitario
+        </h2>
+        <div class="card-content">
+            <p><strong>Nombre Completo:</strong> @Model.Recipe.Advisor.FullName</p>
+            <p><strong>Matrícula:</strong> @Model.Recipe.Advisor.LicenseNumber</p>
+            @if (!string.IsNullOrEmpty(Model.Recipe.Advisor.Contact))
+            {
+                <p><strong>Contacto:</strong> @Model.Recipe.Advisor.Contact</p>
+            }
+        </div>
+    </section>
+
+    <!-- Condiciones Ambientales -->
+    @if (Model.Recipe.TempMin.HasValue || Model.Recipe.TempMax.HasValue ||
+        Model.Recipe.HumidityMin.HasValue || Model.Recipe.HumidityMax.HasValue ||
+        Model.Recipe.WindMinKmh.HasValue || Model.Recipe.WindMaxKmh.HasValue ||
+        !string.IsNullOrEmpty(Model.Recipe.WindDirection))
+    {
+        <section class="detail-section">
+            <h2 class="section-title">
+                <span class="section-icon">🌤️</span> Condiciones Ambientales
+            </h2>
+            <div class="info-grid">
+                @if (Model.Recipe.TempMin.HasValue || Model.Recipe.TempMax.HasValue)
+                {
+                    <div class="info-item">
+                        <span class="info-label">Temperatura</span>
+                        <span class="info-value">
+                            @if (Model.Recipe.TempMin.HasValue && Model.Recipe.TempMax.HasValue)
+                            {
+                                @:@Model.Recipe.TempMin°C - @Model.Recipe.TempMax°C
+                            }
+                            else if (Model.Recipe.TempMin.HasValue)
+                            {
+                                @:Mín: @Model.Recipe.TempMin°C
+                            }
+                            else
+                            {
+                                @:Máx: @Model.Recipe.TempMax°C
+                            }
+                        </span>
+                    </div>
+                }
+                @if (Model.Recipe.HumidityMin.HasValue || Model.Recipe.HumidityMax.HasValue)
+                {
+                    <div class="info-item">
+                        <span class="info-label">Humedad</span>
+                        <span class="info-value">
+                            @if (Model.Recipe.HumidityMin.HasValue && Model.Recipe.HumidityMax.HasValue)
+                            {
+                                @:@Model.Recipe.HumidityMin% - @Model.Recipe.HumidityMax%
+                            }
+                            else if (Model.Recipe.HumidityMin.HasValue)
+                            {
+                                @:Mín: @Model.Recipe.HumidityMin%
+                            }
+                            else
+                            {
+                                @:Máx: @Model.Recipe.HumidityMax%
+                            }
+                        </span>
+                    </div>
+                }
+                @if (Model.Recipe.WindMinKmh.HasValue || Model.Recipe.WindMaxKmh.HasValue)
+                {
+                    <div class="info-item">
+                        <span class="info-label">Velocidad del Viento</span>
+                        <span class="info-value">
+                            @if (Model.Recipe.WindMinKmh.HasValue && Model.Recipe.WindMaxKmh.HasValue)
+                            {
+                                @:@Model.Recipe.WindMinKmh - @Model.Recipe.WindMaxKmh km/h
+                            }
+                            else if (Model.Recipe.WindMinKmh.HasValue)
+                            {
+                                @:Mín: @Model.Recipe.WindMinKmh km/h
+                            }
+                            else
+                            {
+                                @:Máx: @Model.Recipe.WindMaxKmh km/h
+                            }
+                        </span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Recipe.WindDirection))
+                {
+                    <div class="info-item">
+                        <span class="info-label">Dirección del Viento</span>
+                        <span class="info-value">@Model.Recipe.WindDirection</span>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Información de Máquina -->
+    @if (!string.IsNullOrEmpty(Model.Recipe.MachineToUse) ||
+        !string.IsNullOrEmpty(Model.Recipe.MachinePlate) ||
+        !string.IsNullOrEmpty(Model.Recipe.MachineLegalName) ||
+        !string.IsNullOrEmpty(Model.Recipe.MachineType))
+    {
+        <section class="detail-section">
+            <h2 class="section-title">
+                <span class="section-icon">🚜</span> Información de Máquina
+            </h2>
+            <div class="info-grid">
+                @if (!string.IsNullOrEmpty(Model.Recipe.MachineToUse))
+                {
+                    <div class="info-item">
+                        <span class="info-label">Máquina a Usar</span>
+                        <span class="info-value">@Model.Recipe.MachineToUse</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Recipe.MachinePlate))
+                {
+                    <div class="info-item">
+                        <span class="info-label">Patente</span>
+                        <span class="info-value">@Model.Recipe.MachinePlate</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Recipe.MachineLegalName))
+                {
+                    <div class="info-item">
+                        <span class="info-label">Razón Social</span>
+                        <span class="info-value">@Model.Recipe.MachineLegalName</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Recipe.MachineType))
+                {
+                    <div class="info-item">
+                        <span class="info-label">Tipo de Máquina</span>
+                        <span class="info-value">@Model.Recipe.MachineType</span>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Productos -->
+    <section class="detail-section">
+        <h2 class="section-title">
+            <span class="section-icon">🧪</span> Productos (@Model.Recipe.Products.Count)
+        </h2>
+
+        @if (Model.Recipe.Products.Any())
+        {
+            <div class="products-container">
+                @foreach (var product in Model.Recipe.Products)
+                {
+                    <div class="product-card">
+                        <div class="product-header">
+                            <span class="product-name">@product.ProductName</span>
+                            @if (product.DoseValue.HasValue)
+                            {
+                                <span class="product-dose">
+                                    @product.DoseValue.Value.ToString("N2") @(product.DoseUnit ?? "")@(!string.IsNullOrEmpty(product.DosePerUnit) ? $"/{product.DosePerUnit}" : "")
+                                </span>
+                            }
+                        </div>
+                        <div class="product-details">
+                            @if (!string.IsNullOrEmpty(product.SenasaRegistry))
+                            {
+                                <div class="product-detail-item">
+                                    <span class="detail-label">Registro SENASA</span>
+                                    <span class="detail-value">@product.SenasaRegistry</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(product.ProductType))
+                            {
+                                <div class="product-detail-item">
+                                    <span class="detail-label">Tipo de Producto</span>
+                                    <span class="detail-value">@product.ProductType</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(product.ToxicologicalClass))
+                            {
+                                <div class="product-detail-item">
+                                    <span class="detail-label">Clase Toxicológica</span>
+                                    <span class="detail-value">@product.ToxicologicalClass</span>
+                                </div>
+                            }
+                            @if (product.TotalValue.HasValue)
+                            {
+                                <div class="product-detail-item">
+                                    <span class="detail-label">Total</span>
+                                    <span class="detail-value">@product.TotalValue.Value.ToString("N2") @(product.TotalUnit ?? "")</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state-detail">
+                <div class="empty-icon-large">📦</div>
+                <h3>No hay productos registrados</h3>
+                <p>Esta receta no tiene productos asociados.</p>
+            </div>
+        }
+    </section>
+
+    <!-- Lotes -->
+    <section class="detail-section">
+        <h2 class="section-title">
+            <span class="section-icon">🗺️</span> Lotes (@Model.Recipe.Lots.Count)
+        </h2>
+
+        @if (Model.Recipe.Lots.Any())
+        {
+            <div class="lots-container">
+                @foreach (var lot in Model.Recipe.Lots)
+                {
+                    <div class="lot-card">
+                        <div class="lot-header">
+                            <span class="lot-icon">📍</span>
+                            @lot.LotName
+                        </div>
+                        <div class="lot-details">
+                            @if (!string.IsNullOrEmpty(lot.Locality))
+                            {
+                                <p><strong>Localidad:</strong> @lot.Locality</p>
+                            }
+                            @if (!string.IsNullOrEmpty(lot.Department))
+                            {
+                                <p><strong>Departamento:</strong> @lot.Department</p>
+                            }
+                            @if (lot.SurfaceHa.HasValue)
+                            {
+                                <p><strong>Superficie:</strong> @lot.SurfaceHa.Value.ToString("N2") ha</p>
+                            }
+                            @if (lot.Vertices != null && lot.Vertices.Any())
+                            {
+                                <p><strong>Vértices:</strong> @lot.Vertices.Count puntos</p>
+                                <details style="margin-top: 8px;">
+                                    <summary style="cursor: pointer; color: #667eea; font-weight: 600;">
+                                        Ver coordenadas
+                                    </summary>
+                                    <ul style="margin: 8px 0; padding-left: 20px; font-size: 13px;">
+                                        @foreach (var vertex in lot.Vertices.OrderBy(v => v.Order))
+                                        {
+                                            <li>Punto @vertex.Order: @vertex.Latitude.ToString("F6"), @vertex.Longitude.ToString("F6")</li>
+                                        }
+                                    </ul>
+                                </details>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state-detail">
+                <div class="empty-icon-large">🗺️</div>
+                <h3>No hay lotes registrados</h3>
+                <p>Esta receta no tiene lotes asociados.</p>
+            </div>
+        }
+    </section>
+
+    <!-- Puntos Sensibles -->
+    @if (Model.Recipe.SensitivePoints.Any())
+    {
+        <section class="detail-section">
+            <h2 class="section-title">
+                <span class="section-icon">⚠️</span> Puntos Sensibles (@Model.Recipe.SensitivePoints.Count)
+            </h2>
+
+            <div class="lots-container">
+                @foreach (var point in Model.Recipe.SensitivePoints)
+                {
+                    <div class="lot-card" style="border-color: #f59e0b;">
+                        <div class="lot-header">
+                            <span class="lot-icon">⚠️</span>
+                            @point.Name
+                        </div>
+                        <div class="lot-details">
+                            @if (!string.IsNullOrEmpty(point.Type))
+                            {
+                                <p><strong>Tipo:</strong> @point.Type</p>
+                            }
+                            @if (!string.IsNullOrEmpty(point.Locality))
+                            {
+                                <p><strong>Localidad:</strong> @point.Locality</p>
+                            }
+                            @if (!string.IsNullOrEmpty(point.Department))
+                            {
+                                <p><strong>Departamento:</strong> @point.Department</p>
+                            }
+                            <p><strong>Coordenadas:</strong> @point.Latitude.ToString("F6"), @point.Longitude.ToString("F6")</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Notas/Observaciones -->
+    @if (!string.IsNullOrEmpty(Model.Recipe.Notes))
+    {
+        <section class="detail-section">
+            <h2 class="section-title">
+                <span class="section-icon">📝</span> Notas
+            </h2>
+            <div class="card-content">
+                <p style="white-space: pre-wrap;">@Model.Recipe.Notes</p>
+            </div>
+        </section>
+    }
+
+    <!-- Auditoría -->
+    <section class="detail-section">
+        <h2 class="section-title">
+            <span class="section-icon">🕐</span> Información de Auditoría
+        </h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">Fecha de Creación</span>
+                <span class="info-value">@Model.Recipe.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.Recipe.CreatedByUserName))
+            {
+                <div class="info-item">
+                    <span class="info-label">Creado Por</span>
+                    <span class="info-value">@Model.Recipe.CreatedByUserName</span>
+                </div>
+            }
+            @if (Model.Recipe.UpdatedAt.HasValue)
+            {
+                <div class="info-item">
+                    <span class="info-label">Última Actualización</span>
+                    <span class="info-value">@Model.Recipe.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Model.Recipe.UpdatedByUserName))
+            {
+                <div class="info-item">
+                    <span class="info-label">Actualizado Por</span>
+                    <span class="info-value">@Model.Recipe.UpdatedByUserName</span>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/recipeDetail.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/recipes.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script>
+        // Scroll suave al volver arriba
+        document.querySelector('.back-button')?.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    </script>
+}

@@ -61,4 +61,34 @@ public class RecipesController : Controller
             RfdNumber = rfdNumber
         });
     }
+
+    [HttpGet]
+    public async Task<IActionResult> Details(
+        [FromServices] IHttpClientFactory httpClientFactory,
+        long id)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+
+        var resp = await client.GetAsync($"/api/recipes/{id}");
+        if (!resp.IsSuccessStatusCode)
+        {
+            if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                TempData["Error"] = "La receta solicitada no existe.";
+                return RedirectToAction("Index");
+            }
+
+            ViewBag.Error = $"No se pudo obtener el detalle de la receta. HTTP {(int)resp.StatusCode}";
+            return View(new RecipeDetailViewModel());
+        }
+
+        var data = await resp.Content.ReadFromJsonAsync<RecipeDetailDto>(JsonOpts);
+        if (data == null)
+        {
+            ViewBag.Error = "No se pudo procesar la respuesta del servidor.";
+            return View(new RecipeDetailViewModel());
+        }
+
+        return View(new RecipeDetailViewModel { Recipe = data });
+    }
 }

@@ -126,7 +126,10 @@
                             <td class="text-right"><strong>@r.ProductsCount</strong></td>
                             <td class="text-right"><strong>@r.LotsCount</strong></td>
                             <td>
-                                <a href="#" class="btn-view" title="Ver detalles de la receta">
+                                <a asp-action="Details"
+                                   asp-route-id="@r.Id"
+                                   class="btn-view"
+                                   title="Ver detalles de la receta">
                                     <span class="btn-icon">👁️</span>
                                     Ver
                                 </a>
@@ -177,4 +180,39 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/css/recipes.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script>
+        // Detectar si la tabla tiene scroll horizontal en móviles
+        function checkTableScroll() {
+            const tableContainer = document.querySelector('.table-container');
+            if (tableContainer && window.innerWidth <= 768) {
+                const hasScroll = tableContainer.scrollWidth > tableContainer.clientWidth;
+                if (hasScroll) {
+                    tableContainer.classList.add('has-scroll');
+
+                    // Remover indicador después de scroll
+                    let scrollTimeout;
+                    tableContainer.addEventListener('scroll', function() {
+                        clearTimeout(scrollTimeout);
+                        scrollTimeout = setTimeout(function() {
+                            tableContainer.classList.remove('has-scroll');
+                        }, 1000);
+                    }, { passive: true });
+                }
+            }
+        }
+
+        // Ejecutar al cargar y al redimensionar
+        window.addEventListener('DOMContentLoaded', checkTableScroll);
+        window.addEventListener('resize', checkTableScroll);
+
+        // Scroll suave en paginación
+        document.querySelectorAll('.pagination-link').forEach(link => {
+            link.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+    </script>
 }

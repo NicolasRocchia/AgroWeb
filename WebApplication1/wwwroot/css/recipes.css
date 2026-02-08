@@ -154,6 +154,32 @@
     overflow: hidden;
     max-width: 1400px;
     margin: 0 auto 30px auto;
+    position: relative;
+}
+
+    /* Indicador de scroll para móviles */
+    .table-container::after {
+        content: '← Desliza →';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 8px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-align: center;
+        font-size: 12px;
+        font-weight: 600;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+
+/* Mostrar indicador solo en móviles cuando hay scroll */
+@media (max-width: 768px) {
+    .table-container.has-scroll::after {
+        opacity: 1;
+    }
 }
 
 .recipes-table {
@@ -387,14 +413,15 @@
     color: #1e293b;
 }
 
-/* Responsive */
+/* Responsive - Tablet */
 @media (max-width: 1024px) {
     .filters-form {
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .table-container {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling en iOS */
     }
 
     .recipes-table {
@@ -402,43 +429,218 @@
     }
 }
 
+/* Responsive - Mobile */
 @media (max-width: 768px) {
+    /* Header ajustado para móvil */
     .recipes-header {
-        padding: 30px 20px;
+        padding: 24px 16px;
     }
 
     .recipes-title {
-        font-size: 24px;
+        font-size: 22px;
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .recipes-title-icon {
+        font-size: 28px;
     }
 
     .recipes-subtitle {
         font-size: 14px;
+        text-align: center;
     }
 
+    /* Contenedor principal con padding reducido */
+    .recipes-header + div {
+        padding: 0 12px !important;
+    }
+
+    /* Filtros optimizados para móvil */
     .filters-container {
-        padding: 20px;
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+
+    .filters-title {
+        font-size: 16px;
+        margin-bottom: 16px;
     }
 
     .filters-form {
         grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .filter-input {
+        padding: 14px 16px;
+        font-size: 16px; /* Evita zoom en iOS */
     }
 
     .filter-button {
         width: 100%;
+        padding: 14px 30px;
+        font-size: 16px;
     }
 
+    /* Tabla con scroll horizontal */
+    .table-container {
+        border-radius: 12px;
+        margin-bottom: 20px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .recipes-table {
+        min-width: 800px; /* Reducido para móviles */
+        font-size: 13px;
+    }
+
+        .recipes-table th,
+        .recipes-table td {
+            padding: 12px 10px;
+            white-space: nowrap;
+        }
+
+    /* Badges más pequeños en móvil */
+    .status-badge {
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+
+    /* Botón ver más compacto */
+    .btn-view {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .btn-icon {
+        font-size: 13px;
+    }
+
+    /* Paginación vertical en móvil */
     .pagination-container {
         flex-direction: column;
         gap: 12px;
+        padding: 16px;
+    }
+
+    .pagination-info {
+        order: -1; /* Muestra primero */
+        font-size: 13px;
     }
 
     .pagination-link {
         width: 100%;
         text-align: center;
+        padding: 12px 20px;
+        font-size: 15px;
     }
 
+    /* Stats grid en columna */
     .stats-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .stat-card {
+        padding: 16px;
+    }
+
+    .stat-icon {
+        font-size: 28px;
+        width: 50px;
+        height: 50px;
+    }
+
+    .stat-value {
+        font-size: 24px;
+    }
+
+    /* Alert más compacto */
+    .alert-error {
+        padding: 12px 16px;
+        font-size: 14px;
+        border-radius: 10px;
+    }
+
+    .alert-icon {
+        font-size: 20px;
+    }
+
+    /* Empty state ajustado */
+    .empty-state {
+        padding: 40px 16px;
+    }
+
+    .empty-icon {
+        font-size: 48px;
+    }
+
+    .empty-state h3 {
+        font-size: 18px;
+    }
+
+    .empty-state p {
+        font-size: 13px;
+    }
+}
+
+/* Responsive - Mobile Pequeño */
+@media (max-width: 480px) {
+    .recipes-header {
+        padding: 20px 12px;
+    }
+
+    .recipes-title {
+        font-size: 20px;
+    }
+
+    .recipes-title-icon {
+        font-size: 24px;
+    }
+
+    .recipes-subtitle {
+        font-size: 13px;
+    }
+
+    .filters-container {
+        padding: 12px;
+    }
+
+    .recipes-table {
+        min-width: 700px;
+        font-size: 12px;
+    }
+
+        .recipes-table th,
+        .recipes-table td {
+            padding: 10px 8px;
+        }
+}
+
+/* Mejoras para touch devices */
+@media (hover: none) and (pointer: coarse) {
+    /* Aumentar áreas de toque */
+    .filter-input,
+    .filter-button,
+    .btn-view,
+    .pagination-link {
+        min-height: 44px; /* Tamaño mínimo recomendado por Apple */
+    }
+
+    /* Eliminar hover effects en touch */
+    .recipes-table tbody tr:hover {
+        transform: none;
+    }
+
+    /* Feedback táctil */
+    .filter-button:active,
+    .btn-view:active,
+    .pagination-link:active {
+        opacity: 0.7;
     }
 }
 
