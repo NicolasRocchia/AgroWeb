@@ -1,6 +1,7 @@
 ﻿using WebAgroConnect.Configs;
 using Microsoft.Extensions.Options;
 using WebApplication1.Logic;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +12,19 @@ builder.Services.Configure<ApiOptions>(builder.Configuration.GetSection("Api"));
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddTransient<ApiAuthHandler>();
+
+// ✅ Configurar Cookie Authentication
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.ExpireTimeSpan = TimeSpan.FromHours(12);
+        options.SlidingExpiration = true;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+    });
 
 builder.Services.AddHttpClient("AgroApi", (sp, client) =>
 {

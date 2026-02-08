@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace WebApplication1.Controllers;
@@ -104,13 +107,41 @@ public class AccountController : Controller
             Expires = expiresAt
         });
 
+        // ✅ Loguear la WEB (cookie auth) para poder usar [Authorize] y User.IsInRole(...)
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, json.UserId.ToString()),
+            new(ClaimTypes.Name, json.UserName ?? json.Email ?? "Usuario"),
+            new(ClaimTypes.Email, json.Email ?? string.Empty),
+        };
+
+        if (json.Roles != null)
+        {
+            foreach (var role in json.Roles.Where(r => !string.IsNullOrWhiteSpace(r)))
+                claims.Add(new Claim(ClaimTypes.Role, role));
+        }
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            principal,
+            new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = expiresAt.UtcDateTime
+            });
+
         return RedirectToAction("Index", "Home");
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
         // Eliminar todas las cookies relacionadas con la sesión
         Response.Cookies.Delete(TokenCookie);
         Response.Cookies.Delete(ExpiresCookie);
