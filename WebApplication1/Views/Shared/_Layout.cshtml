@@ -31,12 +31,44 @@
                         <li><a class="nav-link-custom" asp-controller="RecipeView" asp-action="Upload">Subir Receta</a></li>
                         <li><a class="nav-link-custom" asp-controller="RecipeView" asp-action="Index">Consultar</a></li>
                         <li><a class="nav-link-custom" href="/swagger" target="_blank">API Docs</a></li>
-                        <li>
-                            <a class="btn-login" asp-controller="Account" asp-action="Login">
-                                <span class="login-icon">🔐</span>
-                                Ingresar
-                            </a>
-                        </li>
+
+                        @if (Context.Request.Cookies.ContainsKey("agro_token"))
+                        {
+                            var userName = Context.Request.Cookies["agro_user_name"] ?? "Usuario";
+                            <li class="user-menu-container">
+                                <button class="btn-user-menu" id="userMenuButton">
+                                    <span class="user-icon">👤</span>
+                                    <span class="user-name">@userName</span>
+                                    <span class="dropdown-arrow">▼</span>
+                                </button>
+                                <div class="user-dropdown" id="userDropdown">
+                                    <div class="user-dropdown-header">
+                                        <span class="user-icon-large">👤</span>
+                                        <div class="user-info">
+                                            <strong>@userName</strong>
+                                            <small>@Context.Request.Cookies["agro_user_email"]</small>
+                                        </div>
+                                    </div>
+                                    <div class="user-dropdown-divider"></div>
+                                    <form method="post" asp-controller="Account" asp-action="Logout">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="user-dropdown-item">
+                                            <span class="item-icon">🚪</span>
+                                            Cerrar Sesión
+                                        </button>
+                                    </form>
+                                </div>
+                            </li>
+                        }
+                        else
+                        {
+                            <li>
+                                <a class="btn-login" asp-controller="Account" asp-action="Login">
+                                    <span class="login-icon">🔐</span>
+                                    Ingresar
+                                </a>
+                            </li>
+                        }
                     </ul>
                 </div>
             </div>
@@ -56,6 +88,7 @@
     </footer>
 
     <script>
+        // Toggle del menú hamburguesa
         document.addEventListener('DOMContentLoaded', function() {
             const toggler = document.getElementById('navbarToggler');
             const menu = document.getElementById('navbarMenu');
@@ -78,6 +111,24 @@
                     if (!menu.contains(e.target) && !toggler.contains(e.target)) {
                         menu.classList.remove('active');
                         toggler.classList.remove('active');
+                    }
+                });
+            }
+
+            // Toggle del menú de usuario
+            const userMenuButton = document.getElementById('userMenuButton');
+            const userDropdown = document.getElementById('userDropdown');
+
+            if (userMenuButton && userDropdown) {
+                userMenuButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    userDropdown.classList.toggle('show');
+                });
+
+                // Cerrar dropdown al hacer clic fuera
+                document.addEventListener('click', function(e) {
+                    if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+                        userDropdown.classList.remove('show');
                     }
                 });
             }
