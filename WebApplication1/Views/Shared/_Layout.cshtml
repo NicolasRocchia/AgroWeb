@@ -30,9 +30,15 @@
                         <li><a class="nav-link-custom" asp-controller="Home" asp-action="Index">Inicio</a></li>
                         <li><a class="nav-link-custom" asp-controller="RecipeView" asp-action="Upload">Subir Receta</a></li>
                         <li><a class="nav-link-custom" asp-controller="RecipeView" asp-action="Index">Consultar</a></li>
+
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li><a class="nav-link-custom" asp-controller="Recipes" asp-action="Index">Recetas (Admin)</a></li>
+                        }
+
                         <li><a class="nav-link-custom" href="/swagger" target="_blank">API Docs</a></li>
 
-                        @if (Context.Request.Cookies.ContainsKey("agro_token"))
+                        @if (User?.Identity?.IsAuthenticated ?? false)
                         {
                             var userName = Context.Request.Cookies["agro_user_name"] ?? "Usuario";
                             <li class="user-menu-container">
@@ -79,60 +85,30 @@
         @RenderBody()
     </main>
 
-    <footer>
-        <div class="container">
-            <p>🌾 AGROCONNECT</p>
-            <p>Sistema de Gestión de Recetas Fitosanitarias</p>
-            <p>© @DateTime.Now.Year - Todos los derechos reservados</p>
-        </div>
-    </footer>
-
     <script>
-        // Toggle del menú hamburguesa
-        document.addEventListener('DOMContentLoaded', function() {
-            const toggler = document.getElementById('navbarToggler');
+        // Toggle del menú móvil
+        document.getElementById('navbarToggler')?.addEventListener('click', function() {
             const menu = document.getElementById('navbarMenu');
-
-            if (toggler && menu) {
-                toggler.addEventListener('click', function() {
-                    menu.classList.toggle('active');
-                    toggler.classList.toggle('active');
-                });
-
-                const links = menu.querySelectorAll('.nav-link-custom, .btn-login');
-                links.forEach(link => {
-                    link.addEventListener('click', function() {
-                        menu.classList.remove('active');
-                        toggler.classList.remove('active');
-                    });
-                });
-
-                document.addEventListener('click', function(e) {
-                    if (!menu.contains(e.target) && !toggler.contains(e.target)) {
-                        menu.classList.remove('active');
-                        toggler.classList.remove('active');
-                    }
-                });
-            }
-
-            // Toggle del menú de usuario
-            const userMenuButton = document.getElementById('userMenuButton');
-            const userDropdown = document.getElementById('userDropdown');
-
-            if (userMenuButton && userDropdown) {
-                userMenuButton.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    userDropdown.classList.toggle('show');
-                });
-
-                // Cerrar dropdown al hacer clic fuera
-                document.addEventListener('click', function(e) {
-                    if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
-                        userDropdown.classList.remove('show');
-                    }
-                });
-            }
+            menu.classList.toggle('active');
         });
+
+        // Toggle del menú de usuario
+        const userMenuButton = document.getElementById('userMenuButton');
+        const userDropdown = document.getElementById('userDropdown');
+
+        if (userMenuButton && userDropdown) {
+            userMenuButton.addEventListener('click', function(e) {
+                e.stopPropagation();
+                userDropdown.classList.toggle('active');
+            });
+
+            // Cerrar el dropdown cuando se hace click fuera
+            document.addEventListener('click', function(e) {
+                if (!userMenuButton.contains(e.target) && !userDropdown.contains(e.target)) {
+                    userDropdown.classList.remove('active');
+                }
+            });
+        }
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

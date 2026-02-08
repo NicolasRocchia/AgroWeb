@@ -1,4 +1,4 @@
-/* ============================================
+ï»¿/* ============================================
    ARCHIVO: layout.css
    Estilos para el Layout Principal (_Layout.cshtml)
    ============================================ */
@@ -67,7 +67,7 @@ body {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
 
-/* Botón de Login en Navbar */
+/* Botï¿½n de Login en Navbar */
 .btn-login {
     display: inline-flex;
     align-items: center;
@@ -112,7 +112,7 @@ body {
     align-items: center;
 }
 
-/* Botón Hamburguesa (Oculto en Desktop) */
+/* Botï¿½n Hamburguesa (Oculto en Desktop) */
 .navbar-toggler {
     display: none;
     background: none;
@@ -136,7 +136,7 @@ body {
         transition: all 0.3s ease;
     }
 
-/* Animación del Hamburguesa cuando está abierto */
+/* Animaciï¿½n del Hamburguesa cuando estï¿½ abierto */
 .navbar-toggler.active .hamburger span:nth-child(1) {
     transform: rotate(45deg) translate(8px, 8px);
 }
@@ -244,7 +244,7 @@ footer {
         font-size: 24px;
     }
 
-    /* Overlay cuando el menú está abierto */
+    /* Overlay cuando el menï¿½ estï¿½ abierto */
     .navbar-nav-custom.active::before {
         content: '';
         position: fixed;
@@ -256,7 +256,7 @@ footer {
         z-index: -1;
     }
 
-    /* Fix para el login page en móvil */
+    /* Fix para el login page en mï¿½vil */
     .login-page .navbar-nav-custom {
         background: white;
     }
@@ -295,7 +295,7 @@ footer {
 }
 
 /* ============================================
-   MENÚ DE USUARIO
+   MENï¿½ DE USUARIO
    ============================================ */
 
 .user-menu-container {
@@ -360,7 +360,7 @@ footer {
     z-index: 1000;
 }
 
-    .user-dropdown.show {
+    .user-dropdown.active {
         opacity: 1;
         visibility: visible;
         transform: translateY(0);
@@ -430,7 +430,7 @@ footer {
     font-size: 18px;
 }
 
-/* Responsive para el menú de usuario */
+/* Responsive para el menï¿½ de usuario */
 @media (max-width: 768px) {
     .user-menu-container {
         width: 100%;
