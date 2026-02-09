@@ -1,0 +1,207 @@
+@model WebApplication1.Models.Recipes.RecipesIndexViewModel
+@{
+    ViewData["Title"] = "Mis Recetas";
+}
+
+<!-- Header Section -->
+<div class="recipes-header">
+    <div class="recipes-header-content">
+        <h1 class="recipes-title">
+            <span class="recipes-title-icon">📋</span>
+            Mis Recetas
+        </h1>
+        <p class="recipes-subtitle">Consultá las recetas fitosanitarias que cargaste en el sistema</p>
+    </div>
+</div>
+
+<div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
+
+    <!-- Error / Success Alerts -->
+    @if (TempData["Error"] is string errorMsg)
+    {
+        <div class="alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>Error:</strong> @errorMsg</div>
+        </div>
+    }
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>Error:</strong> @ViewBag.Error</div>
+        </div>
+    }
+
+    <!-- Filters Section -->
+    <div class="filters-container">
+        <h2 class="filters-title">
+            <span>🔍</span> Filtros de Búsqueda
+        </h2>
+
+        <form method="get" class="filters-form">
+            <div class="filter-group">
+                <label class="filter-label">Estado</label>
+                <input name="status"
+                       value="@Model.Status"
+                       placeholder="ABIERTA, CERRADA..."
+                       class="filter-input" />
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Búsqueda General</label>
+                <input name="searchText"
+                       value="@Model.SearchText"
+                       placeholder="Solicitante, asesor, cultivo..."
+                       class="filter-input" />
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Número RFD</label>
+                <input name="rfdNumber"
+                       value="@(Model.RfdNumber?.ToString() ?? "")"
+                       placeholder="Ej: 12345"
+                       type="number"
+                       class="filter-input" />
+            </div>
+
+            <div class="filter-group">
+                <button type="submit" class="filter-button">
+                    🔎 Buscar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table Section -->
+    <div class="table-container">
+        @if (Model.Data.Items.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <h3>No tenés recetas cargadas</h3>
+                <p>Subí tu primera receta fitosanitaria desde la sección de carga.</p>
+                <a asp-controller="RecipeView" asp-action="Upload" class="btn-upload-empty">
+                    📤 Subir Receta
+                </a>
+            </div>
+        }
+        else
+        {
+            <table class="recipes-table">
+                <thead>
+                    <tr>
+                        <th>RFD</th>
+                        <th>Estado</th>
+                        <th>Emisión</th>
+                        <th>Vencimiento</th>
+                        <th>Solicitante</th>
+                        <th>Asesor</th>
+                        <th>Cultivo</th>
+                        <th class="text-right">Prod.</th>
+                        <th class="text-right">Lotes</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.Data.Items)
+                    {
+                        var statusClass = r.Status?.ToUpper() switch
+                        {
+                            "ABIERTA" => "status-approved",
+                            "CERRADA" => "status-expired",
+                            "ANULADA" => "status-rejected",
+                            _ => "status-draft"
+                        };
+
+                        <tr>
+                            <td><strong>@r.RfdNumber</strong></td>
+                            <td>
+                                <span class="status-badge @statusClass">
+                                    @r.Status
+                                </span>
+                            </td>
+                            <td>@r.IssueDate.ToString("dd/MM/yyyy")</td>
+                            <td>@(r.ExpirationDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td>@r.RequesterName</td>
+                            <td>@r.AdvisorName</td>
+                            <td>@(r.Crop ?? "-")</td>
+                            <td class="text-right"><strong>@r.ProductsCount</strong></td>
+                            <td class="text-right"><strong>@r.LotsCount</strong></td>
+                            <td>
+                                <a asp-action="Details"
+                                   asp-route-id="@r.Id"
+                                   class="btn-view"
+                                   title="Ver detalles de la receta">
+                                    <span class="btn-icon">👁️</span>
+                                    Ver
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.Data.TotalPages > 1)
+    {
+        <div class="pagination-container">
+            @if (Model.Data.HasPreviousPage)
+            {
+                <a asp-action="Index"
+                   asp-route-page="@(Model.Data.Page - 1)"
+                   asp-route-pageSize="@Model.Data.PageSize"
+                   asp-route-status="@Model.Status"
+                   asp-route-searchText="@Model.SearchText"
+                   asp-route-rfdNumber="@Model.RfdNumber"
+                   class="pagination-link">
+                    ← Anterior
+                </a>
+            }
+
+            <span class="pagination-info">
+                Página <strong>@Model.Data.Page</strong> de <strong>@Model.Data.TotalPages</strong>
+                — @Model.Data.TotalItems receta(s) en total
+            </span>
+
+            @if (Model.Data.HasNextPage)
+            {
+                <a asp-action="Index"
+                   asp-route-page="@(Model.Data.Page + 1)"
+                   asp-route-pageSize="@Model.Data.PageSize"
+                   asp-route-status="@Model.Status"
+                   asp-route-searchText="@Model.SearchText"
+                   asp-route-rfdNumber="@Model.RfdNumber"
+                   class="pagination-link">
+                    Siguiente →
+                </a>
+            }
+        </div>
+    }
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/recipes.css" asp-append-version="true" />
+    <style>
+        .btn-upload-empty {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-upload-empty:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+    </style>
+}
