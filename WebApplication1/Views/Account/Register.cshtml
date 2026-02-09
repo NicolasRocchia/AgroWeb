@@ -1,0 +1,162 @@
+@{
+    ViewData["Title"] = "Crear Cuenta";
+    Layout = "_LayoutLogin";
+}
+
+<div class="login-card register-card">
+    <h2>Crear Cuenta</h2>
+    <p class="subtitle">Completá tus datos para registrarte como Aplicador</p>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger">@ViewBag.Error</div>
+    }
+
+    @if (ViewBag.Errors is List<string> errors)
+    {
+        <div class="alert alert-danger">
+            @foreach (var err in errors)
+            {
+                <div>• @err</div>
+            }
+        </div>
+    }
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="form-row">
+            <div class="mb-3">
+                <label class="form-label">Nombre completo *</label>
+                <input name="userName"
+                       type="text"
+                       class="form-control"
+                       placeholder="Juan Pérez"
+                       value="@ViewBag.UserName"
+                       required
+                       maxlength="100" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">CUIT / CUIL *</label>
+                <input name="taxId"
+                       type="text"
+                       class="form-control"
+                       placeholder="20345678901"
+                       value="@ViewBag.TaxId"
+                       required
+                       pattern="\d{10,11}"
+                       title="Ingresá 10 u 11 dígitos sin guiones" />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Email *</label>
+            <input name="email"
+                   type="email"
+                   class="form-control"
+                   placeholder="tu@email.com"
+                   value="@ViewBag.Email"
+                   required />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Teléfono <span class="optional-label">(opcional)</span></label>
+            <input name="phoneNumber"
+                   type="tel"
+                   class="form-control"
+                   placeholder="3464 123456"
+                   value="@ViewBag.PhoneNumber"
+                   maxlength="30" />
+        </div>
+
+        <div class="form-row">
+            <div class="mb-3">
+                <label class="form-label">Contraseña *</label>
+                <input name="password"
+                       type="password"
+                       class="form-control"
+                       placeholder="Mínimo 6 caracteres"
+                       required
+                       minlength="6" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Confirmar contraseña *</label>
+                <input name="confirmPassword"
+                       type="password"
+                       class="form-control"
+                       placeholder="Repetí la contraseña"
+                       required
+                       minlength="6" />
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Crear Cuenta</button>
+    </form>
+
+    <div class="register-footer">
+        <p>¿Ya tenés cuenta? <a asp-action="Login">Iniciá sesión</a></p>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Card más ancha para el registro */
+        .login-page main {
+            max-width: 520px;
+        }
+
+        .register-card {
+            padding: 2.5rem 2rem;
+        }
+
+        /* Filas de 2 columnas */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 1rem;
+        }
+
+        .optional-label {
+            font-weight: 400;
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
+
+        /* Footer con link a login */
+        .register-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .register-footer p {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .register-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .register-footer a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        @@media (max-width: 560px) {
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .login-page main {
+                max-width: 440px;
+            }
+        }
+    </style>
+}

@@ -151,6 +151,104 @@ public class AccountController : Controller
         return RedirectToAction("Login");
     }
 
+    // =============================================
+    // REGISTRO
+    // =============================================
+
+    [HttpGet]
+    public IActionResult Register()
+    {
+        if (Request.Cookies.ContainsKey(TokenCookie))
+            return RedirectToAction("Index", "Home");
+
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Register(
+        string userName,
+        string email,
+        string password,
+        string confirmPassword,
+        string taxId,
+        string? phoneNumber,
+        [FromServices] IHttpClientFactory httpClientFactory)
+    {
+        // Preservar valores en caso de error
+        ViewBag.UserName = userName;
+        ViewBag.Email = email;
+        ViewBag.TaxId = taxId;
+        ViewBag.PhoneNumber = phoneNumber;
+
+        // Validación básica client-side
+        if (string.IsNullOrWhiteSpace(userName) ||
+            string.IsNullOrWhiteSpace(email) ||
+            string.IsNullOrWhiteSpace(password) ||
+            string.IsNullOrWhiteSpace(taxId))
+        {
+            ViewBag.Error = "Completá todos los campos obligatorios.";
+            return View();
+        }
+
+        if (password != confirmPassword)
+        {
+            ViewBag.Error = "Las contraseñas no coinciden.";
+            return View();
+        }
+
+        var client = httpClientFactory.CreateClient("AgroApi");
+
+        var resp = await client.PostAsJsonAsync("/api/auth/register", new
+        {
+            userName = userName.Trim(),
+            email = email.Trim(),
+            password,
+            confirmPassword,
+            taxId = taxId.Trim(),
+            phoneNumber = phoneNumber?.Trim()
+        });
+
+        if (resp.IsSuccessStatusCode)
+        {
+            TempData["Success"] = "¡Cuenta creada exitosamente! Ya podés iniciar sesión.";
+            return RedirectToAction("Login");
+        }
+
+        // Manejar errores de la API
+        try
+        {
+            var body = await resp.Content.ReadAsStringAsync();
+            var doc = JsonDocument.Parse(body);
+
+            // Error de conflicto (email o CUIT duplicado)
+            if (doc.RootElement.TryGetProperty("error", out var errorProp))
+            {
+                ViewBag.Error = errorProp.GetString();
+                return View();
+            }
+
+            // Errores de validación
+            if (doc.RootElement.TryGetProperty("errors", out var errorsProp))
+            {
+                var errorList = new List<string>();
+                foreach (var err in errorsProp.EnumerateArray())
+                {
+                    errorList.Add(err.GetString() ?? "Error desconocido");
+                }
+                ViewBag.Errors = errorList;
+                return View();
+            }
+        }
+        catch
+        {
+            // Si no se puede parsear el error
+        }
+
+        ViewBag.Error = $"Error al crear la cuenta. (HTTP {(int)resp.StatusCode})";
+        return View();
+    }
+
     private sealed class LoginResponseDto
     {
         public int UserId { get; set; }
