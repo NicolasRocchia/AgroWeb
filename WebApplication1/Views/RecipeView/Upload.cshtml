@@ -1,0 +1,235 @@
+@{
+    ViewData["Title"] = "Subir Receta";
+}
+
+<div class="upload-header">
+    <div class="upload-header-content">
+        <h1 class="upload-title">
+            <span class="upload-title-icon">📤</span>
+            Subir Receta Fitosanitaria
+        </h1>
+        <p class="upload-subtitle">Cargá un archivo PDF de receta y el sistema procesará toda la información automáticamente</p>
+    </div>
+</div>
+
+<div class="upload-container">
+
+    @if (TempData["Success"] is string successMsg)
+    {
+        <div class="alert-success">
+            <span class="alert-icon">✅</span>
+            <div>
+                <strong>¡Importación exitosa!</strong>
+                <p>@successMsg</p>
+            </div>
+        </div>
+    }
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div>
+                <strong>Error:</strong> @ViewBag.Error
+            </div>
+        </div>
+    }
+
+    @if (ViewBag.Success != null && ViewBag.Preview != null)
+    {
+        <div class="alert-info">
+            <span class="alert-icon">👁️</span>
+            <div>
+                <strong>Vista previa:</strong> @ViewBag.Success
+            </div>
+        </div>
+
+        <details class="preview-details">
+            <summary>Ver datos extraídos del PDF</summary>
+            <pre class="preview-json">@ViewBag.Preview</pre>
+        </details>
+    }
+
+    <form method="post"
+          enctype="multipart/form-data"
+          id="uploadForm"
+          class="upload-form">
+        @Html.AntiForgeryToken()
+
+        <!-- Zona de Drag & Drop -->
+        <div class="dropzone" id="dropzone">
+            <div class="dropzone-content" id="dropzoneContent">
+                <div class="dropzone-icon">📄</div>
+                <h3>Arrastrá tu PDF aquí</h3>
+                <p>o hacé click para seleccionar un archivo</p>
+                <span class="dropzone-hint">Máximo 50 MB • Solo archivos PDF</span>
+            </div>
+
+            <div class="dropzone-file" id="dropzoneFile" style="display: none;">
+                <div class="file-info">
+                    <span class="file-icon">📋</span>
+                    <div class="file-details">
+                        <span class="file-name" id="fileName"></span>
+                        <span class="file-size" id="fileSize"></span>
+                    </div>
+                    <button type="button" class="file-remove" id="fileRemove" title="Quitar archivo">✕</button>
+                </div>
+            </div>
+
+            <input type="file"
+                   name="pdf"
+                   id="fileInput"
+                   accept=".pdf,application/pdf"
+                   style="display: none;" />
+        </div>
+
+        <!-- Opciones -->
+        <div class="upload-options">
+            <label class="checkbox-label">
+                <input type="checkbox" name="dryRun" value="true" />
+                <span class="checkbox-custom"></span>
+                Solo vista previa (no guardar en la base de datos)
+            </label>
+        </div>
+
+        <!-- Botón Submit -->
+        <button type="submit"
+                id="submitBtn"
+                class="btn-upload"
+                disabled>
+            <span class="btn-upload-icon">🚀</span>
+            Procesar Receta
+        </button>
+    </form>
+
+    <!-- Info -->
+    <div class="upload-info">
+        <h3>📌 ¿Cómo funciona?</h3>
+        <div class="info-steps">
+            <div class="info-step">
+                <div class="step-number">1</div>
+                <div class="step-text">
+                    <strong>Subí el PDF</strong>
+                    <p>Arrastrá o seleccioná el archivo de la receta fitosanitaria</p>
+                </div>
+            </div>
+            <div class="info-step">
+                <div class="step-number">2</div>
+                <div class="step-text">
+                    <strong>Procesamiento automático</strong>
+                    <p>El sistema extrae todos los datos: solicitante, asesor, productos, lotes y condiciones</p>
+                </div>
+            </div>
+            <div class="info-step">
+                <div class="step-number">3</div>
+                <div class="step-text">
+                    <strong>Receta registrada</strong>
+                    <p>La información queda asociada a tu cuenta y disponible para consulta</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/upload.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const dropzoneContent = document.getElementById('dropzoneContent');
+        const dropzoneFile = document.getElementById('dropzoneFile');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileRemove = document.getElementById('fileRemove');
+        const submitBtn = document.getElementById('submitBtn');
+        const uploadForm = document.getElementById('uploadForm');
+
+        // Click para abrir selector
+        dropzone.addEventListener('click', function (e) {
+            if (e.target !== fileRemove && !fileRemove.contains(e.target)) {
+                fileInput.click();
+            }
+        });
+
+        // Drag & Drop
+        dropzone.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+
+        dropzone.addEventListener('dragleave', function (e) {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+        });
+
+        dropzone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // Selección de archivo
+        fileInput.addEventListener('change', function () {
+            if (fileInput.files.length > 0) {
+                handleFile(fileInput.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (!file.name.toLowerCase().endsWith('.pdf')) {
+                alert('Solo se permiten archivos PDF.');
+                return;
+            }
+
+            if (file.size > 50 * 1024 * 1024) {
+                alert('El archivo excede el límite de 50 MB.');
+                return;
+            }
+
+            // Asignar al input (para que el form lo envíe)
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput.files = dt.files;
+
+            // Mostrar info del archivo
+            fileName.textContent = file.name;
+            fileSize.textContent = formatSize(file.size);
+
+            dropzoneContent.style.display = 'none';
+            dropzoneFile.style.display = 'flex';
+            submitBtn.disabled = false;
+            dropzone.classList.add('has-file');
+        }
+
+        // Quitar archivo
+        fileRemove.addEventListener('click', function (e) {
+            e.stopPropagation();
+            fileInput.value = '';
+            dropzoneContent.style.display = 'flex';
+            dropzoneFile.style.display = 'none';
+            submitBtn.disabled = true;
+            dropzone.classList.remove('has-file');
+        });
+
+        // Loading en submit
+        uploadForm.addEventListener('submit', function () {
+            if (fileInput.files.length === 0) return false;
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner"></span> Procesando...';
+        });
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / 1048576).toFixed(1) + ' MB';
+        }
+    </script>
+}
