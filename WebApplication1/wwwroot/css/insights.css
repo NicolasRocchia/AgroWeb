@@ -1,0 +1,218 @@
+/* ============================================
+   INSIGHTS STYLES
+   ============================================ */
+
+.insights-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px 40px;
+}
+
+/* ---- KPI Cards ---- */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.kpi-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-top: 4px solid transparent;
+}
+
+.kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.kpi-recipes { border-top-color: #667eea; }
+.kpi-users { border-top-color: #10b981; }
+.kpi-products { border-top-color: #f59e0b; }
+.kpi-recent { border-top-color: #764ba2; }
+
+.kpi-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.kpi-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.1;
+}
+
+.kpi-label {
+    font-size: 0.85rem;
+    color: #64748b;
+    font-weight: 600;
+    margin-top: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ---- Chart Cards ---- */
+.chart-row {
+    margin-bottom: 1.5rem;
+}
+
+.chart-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.chart-card-wide {
+    width: 100%;
+}
+
+.chart-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.chart-wrapper {
+    position: relative;
+    height: 300px;
+}
+
+.chart-wrapper-sm {
+    height: 260px;
+}
+
+.empty-chart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #94a3b8;
+    font-size: 0.95rem;
+}
+
+/* ---- Ranking Lists (Solicitantes / Asesores) ---- */
+.ranking-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.ranking-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.ranking-pos {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.ranking-item:nth-child(1) .ranking-pos {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: white;
+}
+
+.ranking-item:nth-child(2) .ranking-pos {
+    background: linear-gradient(135deg, #94a3b8, #64748b);
+    color: white;
+}
+
+.ranking-item:nth-child(3) .ranking-pos {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    color: white;
+}
+
+.ranking-bar-container {
+    flex: 1;
+    min-width: 0;
+}
+
+.ranking-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #334155;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    margin-bottom: 3px;
+}
+
+.ranking-bar {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.ranking-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 4px;
+    min-width: 4px;
+    transition: width 0.6s ease;
+}
+
+.ranking-bar-fill-alt {
+    background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.ranking-count {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #475569;
+    min-width: 30px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 1024px) {
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .chart-row-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .kpi-value {
+        font-size: 2rem;
+    }
+
+    .chart-wrapper {
+        height: 250px;
+    }
+}

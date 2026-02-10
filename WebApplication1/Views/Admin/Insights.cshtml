@@ -1,0 +1,284 @@
+@model WebApplication1.Models.Admin.InsightsDto
+@{
+    ViewData["Title"] = "Insights";
+}
+
+<div class="recipes-header">
+    <div class="recipes-header-content">
+        <h1 class="recipes-title">
+            <span class="recipes-title-icon">📊</span>
+            Insights del Sistema
+        </h1>
+        <p class="recipes-subtitle">Estadísticas y métricas de AgroConnect</p>
+    </div>
+</div>
+
+<div class="insights-container">
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>@ViewBag.Error</strong></div>
+        </div>
+    }
+
+    <a asp-controller="Home" asp-action="Index" class="back-link">← Volver al Panel</a>
+
+    <!-- ===== KPI CARDS ===== -->
+    <div class="kpi-grid">
+        <div class="kpi-card kpi-recipes">
+            <div class="kpi-icon">📋</div>
+            <div class="kpi-value">@Model.TotalRecipes</div>
+            <div class="kpi-label">Recetas Totales</div>
+        </div>
+        <div class="kpi-card kpi-users">
+            <div class="kpi-icon">👥</div>
+            <div class="kpi-value">@Model.TotalUsers</div>
+            <div class="kpi-label">Usuarios</div>
+        </div>
+        <div class="kpi-card kpi-products">
+            <div class="kpi-icon">🧪</div>
+            <div class="kpi-value">@Model.TotalProducts</div>
+            <div class="kpi-label">Productos</div>
+        </div>
+        <div class="kpi-card kpi-recent">
+            <div class="kpi-icon">📈</div>
+            <div class="kpi-value">@Model.RecipesLastMonth</div>
+            <div class="kpi-label">Recetas (últ. 30 días)</div>
+        </div>
+    </div>
+
+    <!-- ===== RECETAS POR MES ===== -->
+    <div class="chart-row">
+        <div class="chart-card chart-card-wide">
+            <h3 class="chart-title">📅 Recetas por Mes</h3>
+            <div class="chart-wrapper">
+                <canvas id="chartRecipesByMonth"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ESTADO + CLASE TOXICOLÓGICA ===== -->
+    <div class="chart-row chart-row-2">
+        <div class="chart-card">
+            <h3 class="chart-title">📌 Recetas por Estado</h3>
+            <div class="chart-wrapper chart-wrapper-sm">
+                <canvas id="chartByStatus"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h3 class="chart-title">☠️ Clase Toxicológica</h3>
+            <div class="chart-wrapper chart-wrapper-sm">
+                <canvas id="chartByToxClass"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TOP PRODUCTOS ===== -->
+    <div class="chart-row">
+        <div class="chart-card chart-card-wide">
+            <h3 class="chart-title">🏆 Top 10 Productos</h3>
+            <div class="chart-wrapper">
+                <canvas id="chartTopProducts"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TOP SOLICITANTES + ASESORES ===== -->
+    <div class="chart-row chart-row-2">
+        <div class="chart-card">
+            <h3 class="chart-title">🌾 Top Solicitantes</h3>
+            @if (Model.TopRequesters.Any())
+            {
+                <div class="ranking-list">
+                    @for (int i = 0; i < Model.TopRequesters.Count; i++)
+                    {
+                        var item = Model.TopRequesters[i];
+                        var percent = Model.TotalRecipes > 0
+                            ? (double)item.Count / Model.TotalRecipes * 100
+                            : 0;
+                        <div class="ranking-item">
+                            <span class="ranking-pos">@(i + 1)</span>
+                            <div class="ranking-bar-container">
+                                <span class="ranking-name">@item.Name</span>
+                                <div class="ranking-bar">
+                                    <div class="ranking-bar-fill" style="width: @(percent.ToString("F0"))%"></div>
+                                </div>
+                            </div>
+                            <span class="ranking-count">@item.Count</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-chart">Sin datos</div>
+            }
+        </div>
+        <div class="chart-card">
+            <h3 class="chart-title">👨‍🔬 Top Asesores</h3>
+            @if (Model.TopAdvisors.Any())
+            {
+                <div class="ranking-list">
+                    @for (int i = 0; i < Model.TopAdvisors.Count; i++)
+                    {
+                        var item = Model.TopAdvisors[i];
+                        var percent = Model.TotalRecipes > 0
+                            ? (double)item.Count / Model.TotalRecipes * 100
+                            : 0;
+                        <div class="ranking-item">
+                            <span class="ranking-pos">@(i + 1)</span>
+                            <div class="ranking-bar-container">
+                                <span class="ranking-name">@item.Name</span>
+                                <div class="ranking-bar">
+                                    <div class="ranking-bar-fill ranking-bar-fill-alt" style="width: @(percent.ToString("F0"))%"></div>
+                                </div>
+                            </div>
+                            <span class="ranking-count">@item.Count</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-chart">Sin datos</div>
+            }
+        </div>
+    </div>
+
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/recipes.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/insights.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+        const gradientPrimary = (ctx) => {
+            const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 300);
+            g.addColorStop(0, 'rgba(102, 126, 234, 0.4)');
+            g.addColorStop(1, 'rgba(102, 126, 234, 0.02)');
+            return g;
+        };
+
+        const COLORS = [
+            '#667eea', '#764ba2', '#f59e0b', '#10b981', '#ef4444',
+            '#6366f1', '#ec4899', '#14b8a6', '#f97316', '#8b5cf6'
+        ];
+
+        // ---- Recetas por Mes (Line) ----
+        const monthLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RecipesByMonth.Select(x => x.Month)));
+        const monthData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RecipesByMonth.Select(x => x.Count)));
+
+        new Chart(document.getElementById('chartRecipesByMonth'), {
+            type: 'line',
+            data: {
+                labels: monthLabels,
+                datasets: [{
+                    label: 'Recetas',
+                    data: monthData,
+                    borderColor: '#667eea',
+                    backgroundColor: gradientPrimary,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#667eea',
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, precision: 0 }
+                    }
+                }
+            }
+        });
+
+        // ---- Recetas por Estado (Doughnut) ----
+        const statusLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RecipesByStatus.Select(x => x.Name)));
+        const statusData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RecipesByStatus.Select(x => x.Count)));
+
+        new Chart(document.getElementById('chartByStatus'), {
+            type: 'doughnut',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusData,
+                    backgroundColor: COLORS.slice(0, statusLabels.length),
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } }
+                }
+            }
+        });
+
+        // ---- Clase Toxicológica (Doughnut) ----
+        const toxLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ByToxicologicalClass.Select(x => x.Name)));
+        const toxData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ByToxicologicalClass.Select(x => x.Count)));
+
+        new Chart(document.getElementById('chartByToxClass'), {
+            type: 'doughnut',
+            data: {
+                labels: toxLabels,
+                datasets: [{
+                    data: toxData,
+                    backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#6b7280'].slice(0, toxLabels.length),
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 16, usePointStyle: true } }
+                }
+            }
+        });
+
+        // ---- Top 10 Productos (Horizontal Bar) ----
+        const prodLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopProducts.Select(x => x.Name)));
+        const prodData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopProducts.Select(x => x.Count)));
+
+        new Chart(document.getElementById('chartTopProducts'), {
+            type: 'bar',
+            data: {
+                labels: prodLabels,
+                datasets: [{
+                    label: 'Usos',
+                    data: prodData,
+                    backgroundColor: COLORS.slice(0, prodLabels.length),
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, precision: 0 }
+                    }
+                }
+            }
+        });
+    </script>
+}

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using WebApplication1.Models.Admin;
 using WebApplication1.Models.Users;
-
 
 namespace WebApplication1.Controllers;
 
@@ -234,5 +234,26 @@ public class AdminController : Controller
         }
 
         return RedirectToAction("Users");
+    }
+
+    // =============================================
+    // INSIGHTS
+    // =============================================
+
+    [HttpGet]
+    public async Task<IActionResult> Insights(
+        [FromServices] IHttpClientFactory httpClientFactory)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+        var resp = await client.GetAsync("/api/admin/insights");
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            ViewBag.Error = $"No se pudieron obtener las estadísticas. HTTP {(int)resp.StatusCode}";
+            return View(new InsightsDto());
+        }
+
+        var data = await resp.Content.ReadFromJsonAsync<InsightsDto>(JsonOpts) ?? new InsightsDto();
+        return View(data);
     }
 }
