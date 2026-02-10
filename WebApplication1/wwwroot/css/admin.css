@@ -1,0 +1,408 @@
+/* ============================================
+   ADMIN PANEL STYLES
+   ============================================ */
+
+/* ---- Admin Dashboard Hero ---- */
+.hero-admin {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%) !important;
+}
+
+.hero-admin .logo-icon {
+    font-size: 3rem;
+}
+
+/* ---- Admin feature cards ---- */
+.admin-card {
+    border-top: 3px solid #667eea;
+}
+
+.admin-card:hover {
+    border-top-color: #764ba2;
+}
+
+/* ---- Disabled button (Próximamente) ---- */
+.feature-btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+    background: #94a3b8 !important;
+    color: white !important;
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+/* ---- Badges de roles ---- */
+.role-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.role-admin {
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    color: white;
+}
+
+.role-soporte {
+    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    color: white;
+}
+
+.role-municipio {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+}
+
+.role-inspector {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    color: white;
+}
+
+.role-aplicador {
+    background: linear-gradient(135deg, #059669, #047857);
+    color: white;
+}
+
+.role-default {
+    background: #94a3b8;
+    color: white;
+}
+
+/* ---- Contador y botón crear ---- */
+.user-count-badge {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.btn-create-user {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-create-user:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+/* ---- Filas bloqueadas ---- */
+.row-blocked {
+    background: #fef2f2 !important;
+    opacity: 0.75;
+}
+
+.row-blocked:hover {
+    opacity: 1;
+}
+
+/* ---- Email (truncar en mobile) ---- */
+.email-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ---- Acciones inline ---- */
+.actions-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
+
+.inline-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0;
+}
+
+.action-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.role-select {
+    padding: 4px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    background: white;
+    cursor: pointer;
+    max-width: 110px;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.btn-role {
+    background: #dbeafe;
+}
+
+.btn-role:hover {
+    background: #bfdbfe;
+    transform: scale(1.1);
+}
+
+.btn-block {
+    background: #fee2e2;
+}
+
+.btn-block:hover {
+    background: #fecaca;
+    transform: scale(1.1);
+}
+
+.btn-unblock {
+    background: #dcfce7;
+}
+
+.btn-unblock:hover {
+    background: #bbf7d0;
+    transform: scale(1.1);
+}
+
+/* ---- Alerts ---- */
+.alert-success {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+}
+
+/* ============================================
+   CREATE USER FORM
+   ============================================ */
+
+.create-user-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 20px 40px;
+}
+
+.back-link {
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+}
+
+.back-link:hover {
+    color: var(--primary-dark);
+}
+
+.create-user-form {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+}
+
+.form-section {
+    margin-bottom: 2rem;
+}
+
+.form-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.4rem;
+    font-size: 0.875rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: #fafafa;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+    background: white;
+}
+
+.optional-tag {
+    font-weight: 400;
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
+/* ---- Roles legend ---- */
+.roles-legend {
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.roles-legend h4 {
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+    color: #374151;
+}
+
+.roles-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.role-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.role-desc {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.role-level {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    font-weight: 600;
+}
+
+/* ---- Form actions ---- */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.btn-cancel {
+    padding: 10px 24px;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.btn-cancel:hover {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.btn-submit {
+    padding: 10px 24px;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .roles-grid {
+        flex-direction: column;
+    }
+
+    .actions-cell {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .email-cell {
+        max-width: 120px;
+    }
+}

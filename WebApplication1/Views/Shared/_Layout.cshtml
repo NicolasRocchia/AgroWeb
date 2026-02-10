@@ -28,15 +28,19 @@
 
                     <ul class="navbar-nav-custom" id="navbarMenu">
                         <li><a class="nav-link-custom" asp-controller="Home" asp-action="Index">Inicio</a></li>
-                        <li><a class="nav-link-custom" asp-controller="RecipeView" asp-action="Upload">Subir Receta</a></li>
-                        <li><a class="nav-link-custom" asp-controller="RecipeView" asp-action="Index">Consultar</a></li>
+
+                        @if (User.IsInRole("Aplicador"))
+                        {
+                            <li><a class="nav-link-custom" asp-controller="RecipeView" asp-action="Upload">Subir Receta</a></li>
+                            <li><a class="nav-link-custom" asp-controller="RecipeView" asp-action="Index">Mis Recetas</a></li>
+                        }
 
                         @if (User.IsInRole("Admin"))
                         {
-                            <li><a class="nav-link-custom" asp-controller="Recipes" asp-action="Index">Recetas (Admin)</a></li>
+                            <li><a class="nav-link-custom" asp-controller="Recipes" asp-action="Index">Recetas</a></li>
+                            <li><a class="nav-link-custom" asp-controller="Admin" asp-action="Users">Usuarios</a></li>
+                            <li><a class="nav-link-custom" href="/swagger" target="_blank">API Docs</a></li>
                         }
-
-                        <li><a class="nav-link-custom" href="/swagger" target="_blank">API Docs</a></li>
 
                         @if (User?.Identity?.IsAuthenticated ?? false)
                         {

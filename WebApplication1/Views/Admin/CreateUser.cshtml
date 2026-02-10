@@ -1,0 +1,162 @@
+@model WebApplication1.Models.Users.CreateUserViewModel
+@{
+    ViewData["Title"] = "Crear Usuario";
+}
+
+<div class="recipes-header">
+    <div class="recipes-header-content">
+        <h1 class="recipes-title">
+            <span class="recipes-title-icon">➕</span>
+            Crear Usuario
+        </h1>
+        <p class="recipes-subtitle">Registrá un nuevo usuario y asignale un rol en el sistema</p>
+    </div>
+</div>
+
+<div class="create-user-container">
+    <a asp-action="Users" class="back-link">← Volver a Gestión de Usuarios</a>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>@ViewBag.Error</strong></div>
+        </div>
+    }
+
+    @if (ViewBag.Errors is List<string> errors)
+    {
+        <div class="alert-error">
+            @foreach (var err in errors)
+            {
+                <div>• @err</div>
+            }
+        </div>
+    }
+
+    <form method="post" class="create-user-form">
+        @Html.AntiForgeryToken()
+
+        <div class="form-section">
+            <h3 class="form-section-title">
+                <span>👤</span> Datos Personales
+            </h3>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Nombre completo *</label>
+                    <input name="userName"
+                           type="text"
+                           class="form-control"
+                           placeholder="Juan Pérez"
+                           value="@Model.UserName"
+                           required
+                           maxlength="100" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">CUIT / CUIL *</label>
+                    <input name="taxId"
+                           type="text"
+                           class="form-control"
+                           placeholder="20345678901"
+                           value="@Model.TaxId"
+                           required
+                           pattern="\d{10,11}"
+                           title="Ingresá 10 u 11 dígitos sin guiones" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Email *</label>
+                    <input name="email"
+                           type="email"
+                           class="form-control"
+                           placeholder="usuario@email.com"
+                           value="@Model.Email"
+                           required />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Teléfono <span class="optional-tag">(opcional)</span></label>
+                    <input name="phoneNumber"
+                           type="tel"
+                           class="form-control"
+                           placeholder="3464 123456"
+                           value="@Model.PhoneNumber"
+                           maxlength="30" />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3 class="form-section-title">
+                <span>🔐</span> Seguridad
+            </h3>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Contraseña *</label>
+                    <input name="password"
+                           type="password"
+                           class="form-control"
+                           placeholder="Mínimo 6 caracteres"
+                           required
+                           minlength="6" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Rol *</label>
+                    <select name="roleId" class="form-control" required>
+                        <option value="">Seleccioná un rol...</option>
+                        @foreach (var role in Model.Roles)
+                        {
+                            <option value="@role.Id"
+                                    selected="@(Model.RoleId == role.Id)">
+                                @role.Name — @role.Description
+                            </option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leyenda de roles -->
+        <div class="roles-legend">
+            <h4>📋 Roles disponibles</h4>
+            <div class="roles-grid">
+                @foreach (var role in Model.Roles)
+                {
+                    var roleClass = role.Name switch
+                    {
+                        "Admin" => "role-admin",
+                        "Soporte" => "role-soporte",
+                        "Municipio" => "role-municipio",
+                        "Inspector" => "role-inspector",
+                        "Aplicador" => "role-aplicador",
+                        _ => "role-default"
+                    };
+
+                    <div class="role-legend-item">
+                        <span class="role-badge @roleClass">@role.Name</span>
+                        <span class="role-desc">@role.Description</span>
+                        <span class="role-level">Nivel @role.AccessLevel</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a asp-action="Users" class="btn-cancel">Cancelar</a>
+            <button type="submit" class="btn-submit">
+                ✅ Crear Usuario
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/recipes.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+}

@@ -1,0 +1,164 @@
+@model WebApplication1.Models.Users.UsersIndexViewModel
+@{
+    ViewData["Title"] = "Gestión de Usuarios";
+}
+
+<div class="recipes-header">
+    <div class="recipes-header-content">
+        <h1 class="recipes-title">
+            <span class="recipes-title-icon">👥</span>
+            Gestión de Usuarios
+        </h1>
+        <p class="recipes-subtitle">Administrá los usuarios del sistema, sus roles y estados</p>
+    </div>
+</div>
+
+<div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
+
+    @if (TempData["Success"] is string successMsg)
+    {
+        <div class="alert-success">
+            <span class="alert-icon">✅</span>
+            <div><strong>@successMsg</strong></div>
+        </div>
+    }
+
+    @if (TempData["Error"] is string errorMsg)
+    {
+        <div class="alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>@errorMsg</strong></div>
+        </div>
+    }
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>@ViewBag.Error</strong></div>
+        </div>
+    }
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <span class="user-count-badge">
+            @Model.Users.Count usuario(s) registrados
+        </span>
+        <a asp-action="CreateUser" class="btn-create-user">
+            ➕ Crear Usuario
+        </a>
+    </div>
+
+    <div class="table-container">
+        @if (Model.Users.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-icon">👥</div>
+                <h3>No hay usuarios registrados</h3>
+                <p>Creá el primer usuario del sistema.</p>
+            </div>
+        }
+        else
+        {
+            <table class="recipes-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>CUIT/CUIL</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Último Login</th>
+                        <th>Creado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in Model.Users)
+                    {
+                        var roleName = u.Roles.FirstOrDefault() ?? "Sin rol";
+                        var roleClass = roleName switch
+                        {
+                            "Admin" => "role-admin",
+                            "Soporte" => "role-soporte",
+                            "Municipio" => "role-municipio",
+                            "Inspector" => "role-inspector",
+                            "Aplicador" => "role-aplicador",
+                            _ => "role-default"
+                        };
+
+                        <tr class="@(u.IsBlocked ? "row-blocked" : "")">
+                            <td><strong>#@u.Id</strong></td>
+                            <td>@u.UserName</td>
+                            <td class="email-cell">@u.Email</td>
+                            <td>@(u.TaxId ?? "-")</td>
+                            <td>
+                                <span class="role-badge @roleClass">@roleName</span>
+                            </td>
+                            <td>
+                                @if (u.IsBlocked)
+                                {
+                                    <span class="status-badge status-rejected">Bloqueado</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge status-approved">Activo</span>
+                                }
+                            </td>
+                            <td>@(u.LastLoginAt?.ToString("dd/MM/yy HH:mm") ?? "Nunca")</td>
+                            <td>@u.CreatedAt.ToString("dd/MM/yy")</td>
+                            <td class="actions-cell">
+                                <!-- Cambiar Rol -->
+                                <div class="action-group">
+                                    <form method="post" asp-action="ChangeRole" class="inline-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@u.Id" />
+                                        <select name="roleId" class="role-select">
+                                            @foreach (var role in Model.Roles)
+                                            {
+                                                <option value="@role.Id"
+                                                        selected="@(u.Roles.Contains(role.Name))">
+                                                    @role.Name
+                                                </option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn-action btn-role" title="Cambiar rol">
+                                            💾
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <!-- Bloquear/Desbloquear -->
+                                <form method="post" asp-action="ToggleBlock" class="inline-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@u.Id" />
+                                    <input type="hidden" name="isBlocked" value="@(!u.IsBlocked ? "true" : "false")" />
+                                    @if (u.IsBlocked)
+                                    {
+                                        <button type="submit" class="btn-action btn-unblock" title="Desbloquear">
+                                            🔓
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="submit"
+                                                class="btn-action btn-block"
+                                                title="Bloquear"
+                                                onclick="return confirm('¿Seguro que querés bloquear a @u.UserName?')">
+                                            🔒
+                                        </button>
+                                    }
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/recipes.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+}
