@@ -398,6 +398,12 @@
         }
     </section>
 
+    <!-- Mapa Interactivo -->
+    @{
+        ViewData["Recipe"] = Model.Recipe;
+    }
+    @await Html.PartialAsync("_RecipeMap")
+
     <!-- Puntos Sensibles -->
     @if (Model.Recipe.SensitivePoints.Any())
     {

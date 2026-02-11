@@ -288,6 +288,12 @@
         }
     </section>
 
+    <!-- Mapa Interactivo -->
+    @{
+        ViewData["Recipe"] = Model.Recipe;
+    }
+    @await Html.PartialAsync("_RecipeMap")
+
     <!-- Notas -->
     @if (!string.IsNullOrEmpty(Model.Recipe.Notes))
     {
