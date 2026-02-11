@@ -1,0 +1,238 @@
+@* Partial view: Pronóstico climático para la fecha recomendada *@
+@{
+    var recipe = ViewData["Recipe"] as WebApplication1.Models.Recipes.RecipeDetailDto;
+    if (recipe == null) return;
+
+    // Necesitamos fecha recomendada y al menos un lote con coordenadas
+    if (!recipe.RecommendedDate.HasValue) return;
+
+    var lotWithCoords = recipe.Lots?.FirstOrDefault(l => l.Vertices != null && l.Vertices.Any());
+    if (lotWithCoords == null) return;
+
+    // Calcular centroide del primer lote
+    var vertices = lotWithCoords.Vertices;
+    var centLat = vertices.Average(v => v.Latitude);
+    var centLng = vertices.Average(v => v.Longitude);
+
+    var recDate = recipe.RecommendedDate.Value;
+    var dateStr = recDate.ToString("yyyy-MM-dd");
+
+    // Condiciones de la receta
+    var hasTempRange = recipe.TempMin.HasValue || recipe.TempMax.HasValue;
+    var hasHumRange = recipe.HumidityMin.HasValue || recipe.HumidityMax.HasValue;
+    var hasWindRange = recipe.WindMinKmh.HasValue || recipe.WindMaxKmh.HasValue;
+}
+
+<section class="detail-section" id="weather-section" style="display: none;">
+    <h2 class="section-title">
+        <span class="section-icon">⛅</span> Pronóstico para el @recDate.ToString("dd/MM/yyyy")
+    </h2>
+
+    <div id="weather-loading" style="text-align: center; padding: 30px; color: #888;">
+        <div style="font-size: 28px; margin-bottom: 8px;">🔄</div>
+        Consultando pronóstico...
+    </div>
+
+    <div id="weather-unavailable" style="display: none; text-align: center; padding: 30px; color: #888;">
+        <div style="font-size: 28px; margin-bottom: 8px;">📅</div>
+        <p id="weather-unavailable-msg">El pronóstico estará disponible cuando la fecha esté más cerca (máx. 16 días).</p>
+    </div>
+
+    <div id="weather-content" style="display: none;">
+        <div class="info-grid" id="weather-grid">
+            <!-- Se llena por JS -->
+        </div>
+
+        <p style="font-size: 11px; color: #999; margin-top: 12px; text-align: right;">
+            Datos de <a href="https://open-meteo.com/" target="_blank" style="color: #999;">Open-Meteo</a>
+            · Lote de referencia: @lotWithCoords.LotName
+        </p>
+    </div>
+</section>
+
+<script>
+(function () {
+    var lat = @centLat.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var lng = @centLng.ToString(System.Globalization.CultureInfo.InvariantCulture);
+    var targetDate = '@dateStr';
+    var section = document.getElementById('weather-section');
+
+    // Condiciones de la receta (null si no están definidas)
+    var recipeTempMin = @(recipe.TempMin.HasValue ? recipe.TempMin.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
+    var recipeTempMax = @(recipe.TempMax.HasValue ? recipe.TempMax.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
+    var recipeHumMin = @(recipe.HumidityMin.HasValue ? recipe.HumidityMin.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
+    var recipeHumMax = @(recipe.HumidityMax.HasValue ? recipe.HumidityMax.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
+    var recipeWindMin = @(recipe.WindMinKmh.HasValue ? recipe.WindMinKmh.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
+    var recipeWindMax = @(recipe.WindMaxKmh.HasValue ? recipe.WindMaxKmh.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
+
+    // Verificar si la fecha está en rango de pronóstico (hoy + 16 días)
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var target = new Date(targetDate + 'T00:00:00');
+    var diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+
+    section.style.display = '';
+
+    if (diffDays < 0) {
+        document.getElementById('weather-loading').style.display = 'none';
+        document.getElementById('weather-unavailable').style.display = '';
+        document.getElementById('weather-unavailable-msg').textContent =
+            'La fecha recomendada (' + target.toLocaleDateString('es-AR') + ') ya pasó. No hay pronóstico disponible.';
+        return;
+    }
+
+    if (diffDays > 16) {
+        document.getElementById('weather-loading').style.display = 'none';
+        document.getElementById('weather-unavailable').style.display = '';
+        document.getElementById('weather-unavailable-msg').textContent =
+            'Faltan ' + diffDays + ' días para la fecha recomendada. El pronóstico estará disponible cuando esté dentro de los próximos 16 días.';
+        return;
+    }
+
+    // Llamar a Open-Meteo
+    var url = 'https://api.open-meteo.com/v1/forecast'
+        + '?latitude=' + lat
+        + '&longitude=' + lng
+        + '&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,wind_speed_10m_max,wind_direction_10m_dominant,precipitation_probability_max'
+        + '&start_date=' + targetDate
+        + '&end_date=' + targetDate
+        + '&timezone=America/Argentina/Buenos_Aires';
+
+    fetch(url)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            document.getElementById('weather-loading').style.display = 'none';
+
+            if (!data.daily || !data.daily.time || data.daily.time.length === 0) {
+                document.getElementById('weather-unavailable').style.display = '';
+                document.getElementById('weather-unavailable-msg').textContent =
+                    'No se pudo obtener el pronóstico para esta fecha.';
+                return;
+            }
+
+            var d = data.daily;
+            var tMin = d.temperature_2m_min[0];
+            var tMax = d.temperature_2m_max[0];
+            var hum = d.relative_humidity_2m_mean ? d.relative_humidity_2m_mean[0] : null;
+            var windMax = d.wind_speed_10m_max[0];
+            var windDir = d.wind_direction_10m_dominant ? d.wind_direction_10m_dominant[0] : null;
+            var rainProb = d.precipitation_probability_max ? d.precipitation_probability_max[0] : null;
+
+            var grid = document.getElementById('weather-grid');
+            var html = '';
+
+            // Temperatura
+            html += buildRow(
+                '🌡️', 'Temperatura',
+                tMin.toFixed(1) + '°C - ' + tMax.toFixed(1) + '°C',
+                recipeTempMin, recipeTempMax, tMin, tMax, '°C'
+            );
+
+            // Humedad
+            if (hum !== null) {
+                html += buildRow(
+                    '💧', 'Humedad',
+                    hum.toFixed(0) + '%',
+                    recipeHumMin, recipeHumMax, hum, hum, '%'
+                );
+            }
+
+            // Viento
+            html += buildRow(
+                '💨', 'Viento máx.',
+                windMax.toFixed(1) + ' km/h',
+                recipeWindMin, recipeWindMax, windMax, windMax, ' km/h'
+            );
+
+            // Dirección del viento
+            if (windDir !== null) {
+                var dirName = degreesToCompass(windDir);
+                html += buildSimpleRow('🧭', 'Dirección del viento', dirName + ' (' + windDir + '°)');
+            }
+
+            // Probabilidad de lluvia
+            if (rainProb !== null) {
+                var rainColor = rainProb > 50 ? '#e74c3c' : (rainProb > 25 ? '#f39c12' : '#27ae60');
+                html += '<div class="info-item">'
+                    + '<span class="info-label">🌧️ Prob. lluvia</span>'
+                    + '<span class="info-value" style="font-size: 18px; font-weight: 700; color: ' + rainColor + ';">'
+                    + rainProb + '%'
+                    + '</span>'
+                    + '</div>';
+            }
+
+            grid.innerHTML = html;
+            document.getElementById('weather-content').style.display = '';
+        })
+        .catch(function () {
+            document.getElementById('weather-loading').style.display = 'none';
+            document.getElementById('weather-unavailable').style.display = '';
+            document.getElementById('weather-unavailable-msg').textContent =
+                'Error al consultar el servicio de pronóstico. Intentá recargar la página.';
+        });
+
+    function buildRow(icon, label, forecastText, recMin, recMax, valMin, valMax, unit) {
+        var status = '';
+        var statusColor = '';
+
+        if (recMin !== null && recMax !== null) {
+            // Tenemos rango de la receta → comparar
+            var inRange = valMin >= recMin && valMax <= recMax;
+            var partial = valMax >= recMin && valMin <= recMax;
+
+            if (inRange) {
+                status = '✅ Dentro del rango recomendado (' + recMin + unit + ' - ' + recMax + unit + ')';
+                statusColor = '#27ae60';
+            } else if (partial) {
+                status = '⚠️ Parcialmente fuera del rango (' + recMin + unit + ' - ' + recMax + unit + ')';
+                statusColor = '#f39c12';
+            } else {
+                status = '❌ Fuera del rango recomendado (' + recMin + unit + ' - ' + recMax + unit + ')';
+                statusColor = '#e74c3c';
+            }
+        } else if (recMin !== null) {
+            if (valMin >= recMin) {
+                status = '✅ Sobre el mínimo recomendado (' + recMin + unit + ')';
+                statusColor = '#27ae60';
+            } else {
+                status = '❌ Bajo el mínimo recomendado (' + recMin + unit + ')';
+                statusColor = '#e74c3c';
+            }
+        } else if (recMax !== null) {
+            if (valMax <= recMax) {
+                status = '✅ Bajo el máximo recomendado (' + recMax + unit + ')';
+                statusColor = '#27ae60';
+            } else {
+                status = '❌ Sobre el máximo recomendado (' + recMax + unit + ')';
+                statusColor = '#e74c3c';
+            }
+        }
+
+        var html = '<div class="info-item">'
+            + '<span class="info-label">' + icon + ' ' + label + '</span>'
+            + '<span class="info-value" style="font-size: 16px; font-weight: 600;">' + forecastText + '</span>';
+
+        if (status) {
+            html += '<span style="display: block; font-size: 12px; margin-top: 4px; color: ' + statusColor + '; font-weight: 500;">'
+                + status + '</span>';
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    function buildSimpleRow(icon, label, value) {
+        return '<div class="info-item">'
+            + '<span class="info-label">' + icon + ' ' + label + '</span>'
+            + '<span class="info-value">' + value + '</span>'
+            + '</div>';
+    }
+
+    function degreesToCompass(deg) {
+        var dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
+                    'S', 'SSO', 'SO', 'OSO', 'O', 'ONO', 'NO', 'NNO'];
+        var idx = Math.round(deg / 22.5) % 16;
+        return dirs[idx];
+    }
+})();
+</script>

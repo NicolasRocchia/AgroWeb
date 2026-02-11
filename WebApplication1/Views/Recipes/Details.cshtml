@@ -230,6 +230,11 @@
             </div>
         </section>
     }
+    @{
+        ViewData["Recipe"] = Model.Recipe;
+    }
+    <!-- Pronóstico Climático -->
+    @await Html.PartialAsync("_WeatherForecast")
 
     <!-- Información de Máquina -->
     @if (!string.IsNullOrEmpty(Model.Recipe.MachineToUse) ||
@@ -399,9 +404,7 @@
     </section>
 
     <!-- Mapa Interactivo -->
-    @{
-        ViewData["Recipe"] = Model.Recipe;
-    }
+  
     @await Html.PartialAsync("_RecipeMap")
 
     <!-- Puntos Sensibles -->

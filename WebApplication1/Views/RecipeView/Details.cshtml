@@ -16,9 +16,9 @@
             @{
                 var statusClass = Model.Recipe.Status?.ToUpper() switch
                 {
-                    "ABIERTA" => "status-approved",
-                    "CERRADA" => "status-expired",
-                    "ANULADA" => "status-rejected",
+                            "ABIERTA" => "status-approved",
+                            "CERRADA" => "status-expired",
+                            "ANULADA" => "status-rejected",
                     _ => "status-draft"
                 };
             }
@@ -174,6 +174,12 @@
         </section>
     }
 
+    <!-- Pronóstico Climático -->
+    @{
+        ViewData["Recipe"] = Model.Recipe;
+    }
+    @await Html.PartialAsync("_WeatherForecast")
+
     <!-- Productos -->
     <section class="detail-section">
         <h2 class="section-title">
@@ -289,9 +295,6 @@
     </section>
 
     <!-- Mapa Interactivo -->
-    @{
-        ViewData["Recipe"] = Model.Recipe;
-    }
     @await Html.PartialAsync("_RecipeMap")
 
     <!-- Notas -->
