@@ -662,3 +662,43 @@
     font-size: 16px;
     color: #94a3b8;
 }
+
+/* Botones de cambio de estado */
+.btn-status {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-status:active {
+    transform: scale(0.97);
+}
+
+.btn-cerrar {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 2px solid #6ee7b7;
+}
+
+.btn-cerrar:hover {
+    background: #d1fae5;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.btn-anular {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 2px solid #fca5a5;
+}
+
+.btn-anular:hover {
+    background: #fee2e2;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+}

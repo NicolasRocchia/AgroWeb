@@ -17,6 +17,10 @@
                 var statusClass = Model.Recipe.Status?.ToUpper() switch
                 {
                     "ABIERTA" => "status-approved",
+                    "PENDIENTE" => "status-draft",
+                    "APROBADA" => "status-approved",
+                    "RECHAZADA" => "status-rejected",
+                    "OBSERVADA" => "status-warning",
                     "CERRADA" => "status-expired",
                     "ANULADA" => "status-rejected",
                     _ => "status-draft"
@@ -32,6 +36,24 @@
 <!-- Contenido Principal -->
 <div class="detail-container">
 
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-success" style="background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 10px; padding: 14px 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; color: #065f46;">
+            <span>✅</span>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div>
+                <strong>Error:</strong> @TempData["Error"]
+            </div>
+        </div>
+    }
+
     @if (ViewBag.Error != null)
     {
         <div class="alert-error">
@@ -40,6 +62,162 @@
                 <strong>Error:</strong> @ViewBag.Error
             </div>
         </div>
+    }
+
+    <!-- Acciones de Estado -->
+    @{
+        var st = Model.Recipe.Status?.ToUpper();
+    }
+    @if (st == "ABIERTA" || st == "APROBADA" || st == "RECHAZADA" || st == "OBSERVADA")
+    {
+        <section class="detail-section" style="background: #f8fafc; border: 2px dashed #cbd5e1;">
+            <h2 class="section-title">
+                <span class="section-icon">⚡</span> Acciones
+            </h2>
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                @if (st == "ABIERTA")
+                {
+                    <a href="@Url.Action("AssignMunicipality", "RecipeView", new { id = Model.Recipe.Id })"
+                       class="btn-status" style="background: #eff6ff; color: #1e40af; border: 2px solid #93c5fd; text-decoration: none;">
+                        📤 Enviar a Municipio
+                    </a>
+                    <form asp-action="ChangeStatus" method="post" style="margin: 0;"
+                          onsubmit="return confirm('¿Cerrar esta receta sin enviarla a un municipio?');">
+                        <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                        <input type="hidden" name="status" value="CERRADA" />
+                        <button type="submit" class="btn-status btn-cerrar">✅ Cerrar Receta</button>
+                    </form>
+                    <form asp-action="ChangeStatus" method="post" style="margin: 0;"
+                          onsubmit="return confirm('¿Anular esta receta?');">
+                        <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                        <input type="hidden" name="status" value="ANULADA" />
+                        <button type="submit" class="btn-status btn-anular">❌ Anular Receta</button>
+                    </form>
+                }
+                @if (st == "APROBADA")
+                {
+                    <form asp-action="ChangeStatus" method="post" style="margin: 0;"
+                          onsubmit="return confirm('¿Confirmar que la aplicación fue realizada?');">
+                        <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                        <input type="hidden" name="status" value="CERRADA" />
+                        <button type="submit" class="btn-status btn-cerrar">✅ Cerrar Receta (Aplicada)</button>
+                    </form>
+                }
+                @if (st == "RECHAZADA")
+                {
+                    <form asp-action="ChangeStatus" method="post" style="margin: 0;"
+                          onsubmit="return confirm('¿Anular esta receta rechazada?');">
+                        <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                        <input type="hidden" name="status" value="ANULADA" />
+                        <button type="submit" class="btn-status btn-anular">❌ Anular Receta</button>
+                    </form>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Estado Municipal -->
+    @if (Model.Recipe.AssignedMunicipalityId.HasValue)
+    {
+        <section class="detail-section" style="background: #eff6ff; border-left: 4px solid #3b82f6;">
+            <h2 class="section-title">
+                <span class="section-icon">🏛️</span> Control Municipal
+            </h2>
+            <div class="info-grid" style="grid-template-columns: 1fr 1fr;">
+                <div class="info-item">
+                    <span class="info-label">Municipio asignado</span>
+                    <span class="info-value">@Model.Recipe.AssignedMunicipalityName</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Enviada el</span>
+                    <span class="info-value">@Model.Recipe.AssignedAt?.ToString("dd/MM/yyyy HH:mm")</span>
+                </div>
+            </div>
+
+            @if (Model.Recipe.ReviewLogs?.Any() == true)
+            {
+                <h3 style="margin: 16px 0 8px; font-size: 14px; color: #475569;">Historial de revisiones</h3>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    @foreach (var log in Model.Recipe.ReviewLogs)
+                    {
+                        var actionColor = log.Action switch {
+                            "APROBADA" => "#16a34a",
+                            "RECHAZADA" => "#dc2626",
+                            "OBSERVADA" => "#d97706",
+                            "REDIRIGIDA" => "#2563eb",
+                            _ => "#64748b"
+                        };
+                        var actionIcon = log.Action switch {
+                            "APROBADA" => "✅",
+                            "RECHAZADA" => "❌",
+                            "OBSERVADA" => "💬",
+                            "REDIRIGIDA" => "↪️",
+                            _ => "•"
+                        };
+                        <div style="padding: 10px 14px; background: white; border-radius: 8px; border-left: 3px solid @actionColor;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 600; color: @actionColor;">@actionIcon @log.Action</span>
+                                <span style="font-size: 12px; color: #94a3b8;">@log.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                            <div style="font-size: 13px; color: #64748b;">@log.MunicipalityName</div>
+                            @if (log.Action == "REDIRIGIDA" && !string.IsNullOrEmpty(log.TargetMunicipalityName))
+                            {
+                                <div style="font-size: 13px; color: #2563eb;">→ @log.TargetMunicipalityName</div>
+                            }
+                            @if (!string.IsNullOrEmpty(log.Observation))
+                            {
+                                <div style="margin-top: 6px; font-size: 13px; color: #334155; background: #f8fafc; padding: 8px; border-radius: 6px;">@log.Observation</div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </section>
+    }
+
+    <!-- Mensajes -->
+    @if (Model.Recipe.Messages?.Any() == true || st == "OBSERVADA")
+    {
+        <section class="detail-section">
+            <h2 class="section-title">
+                <span class="section-icon">💬</span> Mensajes
+            </h2>
+
+            @if (Model.Recipe.Messages?.Any() == true)
+            {
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; max-height: 400px; overflow-y: auto;">
+                    @foreach (var msg in Model.Recipe.Messages)
+                    {
+                        var isMe = msg.SenderRole == "Aplicador";
+                        <div style="align-self: @(isMe ? "flex-end" : "flex-start"); max-width: 80%; padding: 10px 14px; border-radius: 12px; background: @(isMe ? "#dcfce7" : "#f1f5f9");">
+                            <div style="font-size: 12px; font-weight: 600; color: @(isMe ? "#166534" : "#1e40af"); margin-bottom: 4px;">
+                                @msg.SenderName (@msg.SenderRole)
+                            </div>
+                            <div style="font-size: 14px; color: #1e293b;">@msg.Message</div>
+                            <div style="font-size: 11px; color: #94a3b8; text-align: right; margin-top: 4px;">
+                                @msg.CreatedAt.ToString("dd/MM HH:mm")
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (st == "OBSERVADA")
+            {
+                <form asp-action="SendMessage" method="post" style="display: flex; gap: 8px;">
+                    <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                    <input type="text" name="message" required maxlength="1000"
+                           placeholder="Respondé al municipio..."
+                           style="flex: 1; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px;" />
+                    <button type="submit" class="btn-status btn-cerrar" style="white-space: nowrap;">
+                        Enviar 📩
+                    </button>
+                </form>
+                <p style="font-size: 12px; color: #94a3b8; margin-top: 6px;">
+                    Al responder, la receta volverá al estado PENDIENTE para que el municipio la revise.
+                </p>
+            }
+        </section>
     }
 
     <!-- Información General -->

@@ -22,4 +22,5 @@ public class RecipeListItemDto
 
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public string? AssignedMunicipalityName { get; set; }
 }

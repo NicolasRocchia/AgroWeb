@@ -237,6 +237,271 @@ public class AdminController : Controller
     }
 
     // =============================================
+    // GESTIÓN DE MUNICIPIOS
+    // =============================================
+
+    private static decimal? ParseCoord(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return null;
+
+        var s = raw.Trim();
+
+        // Aceptar "-32.692014" o "-32,692014"
+        if (decimal.TryParse(s, System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.CurrentCulture, out var v))
+            return v;
+
+        if (decimal.TryParse(s.Replace(",", "."),
+                System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture, out v))
+            return v;
+
+        return null;
+    }
+
+    private static string? ValidateCoords(decimal? lat, decimal? lng)
+    {
+        if (lat is not null && (lat < -90 || lat > 90))
+            return "Latitud inválida. Debe estar entre -90 y 90.";
+
+        if (lng is not null && (lng < -180 || lng > 180))
+            return "Longitud inválida. Debe estar entre -180 y 180.";
+
+        return null;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Municipalities(
+        [FromServices] IHttpClientFactory httpClientFactory)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+
+        var munResp = await client.GetAsync("/api/municipalities");
+        var municipalities = new List<WebApplication1.Models.Admin.MunicipalityAdminDto>();
+
+        if (munResp.IsSuccessStatusCode)
+            municipalities = await munResp.Content.ReadFromJsonAsync<List<WebApplication1.Models.Admin.MunicipalityAdminDto>>(JsonOpts) ?? new();
+
+        return View(new WebApplication1.Models.Admin.MunicipalitiesViewModel
+        {
+            Municipalities = municipalities
+        });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> CreateMunicipality(
+        [FromServices] IHttpClientFactory httpClientFactory)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+        var users = await GetAvailableMunicipioUsers(client);
+
+        return View(new WebApplication1.Models.Admin.CreateMunicipalityViewModel
+        {
+            AvailableUsers = users
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateMunicipality(
+        string name,
+        string? province,
+        string? department,
+        string? latitude,    // 👈 antes decimal?
+        string? longitude,   // 👈 antes decimal?
+        long? userId,
+        [FromServices] IHttpClientFactory httpClientFactory)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+
+        var lat = ParseCoord(latitude);
+        var lng = ParseCoord(longitude);
+
+        var model = new WebApplication1.Models.Admin.CreateMunicipalityViewModel
+        {
+            AvailableUsers = await GetAvailableMunicipioUsers(client),
+            Name = name,
+            Province = province,
+            Department = department,
+            Latitude = lat,      // 👈 el VM sigue siendo decimal?
+            Longitude = lng,     // 👈 el VM sigue siendo decimal?
+            UserId = userId
+        };
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            ViewBag.Error = "El nombre del municipio es obligatorio.";
+            return View(model);
+        }
+
+        if (!string.IsNullOrWhiteSpace(latitude) && lat is null)
+        {
+            ViewBag.Error = "Latitud inválida. Usá formato -32.692014 o -32,692014.";
+            return View(model);
+        }
+
+        if (!string.IsNullOrWhiteSpace(longitude) && lng is null)
+        {
+            ViewBag.Error = "Longitud inválida. Usá formato -62.1026759 o -62,1026759.";
+            return View(model);
+        }
+
+        var coordErr = ValidateCoords(lat, lng);
+        if (coordErr is not null)
+        {
+            ViewBag.Error = coordErr;
+            return View(model);
+        }
+
+        var resp = await client.PostAsJsonAsync("/api/municipalities", new
+        {
+            name = name.Trim(),
+            province = province?.Trim(),
+            department = department?.Trim(),
+            latitude = lat,
+            longitude = lng,
+            userId
+        });
+
+        if (resp.IsSuccessStatusCode)
+        {
+            TempData["Success"] = $"Municipio '{name}' creado exitosamente.";
+            return RedirectToAction("Municipalities");
+        }
+
+        try
+        {
+            var body = await resp.Content.ReadAsStringAsync();
+            var doc = JsonDocument.Parse(body);
+            ViewBag.Error = doc.RootElement.TryGetProperty("error", out var err)
+                ? err.GetString()
+                : $"Error al crear municipio. (HTTP {(int)resp.StatusCode})";
+        }
+        catch
+        {
+            ViewBag.Error = $"Error al crear municipio. (HTTP {(int)resp.StatusCode})";
+        }
+
+        return View(model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> EditMunicipality(
+        long id,
+        [FromServices] IHttpClientFactory httpClientFactory)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+
+        var munResp = await client.GetAsync($"/api/municipalities/{id}");
+        if (!munResp.IsSuccessStatusCode)
+        {
+            TempData["Error"] = "Municipio no encontrado.";
+            return RedirectToAction("Municipalities");
+        }
+
+        var municipality = await munResp.Content.ReadFromJsonAsync<WebApplication1.Models.Admin.MunicipalityAdminDto>(JsonOpts);
+        var users = await GetAvailableMunicipioUsers(client);
+
+        // Agregar el usuario actual asignado a la lista si existe
+        if (municipality?.UserId != null && municipality.UserName != null)
+        {
+            if (!users.Any(u => u.Id == municipality.UserId))
+            {
+                users.Insert(0, new WebApplication1.Models.Admin.MunicipioUserDto
+                {
+                    Id = municipality.UserId.Value,
+                    UserName = municipality.UserName,
+                    EmailNormalized = ""
+                });
+            }
+        }
+
+        return View(new WebApplication1.Models.Admin.EditMunicipalityViewModel
+        {
+            Municipality = municipality ?? new(),
+            AvailableUsers = users
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditMunicipality(
+        long id,
+        string? name,
+        string? province,
+        string? department,
+        string? latitude,   // 👈 antes decimal?
+        string? longitude,  // 👈 antes decimal?
+        long? userId,
+        [FromServices] IHttpClientFactory httpClientFactory)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+
+        var lat = ParseCoord(latitude);
+        var lng = ParseCoord(longitude);
+
+        if (!string.IsNullOrWhiteSpace(latitude) && lat is null)
+        {
+            TempData["Error"] = "Latitud inválida. Usá formato -32.692014 o -32,692014.";
+            return RedirectToAction("EditMunicipality", new { id });
+        }
+
+        if (!string.IsNullOrWhiteSpace(longitude) && lng is null)
+        {
+            TempData["Error"] = "Longitud inválida. Usá formato -62.1026759 o -62,1026759.";
+            return RedirectToAction("EditMunicipality", new { id });
+        }
+
+        var coordErr = ValidateCoords(lat, lng);
+        if (coordErr is not null)
+        {
+            TempData["Error"] = coordErr;
+            return RedirectToAction("EditMunicipality", new { id });
+        }
+
+        var resp = await client.PutAsJsonAsync($"/api/municipalities/{id}", new
+        {
+            name,
+            province,
+            department,
+            latitude = lat,
+            longitude = lng,
+            userId
+        });
+
+        if (resp.IsSuccessStatusCode)
+        {
+            TempData["Success"] = "Municipio actualizado correctamente.";
+            return RedirectToAction("Municipalities");
+        }
+
+        try
+        {
+            var body = await resp.Content.ReadAsStringAsync();
+            var doc = JsonDocument.Parse(body);
+            TempData["Error"] = doc.RootElement.TryGetProperty("error", out var err)
+                ? err.GetString()
+                : $"Error al actualizar. (HTTP {(int)resp.StatusCode})";
+        }
+        catch
+        {
+            TempData["Error"] = $"Error al actualizar. (HTTP {(int)resp.StatusCode})";
+        }
+
+        return RedirectToAction("EditMunicipality", new { id });
+    }
+
+    private async Task<List<WebApplication1.Models.Admin.MunicipioUserDto>> GetAvailableMunicipioUsers(HttpClient client)
+    {
+        var resp = await client.GetAsync("/api/admin/users/available-municipio");
+        if (resp.IsSuccessStatusCode)
+            return await resp.Content.ReadFromJsonAsync<List<WebApplication1.Models.Admin.MunicipioUserDto>>(JsonOpts) ?? new();
+        return new();
+    }
+
+
+    // =============================================
     // INSIGHTS
     // =============================================
 

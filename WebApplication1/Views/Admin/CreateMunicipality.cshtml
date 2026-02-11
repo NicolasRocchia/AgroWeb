@@ -1,0 +1,145 @@
+@model WebApplication1.Models.Admin.CreateMunicipalityViewModel
+@{
+    ViewData["Title"] = "Crear Municipio";
+}
+
+<div class="recipes-header">
+    <div class="recipes-header-content">
+        <h1 class="recipes-title">
+            <span class="recipes-title-icon">🏛️</span>
+            Crear Municipio
+        </h1>
+        <p class="recipes-subtitle">Registrá un nuevo municipio en el sistema</p>
+    </div>
+</div>
+
+<div class="create-user-container">
+    <a asp-action="Municipalities" class="back-link">← Volver a Municipios</a>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>@ViewBag.Error</strong></div>
+        </div>
+    }
+
+    <form method="post" class="create-user-form">
+        @Html.AntiForgeryToken()
+
+        <div class="form-section">
+            <h3 class="form-section-title">
+                <span>🏛️</span> Datos del Municipio
+            </h3>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Nombre del municipio *</label>
+                    <input name="name"
+                           type="text"
+                           class="form-control"
+                           placeholder="Municipalidad de Venado Tuerto"
+                           value="@Model.Name"
+                           required
+                           maxlength="200" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Provincia</label>
+                    <input name="province"
+                           type="text"
+                           class="form-control"
+                           placeholder="Santa Fe"
+                           value="@Model.Province"
+                           maxlength="100" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Departamento</label>
+                    <input name="department"
+                           type="text"
+                           class="form-control"
+                           placeholder="General López"
+                           value="@Model.Department"
+                           maxlength="150" />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3 class="form-section-title">
+                <span>📍</span> Ubicación GPS
+            </h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 12px;">
+                Las coordenadas se usan para ordenar los municipios por cercanía al lote cuando el aplicador envía una receta. 
+                Podés obtenerlas de <a href="https://www.google.com/maps" target="_blank" style="color: #2563eb;">Google Maps</a> (click derecho → copiar coordenadas).
+            </p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Latitud</label>
+                    <input name="latitude"
+                           type="text"
+                           class="form-control"
+                           placeholder="-33.7456000"
+                           value="@Model.Latitude" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Longitud</label>
+                    <input name="longitude"
+                           type="text"
+                           class="form-control"
+                           placeholder="-61.9688000"
+                           value="@Model.Longitude" />
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3 class="form-section-title">
+                <span>👤</span> Operador (usuario asignado)
+            </h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 12px;">
+                Seleccioná el usuario con rol <strong>Municipio</strong> que operará este municipio. Solo se muestran usuarios con ese rol que no están asignados a otro municipio.
+            </p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Usuario operador <span class="optional-tag">(opcional)</span></label>
+                    <select name="userId" class="form-control">
+                        <option value="">— Sin asignar por ahora —</option>
+                        @foreach (var user in Model.AvailableUsers)
+                        {
+                            <option value="@user.Id"
+                                    selected="@(Model.UserId == user.Id)">
+                                @user.UserName (@user.EmailNormalized)
+                            </option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            @if (!Model.AvailableUsers.Any())
+            {
+                <div style="background: #fef3c7; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #92400e;">
+                    ⚠️ No hay usuarios con rol Municipio disponibles. <a asp-action="CreateUser" style="color: #1e40af; font-weight: 600;">Creá uno primero</a>.
+                </div>
+            }
+        </div>
+
+        <div class="form-actions">
+            <a asp-action="Municipalities" class="btn-cancel">Cancelar</a>
+            <button type="submit" class="btn-submit">
+                ✅ Crear Municipio
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/recipes.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+}

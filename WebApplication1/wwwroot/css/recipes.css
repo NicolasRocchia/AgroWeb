@@ -266,6 +266,11 @@
     color: #374151;
 }
 
+.status-warning {
+    background: #fff7ed;
+    color: #9a3412;
+}
+
 /* Action Button */
 .btn-view {
     display: inline-flex;

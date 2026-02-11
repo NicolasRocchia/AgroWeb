@@ -1,0 +1,89 @@
+@{
+    ViewData["Title"] = "Enviar a Municipio";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var recipe = ViewBag.Recipe as WebApplication1.Models.Recipes.RecipeDetailDto;
+    var municipalities = ViewBag.Municipalities as List<WebApplication1.Models.Recipes.MunicipalityDto> ?? new();
+    var hasCoords = (bool)(ViewBag.HasCoords ?? false);
+}
+
+<link rel="stylesheet" href="~/css/recipeDetail.css" />
+
+<div class="detail-container" style="max-width: 700px; margin: 0 auto;">
+
+    <a href="@Url.Action("Details", "RecipeView", new { id = recipe?.Id })" class="back-link">← Volver al detalle</a>
+
+    <h1 style="margin: 16px 0 8px;">📤 Enviar Receta a Municipio</h1>
+
+    @if (recipe != null)
+    {
+        <p style="color: #64748b; margin-bottom: 24px;">
+            Receta <strong>RFD #@recipe.RfdNumber</strong> — @recipe.Crop
+        </p>
+    }
+
+    @if (!municipalities.Any())
+    {
+        <div class="alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div>No hay municipios registrados en el sistema. Contactá al administrador.</div>
+        </div>
+    }
+    else
+    {
+        @if (hasCoords)
+        {
+            <p style="color: #64748b; font-size: 14px; margin-bottom: 16px;">
+                📍 Los municipios se muestran ordenados por cercanía al lote de la receta.
+            </p>
+        }
+
+        <form asp-action="AssignMunicipality" method="post" style="margin: 0;">
+            <input type="hidden" name="id" value="@recipe?.Id" />
+
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px;">
+                @foreach (var m in municipalities)
+                {
+                    <label class="municipality-option" style="display: flex; align-items: center; gap: 12px; padding: 16px; border: 2px solid #e2e8f0; border-radius: 12px; cursor: pointer; transition: all 0.15s;">
+                        <input type="radio" name="municipalityId" value="@m.Id" required
+                               style="width: 20px; height: 20px; accent-color: #2D5016;" />
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #1e293b;">@m.Name</div>
+                            <div style="font-size: 13px; color: #64748b;">
+                                @if (!string.IsNullOrEmpty(m.Department))
+                                {
+                                    <span>@m.Department</span>
+                                }
+                                @if (!string.IsNullOrEmpty(m.Province))
+                                {
+                                    <span>— @m.Province</span>
+                                }
+                            </div>
+                        </div>
+                        @if (m.DistanceKm.HasValue)
+                        {
+                            <span style="background: #f1f5f9; padding: 4px 10px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #475569; white-space: nowrap;">
+                                📍 @m.DistanceKm km
+                            </span>
+                        }
+                    </label>
+                }
+            </div>
+
+            <button type="submit" class="btn-status btn-cerrar" style="width: 100%; justify-content: center; padding: 14px;"
+                    onclick="return confirm('¿Confirmar envío de esta receta al municipio seleccionado?');">
+                📤 Enviar al Municipio
+            </button>
+        </form>
+    }
+</div>
+
+<style>
+    .municipality-option:has(input:checked) {
+        border-color: #2D5016;
+        background: #f0fdf4;
+    }
+    .municipality-option:hover {
+        border-color: #94a3b8;
+        background: #f8fafc;
+    }
+</style>

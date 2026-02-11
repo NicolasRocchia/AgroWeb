@@ -1,0 +1,350 @@
+@model WebApplication1.Models.Recipes.RecipeDetailViewModel
+@{
+    ViewData["Title"] = $"Receta RFD #{Model.Recipe?.RfdNumber}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/recipeDetail.css" />
+
+<!-- Header -->
+<div class="detail-header">
+    <div class="detail-header-content">
+        <h1 class="detail-title">
+            <a href="@Url.Action("Index", "Municipio")" class="back-link">← Volver</a>
+            Receta RFD #@Model.Recipe.RfdNumber
+        </h1>
+        <div class="detail-meta">
+            @{
+                var statusClass = Model.Recipe.Status?.ToUpper() switch
+                {
+                    "PENDIENTE" => "status-draft",
+                    "APROBADA" => "status-approved",
+                    "RECHAZADA" => "status-rejected",
+                    "OBSERVADA" => "status-warning",
+                    "CERRADA" => "status-expired",
+                    "ANULADA" => "status-rejected",
+                    _ => "status-draft"
+                };
+            }
+            <span class="status-badge @statusClass">
+                @Model.Recipe.Status
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="detail-container">
+
+    @if (TempData["Success"] != null)
+    {
+        <div style="background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 10px; padding: 14px 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; color: #065f46;">
+            <span>✅</span> <span>@TempData["Success"]</span>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>Error:</strong> @TempData["Error"]</div>
+        </div>
+    }
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>Error:</strong> @ViewBag.Error</div>
+        </div>
+    }
+
+    <!-- Acciones de Revisión -->
+    @if (Model.Recipe.Status?.ToUpper() == "PENDIENTE")
+    {
+        <section class="detail-section" style="background: #eff6ff; border: 2px dashed #93c5fd;">
+            <h2 class="section-title">
+                <span class="section-icon">🏛️</span> Revisión Municipal
+            </h2>
+
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+                <!-- Aprobar -->
+                <form asp-action="Review" method="post" style="margin: 0;"
+                      onsubmit="return confirm('¿Aprobar esta receta?');">
+                    <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                    <input type="hidden" name="action" value="APROBADA" />
+                    <button type="submit" class="btn-status btn-cerrar">✅ Aprobar</button>
+                </form>
+
+                <!-- Rechazar -->
+                <button type="button" class="btn-status btn-anular" onclick="document.getElementById('rejectSection').style.display='block'; this.style.display='none';">
+                    ❌ Rechazar
+                </button>
+
+                <!-- Observar -->
+                <button type="button" class="btn-status" style="background: #fef3c7; color: #92400e; border: 2px solid #fbbf24;"
+                        onclick="document.getElementById('observeSection').style.display='block'; this.style.display='none';">
+                    💬 Pedir Información
+                </button>
+
+                <!-- Redirigir -->
+                <button type="button" class="btn-status" style="background: #eff6ff; color: #1e40af; border: 2px solid #93c5fd;"
+                        onclick="document.getElementById('redirectSection').style.display='block'; this.style.display='none';">
+                    ↪️ Redirigir
+                </button>
+            </div>
+
+            <!-- Formulario Rechazar -->
+            <div id="rejectSection" style="display: none; margin-top: 12px;">
+                <form asp-action="Review" method="post">
+                    <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                    <input type="hidden" name="action" value="RECHAZADA" />
+                    <textarea name="observation" required rows="3" placeholder="Motivo del rechazo..."
+                              style="width: 100%; padding: 10px; border: 2px solid #fca5a5; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button type="submit" class="btn-status btn-anular">Confirmar Rechazo</button>
+                        <button type="button" class="btn-status" style="background: #f1f5f9; color: #64748b; border: 2px solid #e2e8f0;"
+                                onclick="this.closest('div[id]').style.display='none';">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Formulario Observar -->
+            <div id="observeSection" style="display: none; margin-top: 12px;">
+                <form asp-action="Review" method="post">
+                    <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                    <input type="hidden" name="action" value="OBSERVADA" />
+                    <textarea name="observation" required rows="3" placeholder="¿Qué información necesitás del aplicador?"
+                              style="width: 100%; padding: 10px; border: 2px solid #fbbf24; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button type="submit" class="btn-status" style="background: #fef3c7; color: #92400e; border: 2px solid #fbbf24;">Enviar Solicitud</button>
+                        <button type="button" class="btn-status" style="background: #f1f5f9; color: #64748b; border: 2px solid #e2e8f0;"
+                                onclick="this.closest('div[id]').style.display='none';">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Formulario Redirigir -->
+            <div id="redirectSection" style="display: none; margin-top: 12px;">
+                <form asp-action="Review" method="post" id="redirectForm">
+                    <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                    <input type="hidden" name="action" value="REDIRIGIDA" />
+                    <p style="font-size: 14px; color: #475569; margin-bottom: 8px;">Seleccioná el municipio destino:</p>
+                    <select name="targetMunicipalityId" required id="targetMunSelect"
+                            style="width: 100%; padding: 10px; border: 2px solid #93c5fd; border-radius: 8px; font-size: 14px; margin-bottom: 8px;">
+                        <option value="">— Cargando municipios... —</option>
+                    </select>
+                    <textarea name="observation" rows="2" placeholder="Motivo de la redirección (opcional)"
+                              style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button type="submit" class="btn-status" style="background: #eff6ff; color: #1e40af; border: 2px solid #93c5fd;">Confirmar Redirección</button>
+                        <button type="button" class="btn-status" style="background: #f1f5f9; color: #64748b; border: 2px solid #e2e8f0;"
+                                onclick="this.closest('div[id]').style.display='none';">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    }
+
+    <!-- Historial de Revisiones -->
+    @if (Model.Recipe.ReviewLogs?.Any() == true)
+    {
+        <section class="detail-section" style="border-left: 4px solid #3b82f6;">
+            <h2 class="section-title">
+                <span class="section-icon">📋</span> Historial de Revisiones
+            </h2>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                @foreach (var log in Model.Recipe.ReviewLogs)
+                {
+                    var actionColor = log.Action switch {
+                        "APROBADA" => "#16a34a",
+                        "RECHAZADA" => "#dc2626",
+                        "OBSERVADA" => "#d97706",
+                        "REDIRIGIDA" => "#2563eb",
+                        _ => "#64748b"
+                    };
+                    var actionIcon = log.Action switch {
+                        "APROBADA" => "✅",
+                        "RECHAZADA" => "❌",
+                        "OBSERVADA" => "💬",
+                        "REDIRIGIDA" => "↪️",
+                        _ => "•"
+                    };
+                    <div style="padding: 10px 14px; background: #f8fafc; border-radius: 8px; border-left: 3px solid @actionColor;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 600; color: @actionColor;">@actionIcon @log.Action</span>
+                            <span style="font-size: 12px; color: #94a3b8;">@log.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        <div style="font-size: 13px; color: #64748b;">@log.MunicipalityName</div>
+                        @if (log.Action == "REDIRIGIDA" && !string.IsNullOrEmpty(log.TargetMunicipalityName))
+                        {
+                            <div style="font-size: 13px; color: #2563eb;">→ @log.TargetMunicipalityName</div>
+                        }
+                        @if (!string.IsNullOrEmpty(log.Observation))
+                        {
+                            <div style="margin-top: 6px; font-size: 13px; color: #334155; background: white; padding: 8px; border-radius: 6px;">@log.Observation</div>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Mensajes -->
+    @if (Model.Recipe.Messages?.Any() == true || Model.Recipe.Status?.ToUpper() == "PENDIENTE")
+    {
+        <section class="detail-section">
+            <h2 class="section-title">
+                <span class="section-icon">💬</span> Mensajes
+            </h2>
+
+            @if (Model.Recipe.Messages?.Any() == true)
+            {
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; max-height: 400px; overflow-y: auto;">
+                    @foreach (var msg in Model.Recipe.Messages)
+                    {
+                        var isMe = msg.SenderRole == "Municipio";
+                        <div style="align-self: @(isMe ? "flex-end" : "flex-start"); max-width: 80%; padding: 10px 14px; border-radius: 12px; background: @(isMe ? "#dbeafe" : "#f1f5f9");">
+                            <div style="font-size: 12px; font-weight: 600; color: @(isMe ? "#1e40af" : "#166534"); margin-bottom: 4px;">
+                                @msg.SenderName (@msg.SenderRole)
+                            </div>
+                            <div style="font-size: 14px; color: #1e293b;">@msg.Message</div>
+                            <div style="font-size: 11px; color: #94a3b8; text-align: right; margin-top: 4px;">@msg.CreatedAt.ToString("dd/MM HH:mm")</div>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (Model.Recipe.Status?.ToUpper() == "PENDIENTE" || Model.Recipe.Status?.ToUpper() == "OBSERVADA")
+            {
+                <form asp-action="SendMessage" method="post" style="display: flex; gap: 8px;">
+                    <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                    <input type="text" name="message" required maxlength="1000"
+                           placeholder="Escribí un mensaje..."
+                           style="flex: 1; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px;" />
+                    <button type="submit" class="btn-status" style="background: #eff6ff; color: #1e40af; border: 2px solid #93c5fd; white-space: nowrap;">
+                        Enviar 📩
+                    </button>
+                </form>
+            }
+        </section>
+    }
+
+    <!-- Información General -->
+    @{
+        ViewData["Recipe"] = Model.Recipe;
+    }
+    <section class="detail-section">
+        <h2 class="section-title">
+            <span class="section-icon">📋</span> Información General
+        </h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">Fecha de Emisión</span>
+                <span class="info-value">@Model.Recipe.IssueDate.ToString("dd/MM/yyyy")</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Inicio Posible</span>
+                <span class="info-value">@(Model.Recipe.PossibleStartDate?.ToString("dd/MM/yyyy") ?? "—")</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Fecha Recomendada</span>
+                <span class="info-value">@(Model.Recipe.RecommendedDate?.ToString("dd/MM/yyyy") ?? "—")</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Vencimiento</span>
+                <span class="info-value">@(Model.Recipe.ExpirationDate?.ToString("dd/MM/yyyy") ?? "—")</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Tipo de Aplicación</span>
+                <span class="info-value">@(Model.Recipe.ApplicationType ?? "—")</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Cultivo</span>
+                <span class="info-value">@(Model.Recipe.Crop ?? "—")</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Superficie (ha)</span>
+                <span class="info-value">@(Model.Recipe.UnitSurfaceHa?.ToString("N2") ?? "—")</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Diagnóstico y Tratamiento -->
+    @if (!string.IsNullOrEmpty(Model.Recipe.Diagnosis) || !string.IsNullOrEmpty(Model.Recipe.Treatment))
+    {
+        <section class="detail-section">
+            <h2 class="section-title"><span class="section-icon">🔬</span> Diagnóstico y Tratamiento</h2>
+            <div class="info-grid" style="grid-template-columns: 1fr;">
+                @if (!string.IsNullOrEmpty(Model.Recipe.Diagnosis))
+                {
+                    <div class="info-item">
+                        <span class="info-label">Diagnóstico</span>
+                        <span class="info-value">@Model.Recipe.Diagnosis</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Recipe.Treatment))
+                {
+                    <div class="info-item">
+                        <span class="info-label">Tratamiento</span>
+                        <span class="info-value">@Model.Recipe.Treatment</span>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
+    <!-- Productos -->
+    @if (Model.Recipe.Products?.Any() == true)
+    {
+        <section class="detail-section">
+            <h2 class="section-title"><span class="section-icon">🧪</span> Productos (@Model.Recipe.Products.Count)</h2>
+            @foreach (var p in Model.Recipe.Products)
+            {
+                @await Html.PartialAsync("~/Views/Shared/_ProductCard.cshtml", p)
+            }
+        </section>
+    }
+
+    <!-- Mapa -->
+    @await Html.PartialAsync("~/Views/Shared/_RecipeMap.cshtml")
+
+    <!-- Solicitante y Asesor -->
+    <section class="detail-section">
+        <h2 class="section-title"><span class="section-icon">👥</span> Solicitante y Asesor</h2>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">Solicitante</span>
+                <span class="info-value">@Model.Recipe.Requester.LegalName</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">CUIT</span>
+                <span class="info-value">@Model.Recipe.Requester.TaxId</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Asesor</span>
+                <span class="info-value">@Model.Recipe.Advisor.FullName</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Matrícula</span>
+                <span class="info-value">@Model.Recipe.Advisor.LicenseNumber</span>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        // Cargar municipios para redirección
+        document.addEventListener('DOMContentLoaded', async function () {
+            const select = document.getElementById('targetMunSelect');
+            if (!select) return;
+
+            try {
+                const resp = await fetch('/api/municipalities', {
+                    headers: { 'Authorization': 'Bearer ' + document.cookie.split('jwt=')[1]?.split(';')[0] }
+                });
+                // Fallback: cargar via controller proxy si direct API no funciona
+            } catch (e) {
+                select.innerHTML = '<option value="">Error al cargar municipios</option>';
+            }
+        });
+    </script>
+}

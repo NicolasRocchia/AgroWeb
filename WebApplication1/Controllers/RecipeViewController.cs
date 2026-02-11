@@ -108,6 +108,166 @@ public class RecipeViewController : Controller
     }
 
     // =============================================
+    // CAMBIAR ESTADO DE RECETA
+    // =============================================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangeStatus(
+        long id,
+        string status,
+        [FromServices] IHttpClientFactory httpClientFactory)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+
+        var payload = new { status };
+        var resp = await client.PutAsJsonAsync($"/api/recipes/{id}/status", payload);
+
+        if (resp.IsSuccessStatusCode)
+        {
+            TempData["Success"] = status.ToUpper() switch
+            {
+                "CERRADA" => "La receta fue cerrada correctamente.",
+                "ANULADA" => "La receta fue anulada correctamente.",
+                _ => "Estado actualizado."
+            };
+        }
+        else
+        {
+            try
+            {
+                var body = await resp.Content.ReadAsStringAsync();
+                var doc = System.Text.Json.JsonDocument.Parse(body);
+                TempData["Error"] = doc.RootElement.TryGetProperty("error", out var err)
+                    ? err.GetString()
+                    : $"No se pudo cambiar el estado. (HTTP {(int)resp.StatusCode})";
+            }
+            catch
+            {
+                TempData["Error"] = $"No se pudo cambiar el estado. (HTTP {(int)resp.StatusCode})";
+            }
+        }
+
+        return RedirectToAction("Details", new { id });
+    }
+
+    // =============================================
+    // ENVIAR A MUNICIPIO
+    // =============================================
+
+    [HttpGet]
+    public async Task<IActionResult> AssignMunicipality(
+        long id,
+        [FromServices] IHttpClientFactory httpClientFactory)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+
+        // Obtener receta para tener las coordenadas
+        var recipeResp = await client.GetAsync($"/api/recipes/{id}");
+        if (!recipeResp.IsSuccessStatusCode)
+        {
+            TempData["Error"] = "No se pudo obtener la receta.";
+            return RedirectToAction("Details", new { id });
+        }
+
+        var recipe = await recipeResp.Content.ReadFromJsonAsync<RecipeDetailDto>(JsonOpts);
+        if (recipe == null)
+        {
+            TempData["Error"] = "No se pudo procesar la receta.";
+            return RedirectToAction("Details", new { id });
+        }
+
+        // Obtener municipios cercanos si hay coordenadas, sino todos
+        List<MunicipalityDto> municipalities = new();
+        var firstLot = recipe.Lots?.FirstOrDefault();
+        var hasCoords = firstLot?.Vertices?.Any() == true;
+
+        if (hasCoords)
+        {
+            var centroidLat = firstLot!.Vertices.Average(v => v.Latitude);
+            var centroidLng = firstLot!.Vertices.Average(v => v.Longitude);
+            var latStr = centroidLat.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var lngStr = centroidLng.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var nearbyResp = await client.GetAsync($"/api/municipalities/nearby?lat={latStr}&lng={lngStr}&limit=15");
+
+            if (nearbyResp.IsSuccessStatusCode)
+            {
+                municipalities = await nearbyResp.Content.ReadFromJsonAsync<List<MunicipalityDto>>(JsonOpts)
+                                ?? new List<MunicipalityDto>();
+            }
+        }
+
+        ViewBag.Recipe = recipe;
+        ViewBag.Municipalities = municipalities;
+        ViewBag.HasCoords = hasCoords;
+
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AssignMunicipality(
+        long id,
+        long municipalityId,
+        [FromServices] IHttpClientFactory httpClientFactory)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+
+        var payload = new { municipalityId };
+        var resp = await client.PostAsJsonAsync($"/api/recipes/{id}/assign-municipality", payload);
+
+        if (resp.IsSuccessStatusCode)
+        {
+            TempData["Success"] = "Receta enviada al municipio correctamente. ✅";
+        }
+        else
+        {
+            try
+            {
+                var body = await resp.Content.ReadAsStringAsync();
+                var doc = System.Text.Json.JsonDocument.Parse(body);
+                TempData["Error"] = doc.RootElement.TryGetProperty("error", out var err)
+                    ? err.GetString()
+                    : $"No se pudo enviar la receta al municipio. (HTTP {(int)resp.StatusCode})";
+            }
+            catch
+            {
+                TempData["Error"] = $"No se pudo enviar la receta al municipio. (HTTP {(int)resp.StatusCode})";
+            }
+        }
+
+        return RedirectToAction("Details", new { id });
+    }
+
+    // =============================================
+    // ENVIAR MENSAJE EN RECETA
+    // =============================================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendMessage(
+        long id,
+        string message,
+        [FromServices] IHttpClientFactory httpClientFactory)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+
+        var payload = new { message };
+        var resp = await client.PostAsJsonAsync($"/api/recipes/{id}/messages", payload);
+
+        if (resp.IsSuccessStatusCode)
+        {
+            TempData["Success"] = "Mensaje enviado.";
+        }
+        else
+        {
+            TempData["Error"] = "No se pudo enviar el mensaje.";
+        }
+
+        return RedirectToAction("Details", new { id });
+    }
+
+    // =============================================
     // SUBIR PDF
     // =============================================
     [HttpGet]

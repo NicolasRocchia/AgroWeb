@@ -52,6 +52,13 @@ public class RecipeDetailDto
     public DateTime? UpdatedAt { get; set; }
     public long? UpdatedByUserId { get; set; }
     public string? UpdatedByUserName { get; set; }
+
+    // Municipal
+    public long? AssignedMunicipalityId { get; set; }
+    public string? AssignedMunicipalityName { get; set; }
+    public DateTime? AssignedAt { get; set; }
+    public List<RecipeReviewLogDto> ReviewLogs { get; set; } = new();
+    public List<RecipeMessageDto> Messages { get; set; } = new();
 }
 
 public class RequesterDto
@@ -115,4 +122,36 @@ public class RecipeSensitivePointDto
     public decimal Longitude { get; set; }
     public string? Locality { get; set; }
     public string? Department { get; set; }
+}
+
+public class RecipeReviewLogDto
+{
+    public long Id { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string MunicipalityName { get; set; } = string.Empty;
+    public string? TargetMunicipalityName { get; set; }
+    public string? Observation { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public string? CreatedByUserName { get; set; }
+}
+
+public class RecipeMessageDto
+{
+    public long Id { get; set; }
+    public long SenderUserId { get; set; }
+    public string SenderName { get; set; } = string.Empty;
+    public string SenderRole { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+}
+
+public class MunicipalityDto
+{
+    public long Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Province { get; set; }
+    public string? Department { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+    public double? DistanceKm { get; set; }
 }
