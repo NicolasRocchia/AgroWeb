@@ -178,6 +178,8 @@
     padding: 20px;
     transition: all 0.3s;
     background: white;
+    position: relative;
+    overflow: hidden;
 }
 
     .product-card:hover {
@@ -185,6 +187,74 @@
         box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
         transform: translateY(-2px);
     }
+
+/* Banda lateral de clase toxicológica */
+.product-card[data-tox-class]::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    border-radius: 12px 0 0 12px;
+}
+
+.product-card[data-tox-class="ia"]::before,
+.product-card[data-tox-class="ib"]::before { background: #d32f2f; }
+.product-card[data-tox-class="ii"]::before { background: #f9a825; }
+.product-card[data-tox-class="iii"]::before { background: #1565c0; }
+.product-card[data-tox-class="iv"]::before { background: #2e7d32; }
+
+/* Badge de clase toxicológica */
+.tox-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    line-height: 1.4;
+}
+
+.tox-badge-ia,
+.tox-badge-ib {
+    background: #ffebee;
+    color: #c62828;
+    border: 1px solid #ef9a9a;
+}
+
+.tox-badge-ii {
+    background: #fff8e1;
+    color: #f57f17;
+    border: 1px solid #ffe082;
+}
+
+.tox-badge-iii {
+    background: #e3f2fd;
+    color: #0d47a1;
+    border: 1px solid #90caf9;
+}
+
+.tox-badge-iv {
+    background: #e8f5e9;
+    color: #1b5e20;
+    border: 1px solid #a5d6a7;
+}
+
+.tox-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.tox-dot-ia, .tox-dot-ib { background: #d32f2f; }
+.tox-dot-ii { background: #f9a825; }
+.tox-dot-iii { background: #1565c0; }
+.tox-dot-iv { background: #2e7d32; }
 
 .product-header {
     display: flex;

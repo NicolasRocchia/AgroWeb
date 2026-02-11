@@ -1,0 +1,83 @@
+@model WebApplication1.Models.Recipes.RecipeProductDto
+@{
+    // Determinar la clase toxicológica normalizada
+    var toxRaw = Model.ToxicologicalClass?.Trim() ?? "";
+    var toxKey = "";
+    var toxLabel = "";
+    var toxPeligro = "";
+
+    if (System.Text.RegularExpressions.Regex.IsMatch(toxRaw, @"^I\s*[aA]\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+    {
+        toxKey = "ia"; toxLabel = "Ia"; toxPeligro = "MUY TÓXICO";
+    }
+    else if (System.Text.RegularExpressions.Regex.IsMatch(toxRaw, @"^I\s*[bB]\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+    {
+        toxKey = "ib"; toxLabel = "Ib"; toxPeligro = "TÓXICO";
+    }
+    else if (System.Text.RegularExpressions.Regex.IsMatch(toxRaw, @"^II\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+    {
+        toxKey = "ii"; toxLabel = "II"; toxPeligro = "NOCIVO";
+    }
+    else if (System.Text.RegularExpressions.Regex.IsMatch(toxRaw, @"^III\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+    {
+        toxKey = "iii"; toxLabel = "III"; toxPeligro = "CUIDADO";
+    }
+    else if (System.Text.RegularExpressions.Regex.IsMatch(toxRaw, @"^IV\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+    {
+        toxKey = "iv"; toxLabel = "IV"; toxPeligro = "CUIDADO";
+    }
+
+    var hasTox = !string.IsNullOrEmpty(toxKey);
+}
+
+<div class="product-card" @(hasTox ? $"data-tox-class=\"{toxKey}\"" : "")>
+    <div class="product-header">
+        <span class="product-name">@Model.ProductName</span>
+        @if (Model.DoseValue.HasValue)
+        {
+            <span class="product-dose">
+                @Model.DoseValue.Value.ToString("N2") @(Model.DoseUnit ?? "")@(!string.IsNullOrEmpty(Model.DosePerUnit) ? $"/{Model.DosePerUnit}" : "")
+            </span>
+        }
+    </div>
+    <div class="product-details">
+        @if (!string.IsNullOrEmpty(Model.SenasaRegistry))
+        {
+            <div class="product-detail-item">
+                <span class="detail-label">Registro SENASA</span>
+                <span class="detail-value">@Model.SenasaRegistry</span>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Model.ProductType))
+        {
+            <div class="product-detail-item">
+                <span class="detail-label">Tipo de Producto</span>
+                <span class="detail-value">@Model.ProductType</span>
+            </div>
+        }
+        @if (hasTox)
+        {
+            <div class="product-detail-item">
+                <span class="detail-label">Clase Toxicológica</span>
+                <span class="tox-badge tox-badge-@toxKey">
+                    <span class="tox-dot tox-dot-@toxKey"></span>
+                    @toxLabel — @toxPeligro
+                </span>
+            </div>
+        }
+        else if (!string.IsNullOrEmpty(Model.ToxicologicalClass))
+        {
+            <div class="product-detail-item">
+                <span class="detail-label">Clase Toxicológica</span>
+                <span class="detail-value">@Model.ToxicologicalClass</span>
+            </div>
+        }
+        @if (Model.TotalValue.HasValue)
+        {
+            <div class="product-detail-item">
+                <span class="detail-label">Total</span>
+                <span class="detail-value">@Model.TotalValue.Value.ToString("N2") @(Model.TotalUnit ?? "")</span>
+            </div>
+        }
+    </div>
+</div>

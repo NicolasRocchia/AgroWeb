@@ -16,9 +16,9 @@
             @{
                 var statusClass = Model.Recipe.Status?.ToUpper() switch
                 {
-                            "ABIERTA" => "status-approved",
-                            "CERRADA" => "status-expired",
-                            "ANULADA" => "status-rejected",
+                    "ABIERTA" => "status-approved",
+                    "CERRADA" => "status-expired",
+                    "ANULADA" => "status-rejected",
                     _ => "status-draft"
                 };
             }
@@ -191,40 +191,7 @@
             <div class="products-container">
                 @foreach (var product in Model.Recipe.Products)
                 {
-                    <div class="product-card">
-                        <div class="product-header">
-                            <span class="product-name">@product.ProductName</span>
-                            @if (product.DoseValue.HasValue)
-                            {
-                                <span class="product-dose">
-                                    @product.DoseValue.Value.ToString("N2") @(product.DoseUnit ?? "")
-                                </span>
-                            }
-                        </div>
-                        <div class="product-details">
-                            @if (!string.IsNullOrEmpty(product.SenasaRegistry))
-                            {
-                                <div class="product-detail-item">
-                                    <span class="detail-label">SENASA</span>
-                                    <span class="detail-value">@product.SenasaRegistry</span>
-                                </div>
-                            }
-                            @if (!string.IsNullOrEmpty(product.ToxicologicalClass))
-                            {
-                                <div class="product-detail-item">
-                                    <span class="detail-label">Clase Toxicológica</span>
-                                    <span class="detail-value">@product.ToxicologicalClass</span>
-                                </div>
-                            }
-                            @if (product.TotalValue.HasValue)
-                            {
-                                <div class="product-detail-item">
-                                    <span class="detail-label">Total</span>
-                                    <span class="detail-value">@product.TotalValue.Value.ToString("N2") @(product.TotalUnit ?? "")</span>
-                                </div>
-                            }
-                        </div>
-                    </div>
+                    @await Html.PartialAsync("_ProductCard", product)
                 }
             </div>
         }
