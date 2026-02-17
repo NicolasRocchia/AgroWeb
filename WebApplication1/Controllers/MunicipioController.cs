@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using WebApplication1.Models.Recipes;
+using WebApplication1.Models.Municipio;
 
 namespace WebApplication1.Controllers;
 
@@ -12,6 +13,48 @@ public class MunicipioController : Controller
     {
         PropertyNameCaseInsensitive = true
     };
+
+    // =============================================
+    // DASHBOARD GEOESPACIAL DE FISCALIZACIÓN
+    // =============================================
+
+    [HttpGet]
+    public async Task<IActionResult> GeoInsights(
+        [FromServices] IHttpClientFactory httpClientFactory,
+        string? dateFrom = null,
+        string? dateTo = null,
+        string? crop = null,
+        string? toxClass = null,
+        string? productName = null,
+        string? advisorName = null)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+
+        var qs = new List<string>();
+        if (!string.IsNullOrWhiteSpace(dateFrom)) qs.Add($"DateFrom={dateFrom}");
+        if (!string.IsNullOrWhiteSpace(dateTo)) qs.Add($"DateTo={dateTo}");
+        if (!string.IsNullOrWhiteSpace(crop)) qs.Add($"Crop={System.Text.Encodings.Web.UrlEncoder.Default.Encode(crop)}");
+        if (!string.IsNullOrWhiteSpace(toxClass)) qs.Add($"ToxClass={System.Text.Encodings.Web.UrlEncoder.Default.Encode(toxClass)}");
+        if (!string.IsNullOrWhiteSpace(productName)) qs.Add($"ProductName={System.Text.Encodings.Web.UrlEncoder.Default.Encode(productName)}");
+        if (!string.IsNullOrWhiteSpace(advisorName)) qs.Add($"AdvisorName={System.Text.Encodings.Web.UrlEncoder.Default.Encode(advisorName)}");
+
+        var url = "/api/recipes/geo-insights" + (qs.Any() ? "?" + string.Join("&", qs) : "");
+
+        var resp = await client.GetAsync(url);
+        if (!resp.IsSuccessStatusCode)
+        {
+            var body = await resp.Content.ReadAsStringAsync();
+            ViewBag.Error = $"No se pudieron obtener datos geoespaciales. HTTP {(int)resp.StatusCode}";
+            return View(new GeoInsightsViewModel());
+        }
+
+        var jsonData = await resp.Content.ReadAsStringAsync();
+
+        return View(new GeoInsightsViewModel
+        {
+            JsonData = jsonData
+        });
+    }
 
     // =============================================
     // RECETAS ASIGNADAS A MI MUNICIPIO

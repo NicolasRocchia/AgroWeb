@@ -1,0 +1,562 @@
+@model WebApplication1.Models.Municipio.GeoInsightsViewModel
+@{
+    ViewData["Title"] = "Mapa Territorial";
+}
+
+<div class="geo-dashboard">
+
+    <!-- ===== HEADER ===== -->
+    <div class="geo-header">
+        <div class="geo-header-content">
+            <h1 class="geo-title">
+                <span class="geo-title-icon">🗺️</span>
+                Fiscalización Territorial
+            </h1>
+            <p class="geo-subtitle">Mapa de calor de aplicaciones fitosanitarias en tu jurisdicción</p>
+        </div>
+        <a asp-action="Index" class="geo-back-link">← Volver a Recetas</a>
+    </div>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="geo-alert-error">
+            <span>⚠️</span>
+            <div><strong>@ViewBag.Error</strong></div>
+        </div>
+    }
+
+    <!-- ===== KPI CARDS ===== -->
+    <div class="geo-kpi-grid" id="kpiGrid">
+        <div class="geo-kpi-card geo-kpi-apps">
+            <div class="geo-kpi-icon">📋</div>
+            <div class="geo-kpi-value" id="kpiTotalApps">-</div>
+            <div class="geo-kpi-label">Aplicaciones</div>
+        </div>
+        <div class="geo-kpi-card geo-kpi-hectares">
+            <div class="geo-kpi-icon">🌾</div>
+            <div class="geo-kpi-value" id="kpiHectares">-</div>
+            <div class="geo-kpi-label">Hectáreas</div>
+        </div>
+        <div class="geo-kpi-card geo-kpi-products">
+            <div class="geo-kpi-icon">🧪</div>
+            <div class="geo-kpi-value" id="kpiProducts">-</div>
+            <div class="geo-kpi-label">Productos</div>
+        </div>
+        <div class="geo-kpi-card geo-kpi-danger">
+            <div class="geo-kpi-icon">☠️</div>
+            <div class="geo-kpi-value" id="kpiHighTox">-</div>
+            <div class="geo-kpi-label">Alta Toxicidad</div>
+        </div>
+        <div class="geo-kpi-card geo-kpi-advisors">
+            <div class="geo-kpi-icon">👨‍🔬</div>
+            <div class="geo-kpi-value" id="kpiAdvisors">-</div>
+            <div class="geo-kpi-label">Asesores</div>
+        </div>
+    </div>
+
+    <!-- ===== FILTERS BAR ===== -->
+    <div class="geo-filters">
+        <div class="geo-filters-header">
+            <h3><span>🔍</span> Filtros</h3>
+            <button type="button" class="geo-btn-clear" id="btnClearFilters">Limpiar</button>
+        </div>
+        <form method="get" class="geo-filters-form" id="filtersForm">
+            <div class="geo-filter-group">
+                <label>Fecha desde</label>
+                <input type="date" name="dateFrom" id="filterDateFrom" value="@Context.Request.Query["dateFrom"]" />
+            </div>
+            <div class="geo-filter-group">
+                <label>Fecha hasta</label>
+                <input type="date" name="dateTo" id="filterDateTo" value="@Context.Request.Query["dateTo"]" />
+            </div>
+            <div class="geo-filter-group">
+                <label>Cultivo</label>
+                <select name="crop" id="filterCrop">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="geo-filter-group">
+                <label>Clase Toxicológica</label>
+                <select name="toxClass" id="filterToxClass">
+                    <option value="">Todas</option>
+                </select>
+            </div>
+            <div class="geo-filter-group">
+                <label>Producto</label>
+                <select name="productName" id="filterProduct">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="geo-filter-group">
+                <label>Asesor</label>
+                <select name="advisorName" id="filterAdvisor">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="geo-filter-group geo-filter-actions">
+                <button type="submit" class="geo-btn-filter">🔎 Filtrar</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- ===== MAP (full width) ===== -->
+    <div class="geo-map-container">
+        <div id="geoMap" class="geo-map"></div>
+
+        <!-- Map controls overlay -->
+        <div class="geo-map-controls">
+            <div class="geo-map-legend">
+                <h4>Leyenda</h4>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: rgba(0, 180, 0, 0.3); border: 2px solid #00b400;"></span>
+                    Clase IV (baja toxicidad)
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: rgba(52, 152, 219, 0.3); border: 2px solid #3498db;"></span>
+                    Clase III
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: rgba(243, 156, 18, 0.3); border: 2px solid #f39c12;"></span>
+                    Clase II
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: rgba(231, 76, 60, 0.3); border: 2px solid #e74c3c;"></span>
+                    Clase Ib
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color" style="background: rgba(142, 68, 173, 0.3); border: 2px solid #8e44ad;"></span>
+                    Clase Ia (extrema)
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background: #e74c3c;"></span>
+                    Punto sensible
+                </div>
+                <div class="legend-item">
+                    <span class="legend-heat"></span>
+                    Mapa de calor
+                </div>
+            </div>
+
+            <div class="geo-map-toggles">
+                <label class="toggle-label">
+                    <input type="checkbox" id="toggleHeatmap" checked /> Mapa de calor
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="togglePolygons" checked /> Polígonos
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="toggleSensitive" checked /> Puntos sensibles
+                </label>
+            </div>
+        </div>
+    </div>
+
+    @*
+    ========================================================================
+    PANEL DE ALERTAS (desactivado por ahora)
+    Para activarlo:
+    1. Descomentar este bloque HTML
+    2. Descomentar el JS de alertas más abajo
+    3. En el CSS, cambiar .geo-map-container para usar layout con sidebar
+    4. En GeoInsightsService.cs descomentar las secciones 3 y 4
+    ========================================================================
+
+    <div class="geo-alerts-panel" id="alertsPanel">
+        <h3 class="geo-alerts-title">
+            <span>🚨</span> Alertas de Fiscalización
+        </h3>
+        <div id="alertsList" class="geo-alerts-list">
+            <div class="geo-alert-placeholder">Cargando datos...</div>
+        </div>
+    </div>
+    *@
+
+    <!-- ===== TIMELINE ===== -->
+    <div class="geo-timeline-section">
+        <h3><span>📅</span> Evolución Temporal</h3>
+        <div class="geo-timeline-chart-wrapper">
+            <canvas id="timelineChart"></canvas>
+        </div>
+    </div>
+
+    <!-- ===== STATS GRID ===== -->
+    <div class="geo-stats-grid">
+        <div class="geo-stats-card">
+            <h3><span>☠️</span> Distribución Toxicológica</h3>
+            <div class="geo-chart-wrapper">
+                <canvas id="toxChart"></canvas>
+            </div>
+        </div>
+        <div class="geo-stats-card">
+            <h3><span>🌾</span> Cultivos</h3>
+            <div class="geo-chart-wrapper">
+                <canvas id="cropChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/recipes.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="~/css/geoInsights.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+    <script>
+        // ===== INIT DATA =====
+        const geoData = @Html.Raw(Model.JsonData);
+
+        // ===== POPULATE KPIs =====
+        if (geoData.kpis) {
+            const k = geoData.kpis;
+            document.getElementById('kpiTotalApps').textContent = k.totalApplications || 0;
+            document.getElementById('kpiHectares').textContent = (k.totalHectares || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 });
+            document.getElementById('kpiProducts').textContent = k.uniqueProducts || 0;
+            document.getElementById('kpiHighTox').textContent = k.highToxApplications || 0;
+            document.getElementById('kpiAdvisors').textContent = k.uniqueAdvisors || 0;
+        }
+
+        // ===== POPULATE FILTER SELECTS =====
+        if (geoData.availableFilters) {
+            const f = geoData.availableFilters;
+            populateSelect('filterCrop', f.crops, '@Context.Request.Query["crop"]');
+            populateSelect('filterToxClass', f.toxClasses, '@Context.Request.Query["toxClass"]');
+            populateSelect('filterProduct', f.products, '@Context.Request.Query["productName"]');
+            populateSelect('filterAdvisor', f.advisors, '@Context.Request.Query["advisorName"]');
+        }
+
+        function populateSelect(id, items, selectedValue) {
+            const select = document.getElementById(id);
+            if (!select || !items) return;
+            items.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item;
+                opt.textContent = item;
+                if (selectedValue && item === selectedValue) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        // ===== CLEAR FILTERS =====
+        document.getElementById('btnClearFilters')?.addEventListener('click', () => {
+            window.location.href = window.location.pathname;
+        });
+
+        // ===== INIT MAP =====
+        const map = L.map('geoMap', { zoomControl: true });
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+            maxZoom: 19
+        }).addTo(map);
+
+        const bounds = L.latLngBounds();
+        const polygonLayers = L.layerGroup().addTo(map);
+        const sensitiveLayer = L.layerGroup().addTo(map);
+        let heatLayer = null;
+
+        // Color por toxicidad
+        function toxColor(score) {
+            if (score <= 1) return { color: '#8e44ad', fill: 'rgba(142, 68, 173, 0.25)' };
+            if (score <= 2) return { color: '#e74c3c', fill: 'rgba(231, 76, 60, 0.25)' };
+            if (score <= 3) return { color: '#f39c12', fill: 'rgba(243, 156, 18, 0.25)' };
+            if (score <= 4) return { color: '#3498db', fill: 'rgba(52, 152, 219, 0.25)' };
+            return { color: '#00b400', fill: 'rgba(0, 180, 0, 0.25)' };
+        }
+
+        // ===== DRAW POLYGONS =====
+        const apps = geoData.applications || [];
+        const heatPoints = [];
+
+        apps.forEach(app => {
+            if (!app.vertices || app.vertices.length === 0) return;
+
+            const coords = app.vertices.map(v => [v.lat, v.lng]);
+            const tc = toxColor(app.toxScore);
+
+            const polygon = L.polygon(coords, {
+                color: tc.color,
+                weight: 2,
+                fillColor: tc.fill,
+                fillOpacity: 0.35,
+                className: 'geo-polygon'
+            });
+
+            // Build popup
+            const productsHtml = app.products.map(p =>
+                `<span class="popup-product">${p.productName} <small>(${p.toxicologicalClass || '?'})</small></span>`
+            ).join('');
+
+            const popupHtml = `
+                <div class="geo-popup">
+                    <div class="geo-popup-header">
+                        <strong>RFD #${app.rfdNumber}</strong>
+                        <span class="geo-popup-status geo-popup-status-${app.status?.toLowerCase()}">${app.status}</span>
+                    </div>
+                    <div class="geo-popup-body">
+                        <div><strong>Lote:</strong> ${app.lotName}</div>
+                        <div><strong>Cultivo:</strong> ${app.crop || '-'}</div>
+                        <div><strong>Superficie:</strong> ${app.surfaceHa ? app.surfaceHa.toFixed(1) + ' ha' : '-'}</div>
+                        <div><strong>Fecha:</strong> ${new Date(app.issueDate).toLocaleDateString('es-AR')}</div>
+                        <div><strong>Asesor:</strong> ${app.advisorName || '-'}</div>
+                        <div><strong>Solicitante:</strong> ${app.requesterName || '-'}</div>
+                        <div class="geo-popup-products"><strong>Productos:</strong><br/>${productsHtml}</div>
+                        <div><strong>Toxicidad máx:</strong> <span style="color:${tc.color}; font-weight:700;">${app.maxToxClass || 'N/D'}</span></div>
+                    </div>
+                    <a href="/Municipio/Details/${app.recipeId}" class="geo-popup-link">Ver receta →</a>
+                </div>
+            `;
+
+            polygon.bindPopup(popupHtml, { maxWidth: 320 });
+            polygonLayers.addLayer(polygon);
+
+            coords.forEach(c => bounds.extend(c));
+
+            // Heatmap point: weight by inverse tox score (more toxic = more heat)
+            const weight = app.toxScore <= 2 ? 1.0 : app.toxScore <= 3 ? 0.6 : 0.3;
+            heatPoints.push([app.centerLat, app.centerLng, weight]);
+        });
+
+        // ===== DRAW SENSITIVE POINTS =====
+        const sensitivePoints = geoData.sensitivePoints || [];
+        sensitivePoints.forEach(sp => {
+            const icon = L.divIcon({
+                html: '<div class="sp-marker"><span>📍</span></div>',
+                className: '',
+                iconSize: [28, 28],
+                iconAnchor: [14, 14],
+                popupAnchor: [0, -16]
+            });
+
+            const marker = L.marker([sp.latitude, sp.longitude], { icon });
+
+            const popupHtml = `
+                <div class="geo-popup">
+                    <div class="geo-popup-header">
+                        <strong>📍 ${sp.name}</strong>
+                    </div>
+                    <div class="geo-popup-body">
+                        <div><strong>Tipo:</strong> ${sp.type || '-'}</div>
+                        <div><strong>Localidad:</strong> ${sp.locality || '-'}</div>
+                    </div>
+                </div>
+            `;
+
+            marker.bindPopup(popupHtml, { maxWidth: 300 });
+            sensitiveLayer.addLayer(marker);
+            bounds.extend([sp.latitude, sp.longitude]);
+        });
+
+        // ===== HEATMAP LAYER =====
+        if (heatPoints.length > 0) {
+            heatLayer = L.heatLayer(heatPoints, {
+                radius: 30,
+                blur: 20,
+                maxZoom: 15,
+                max: 1.0,
+                gradient: {
+                    0.2: '#2ecc71',
+                    0.4: '#f1c40f',
+                    0.6: '#e67e22',
+                    0.8: '#e74c3c',
+                    1.0: '#8e44ad'
+                }
+            }).addTo(map);
+        }
+
+        // Fit bounds
+        if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+        } else {
+            map.setView([-33.0, -61.0], 8);
+        }
+
+        // ===== TOGGLE CONTROLS =====
+        document.getElementById('toggleHeatmap')?.addEventListener('change', function () {
+            if (heatLayer) {
+                this.checked ? map.addLayer(heatLayer) : map.removeLayer(heatLayer);
+            }
+        });
+        document.getElementById('togglePolygons')?.addEventListener('change', function () {
+            this.checked ? map.addLayer(polygonLayers) : map.removeLayer(polygonLayers);
+        });
+        document.getElementById('toggleSensitive')?.addEventListener('change', function () {
+            this.checked ? map.addLayer(sensitiveLayer) : map.removeLayer(sensitiveLayer);
+        });
+
+        /*
+        ========================================================================
+        ALERTAS (desactivado por ahora)
+        Para activar:
+        1. Descomentar el HTML del panel de alertas arriba
+        2. Descomentar este bloque JS
+        3. En GeoInsightsService.cs descomentar las secciones 3 y 4
+        ========================================================================
+
+        const alertsList = document.getElementById('alertsList');
+        const alerts = geoData.alerts || [];
+
+        if (alerts.length === 0) {
+            alertsList.innerHTML = '<div class="geo-alert-empty">✅ No se detectaron alertas en tu jurisdicción.</div>';
+        } else {
+            alertsList.innerHTML = '';
+            alerts.forEach(alert => {
+                const levelClass = alert.level === 'critical' ? 'geo-alert-critical' : alert.level === 'warning' ? 'geo-alert-warning' : 'geo-alert-info';
+                const div = document.createElement('div');
+                div.className = `geo-alert-item ${levelClass}`;
+                div.innerHTML = `
+                    <div class="geo-alert-item-title">${alert.title}</div>
+                    <div class="geo-alert-item-desc">${alert.description}</div>
+                    ${alert.latitude ? `<button class="geo-alert-locate" data-lat="${alert.latitude}" data-lng="${alert.longitude}">📍 Ver en mapa</button>` : ''}
+                `;
+                alertsList.appendChild(div);
+            });
+
+            alertsList.querySelectorAll('.geo-alert-locate').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const lat = parseFloat(btn.dataset.lat);
+                    const lng = parseFloat(btn.dataset.lng);
+                    map.setView([lat, lng], 15);
+                });
+            });
+        }
+        */
+
+        // ===== TIMELINE CHART =====
+        if (apps.length > 0) {
+            const monthMap = {};
+            apps.forEach(app => {
+                const d = new Date(app.issueDate);
+                const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                if (!monthMap[key]) monthMap[key] = { total: 0, highTox: 0 };
+                monthMap[key].total++;
+                if (app.toxScore <= 2) monthMap[key].highTox++;
+            });
+
+            const sortedMonths = Object.keys(monthMap).sort();
+            const labels = sortedMonths.map(k => {
+                const [y, m] = k.split('-');
+                return new Date(y, m - 1).toLocaleDateString('es-AR', { month: 'short', year: '2-digit' });
+            });
+
+            new Chart(document.getElementById('timelineChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Total aplicaciones',
+                            data: sortedMonths.map(k => monthMap[k].total),
+                            backgroundColor: 'rgba(52, 152, 219, 0.6)',
+                            borderColor: '#3498db',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Alta toxicidad (Clase I/II)',
+                            data: sortedMonths.map(k => monthMap[k].highTox),
+                            backgroundColor: 'rgba(231, 76, 60, 0.6)',
+                            borderColor: '#e74c3c',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } }
+                    }
+                }
+            });
+        }
+
+        // ===== TOX CHART =====
+        if (apps.length > 0) {
+            const toxGroups = {};
+            apps.forEach(app => {
+                const cls = app.maxToxClass || 'Sin clasificar';
+                toxGroups[cls] = (toxGroups[cls] || 0) + 1;
+            });
+
+            const toxLabels = Object.keys(toxGroups);
+            const toxData = Object.values(toxGroups);
+            const toxColors = toxLabels.map(l => {
+                if (l.includes('Ia')) return '#8e44ad';
+                if (l.includes('Ib')) return '#e74c3c';
+                if (l.includes('II') && !l.includes('III')) return '#f39c12';
+                if (l.includes('III') && !l.includes('IV')) return '#3498db';
+                if (l.includes('IV')) return '#2ecc71';
+                return '#95a5a6';
+            });
+
+            new Chart(document.getElementById('toxChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: toxLabels,
+                    datasets: [{
+                        data: toxData,
+                        backgroundColor: toxColors,
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 14, usePointStyle: true } }
+                    }
+                }
+            });
+        }
+
+        // ===== CROP CHART =====
+        if (apps.length > 0) {
+            const cropGroups = {};
+            apps.forEach(app => {
+                const c = app.crop || 'Sin especificar';
+                cropGroups[c] = (cropGroups[c] || 0) + 1;
+            });
+
+            const cropLabels = Object.keys(cropGroups).sort((a, b) => cropGroups[b] - cropGroups[a]).slice(0, 8);
+            const cropData = cropLabels.map(l => cropGroups[l]);
+
+            const cropColors = ['#3498db', '#2ecc71', '#f39c12', '#e74c3c', '#9b59b6', '#1abc9c', '#e67e22', '#34495e'];
+
+            new Chart(document.getElementById('cropChart'), {
+                type: 'bar',
+                data: {
+                    labels: cropLabels,
+                    datasets: [{
+                        label: 'Aplicaciones',
+                        data: cropData,
+                        backgroundColor: cropColors.slice(0, cropLabels.length),
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } }
+                    }
+                }
+            });
+        }
+    </script>
+}

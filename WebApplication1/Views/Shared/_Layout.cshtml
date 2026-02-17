@@ -46,6 +46,7 @@
                         @if (User.IsInRole("Municipio"))
                         {
                             <li><a class="nav-link-custom" asp-controller="Municipio" asp-action="Index">🏛️ Recetas Asignadas</a></li>
+                            <li><a class="nav-link-custom" asp-controller="Municipio" asp-action="GeoInsights">🗺️ Mapa Territorial</a></li>
                         }
 
                         @if (User?.Identity?.IsAuthenticated ?? false)
