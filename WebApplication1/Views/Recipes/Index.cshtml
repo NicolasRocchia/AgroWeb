@@ -99,13 +99,15 @@
                 <tbody>
                     @foreach (var r in Model.Data.Items)
                     {
-                        var statusClass = r.Status?.ToLower() switch
+                        var statusClass = r.Status?.ToUpper() switch
                         {
-                            "draft" => "status-draft",
-                            "pending" => "status-pending",
-                            "approved" => "status-approved",
-                            "rejected" => "status-rejected",
-                            "expired" => "status-expired",
+                                        "ABIERTA" => "status-draft",
+                                        "PENDIENTE" => "status-pending",
+                                        "APROBADA" => "status-approved",
+                                        "RECHAZADA" => "status-rejected",
+                                        "OBSERVADA" => "status-warning",
+                                        "CERRADA" => "status-expired",
+                                        "ANULADA" => "status-rejected",
                             _ => "status-draft"
                         };
 

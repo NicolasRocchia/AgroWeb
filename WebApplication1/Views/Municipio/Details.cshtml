@@ -17,12 +17,12 @@
             @{
                 var statusClass = Model.Recipe.Status?.ToUpper() switch
                 {
-                    "PENDIENTE" => "status-draft",
-                    "APROBADA" => "status-approved",
-                    "RECHAZADA" => "status-rejected",
-                    "OBSERVADA" => "status-warning",
-                    "CERRADA" => "status-expired",
-                    "ANULADA" => "status-rejected",
+                            "PENDIENTE" => "status-draft",
+                            "APROBADA" => "status-approved",
+                            "RECHAZADA" => "status-rejected",
+                            "OBSERVADA" => "status-warning",
+                            "CERRADA" => "status-expired",
+                            "ANULADA" => "status-rejected",
                     _ => "status-draft"
                 };
             }
@@ -57,7 +57,7 @@
     }
 
     <!-- Acciones de Revisión -->
-    @if (Model.Recipe.Status?.ToUpper() == "PENDIENTE")
+    @if (Model.Recipe.Status?.ToUpper() == "PENDIENTE" || Model.Recipe.Status?.ToUpper() == "OBSERVADA")
     {
         <section class="detail-section" style="background: #eff6ff; border: 2px dashed #93c5fd;">
             <h2 class="section-title">
@@ -97,11 +97,13 @@
                     <input type="hidden" name="id" value="@Model.Recipe.Id" />
                     <input type="hidden" name="action" value="RECHAZADA" />
                     <textarea name="observation" required rows="3" placeholder="Motivo del rechazo..."
-                              style="width: 100%; padding: 10px; border: 2px solid #fca5a5; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
+                          style="width: 100%; padding: 10px; border: 2px solid #fca5a5; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
                     <div style="display: flex; gap: 8px; margin-top: 8px;">
                         <button type="submit" class="btn-status btn-anular">Confirmar Rechazo</button>
                         <button type="button" class="btn-status" style="background: #f1f5f9; color: #64748b; border: 2px solid #e2e8f0;"
-                                onclick="this.closest('div[id]').style.display='none';">Cancelar</button>
+                                onclick="this.closest('div[id]').style.display='none';">
+                            Cancelar
+                        </button>
                     </div>
                 </form>
             </div>
@@ -112,11 +114,13 @@
                     <input type="hidden" name="id" value="@Model.Recipe.Id" />
                     <input type="hidden" name="action" value="OBSERVADA" />
                     <textarea name="observation" required rows="3" placeholder="¿Qué información necesitás del aplicador?"
-                              style="width: 100%; padding: 10px; border: 2px solid #fbbf24; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
+                          style="width: 100%; padding: 10px; border: 2px solid #fbbf24; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
                     <div style="display: flex; gap: 8px; margin-top: 8px;">
                         <button type="submit" class="btn-status" style="background: #fef3c7; color: #92400e; border: 2px solid #fbbf24;">Enviar Solicitud</button>
                         <button type="button" class="btn-status" style="background: #f1f5f9; color: #64748b; border: 2px solid #e2e8f0;"
-                                onclick="this.closest('div[id]').style.display='none';">Cancelar</button>
+                                onclick="this.closest('div[id]').style.display='none';">
+                            Cancelar
+                        </button>
                     </div>
                 </form>
             </div>
@@ -132,11 +136,13 @@
                         <option value="">— Cargando municipios... —</option>
                     </select>
                     <textarea name="observation" rows="2" placeholder="Motivo de la redirección (opcional)"
-                              style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
+                          style="width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
                     <div style="display: flex; gap: 8px; margin-top: 8px;">
                         <button type="submit" class="btn-status" style="background: #eff6ff; color: #1e40af; border: 2px solid #93c5fd;">Confirmar Redirección</button>
                         <button type="button" class="btn-status" style="background: #f1f5f9; color: #64748b; border: 2px solid #e2e8f0;"
-                                onclick="this.closest('div[id]').style.display='none';">Cancelar</button>
+                                onclick="this.closest('div[id]').style.display='none';">
+                            Cancelar
+                        </button>
                     </div>
                 </form>
             </div>
@@ -153,18 +159,20 @@
             <div style="display: flex; flex-direction: column; gap: 8px;">
                 @foreach (var log in Model.Recipe.ReviewLogs)
                 {
-                    var actionColor = log.Action switch {
-                        "APROBADA" => "#16a34a",
-                        "RECHAZADA" => "#dc2626",
-                        "OBSERVADA" => "#d97706",
-                        "REDIRIGIDA" => "#2563eb",
+                    var actionColor = log.Action switch
+                    {
+                                    "APROBADA" => "#16a34a",
+                                    "RECHAZADA" => "#dc2626",
+                                    "OBSERVADA" => "#d97706",
+                                    "REDIRIGIDA" => "#2563eb",
                         _ => "#64748b"
                     };
-                    var actionIcon = log.Action switch {
-                        "APROBADA" => "✅",
-                        "RECHAZADA" => "❌",
-                        "OBSERVADA" => "💬",
-                        "REDIRIGIDA" => "↪️",
+                    var actionIcon = log.Action switch
+                    {
+                                    "APROBADA" => "✅",
+                                    "RECHAZADA" => "❌",
+                                    "OBSERVADA" => "💬",
+                                    "REDIRIGIDA" => "↪️",
                         _ => "•"
                     };
                     <div style="padding: 10px 14px; background: #f8fafc; border-radius: 8px; border-left: 3px solid @actionColor;">

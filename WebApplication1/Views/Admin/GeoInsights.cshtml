@@ -10,11 +10,11 @@
         <div class="geo-header-content">
             <h1 class="geo-title">
                 <span class="geo-title-icon">🗺️</span>
-                Fiscalización Territorial
+                Mapa Territorial Global
             </h1>
-            <p class="geo-subtitle">Mapa de calor de aplicaciones fitosanitarias en tu jurisdicción</p>
+            <p class="geo-subtitle">Visualización de todas las aplicaciones fitosanitarias del sistema</p>
         </div>
-        <a asp-action="Index" class="geo-back-link">← Volver a Recetas</a>
+        <a asp-controller="Admin" asp-action="Insights" class="geo-back-link">← Volver a Insights</a>
     </div>
 
     @if (ViewBag.Error != null)
@@ -61,6 +61,26 @@
             <button type="button" class="geo-btn-clear" id="btnClearFilters">Limpiar</button>
         </div>
         <form method="get" class="geo-filters-form" id="filtersForm">
+            <div class="geo-filter-group">
+                <label>Municipio</label>
+                <select name="municipalityId" id="filterMunicipality">
+                    <option value="">Todos los municipios</option>
+                    @if (ViewBag.Municipalities != null)
+                    {
+                        foreach (var m in (List<WebApplication1.Models.Admin.MunicipalityAdminDto>)ViewBag.Municipalities)
+                        {
+                            if (ViewBag.SelectedMunicipalityId != null && (long)ViewBag.SelectedMunicipalityId == m.Id)
+                            {
+                                <option value="@m.Id" selected="selected">@m.Name (@(m.Province ?? "—"))</option>
+                            }
+                            else
+                            {
+                                <option value="@m.Id">@m.Name (@(m.Province ?? "—"))</option>
+                            }
+                        }
+                    }
+                </select>
+            </div>
             <div class="geo-filter-group">
                 <label>Fecha desde</label>
                 <input type="date" name="dateFrom" id="filterDateFrom" value="@Context.Request.Query["dateFrom"]" />
@@ -336,7 +356,7 @@
                         <div class="geo-popup-products"><strong>Productos:</strong><br/>${productsHtml}</div>
                         <div><strong>Toxicidad máx:</strong> <span style="color:${tc.color}; font-weight:700;">${app.maxToxClass || 'N/D'}</span></div>
                     </div>
-                    <a href="/Municipio/Details/${app.recipeId}" class="geo-popup-link">Ver receta →</a>
+                    <a href="/Recipes/Details/${app.recipeId}" class="geo-popup-link">Ver receta →</a>
                 </div>
             `;
 

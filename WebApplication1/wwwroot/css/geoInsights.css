@@ -266,7 +266,12 @@
 }
 
 /* Map controls */
-.geo-map-controls {
+.geo-map-wrapper {
+    margin-bottom: 24px;
+}
+
+/* Desktop: overlay on map */
+.geo-controls-desktop {
     position: absolute;
     top: 12px;
     right: 12px;
@@ -290,7 +295,120 @@
         margin: 0 0 8px;
         font-size: 0.8rem;
         font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
     }
+
+        .geo-map-legend h4 .legend-toggle {
+            font-size: 0.65rem;
+            transition: transform 0.2s;
+        }
+
+.legend-items {
+    transition: max-height 0.3s ease, opacity 0.2s ease;
+    overflow: hidden;
+    max-height: 300px;
+    opacity: 1;
+}
+
+.geo-map-legend.collapsed .legend-items {
+    max-height: 0;
+    opacity: 0;
+}
+
+.geo-map-legend.collapsed h4 {
+    margin-bottom: 0;
+}
+
+    .geo-map-legend.collapsed h4 .legend-toggle {
+        transform: rotate(-90deg);
+    }
+
+/* Mobile: bottom HUD bar inside map */
+.geo-controls-mobile {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .geo-controls-desktop {
+        display: none !important;
+    }
+
+    .geo-controls-mobile {
+        display: block;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.92);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-top: 1px solid rgba(0,0,0,0.08);
+        padding: 8px 12px;
+    }
+
+    .geo-mobile-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .geo-mobile-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .ml-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 0.65rem;
+        color: #475569;
+        background: rgba(255,255,255,0.7);
+        padding: 2px 5px;
+        border-radius: 4px;
+    }
+
+        .ml-chip .legend-color {
+            width: 12px;
+            height: 9px;
+            border-radius: 2px;
+        }
+
+        .ml-chip .legend-dot {
+            width: 8px;
+            height: 8px;
+        }
+
+    .geo-mobile-toggles {
+        display: flex;
+        gap: 2px;
+        flex-shrink: 0;
+    }
+
+    .mt-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        user-select: none;
+        padding: 3px 4px;
+        border-radius: 4px;
+        background: rgba(255,255,255,0.7);
+    }
+
+        .mt-chip input[type="checkbox"] {
+            width: 13px;
+            height: 13px;
+            accent-color: #2c3e50;
+        }
+}
 
 .legend-item {
     display: flex;
