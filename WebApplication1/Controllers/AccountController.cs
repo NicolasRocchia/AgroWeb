@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
+using WebApplication1.Services;
 
 namespace WebApplication1.Controllers;
 
@@ -14,26 +14,20 @@ public class AccountController : Controller
     private const string UserNameCookie = "agro_user_name";
     private const string UserEmailCookie = "agro_user_email";
 
-    private static readonly JsonSerializerOptions JsonOpts = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
+    private readonly AgroApiClient _api;
+    public AccountController(AgroApiClient api) => _api = api;
 
     [HttpGet]
     public IActionResult Login()
     {
         if (Request.Cookies.ContainsKey(TokenCookie))
             return RedirectToAction("Index", "Home");
-
         return View();
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Login(
-        string email,
-        string password,
-        [FromServices] IHttpClientFactory httpClientFactory)
+    public async Task<IActionResult> Login(string email, string password)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
@@ -41,22 +35,28 @@ public class AccountController : Controller
             return View();
         }
 
-        var client = httpClientFactory.CreateClient("AgroApi");
+        var result = await _api.LoginAsync(email, password);
 
-        // Llamar a la API de login
-        var resp = await client.PostAsJsonAsync("/api/auth/login", new
-        {
-            email,
-            password
-        });
-
-        if (!resp.IsSuccessStatusCode)
+        if (!result.Success)
         {
             ViewBag.Error = "Credenciales inválidas.";
             return View();
         }
 
-        var json = await resp.Content.ReadFromJsonAsync<LoginResponseDto>(JsonOpts);
+        // Parse login response
+        LoginResponseDto? json;
+        try
+        {
+            json = JsonSerializer.Deserialize<LoginResponseDto>(result.Data!, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+        catch
+        {
+            ViewBag.Error = "Respuesta inválida del servidor.";
+            return View();
+        }
 
         if (json is null || string.IsNullOrWhiteSpace(json.Token))
         {
@@ -89,7 +89,7 @@ public class AccountController : Controller
             });
         }
 
-        // Guardar nombre de usuario (NO HttpOnly para que el Layout pueda leerlo)
+        // Guardar nombre de usuario
         Response.Cookies.Append(UserNameCookie, json.UserName ?? "Usuario", new CookieOptions
         {
             HttpOnly = false,
@@ -98,7 +98,7 @@ public class AccountController : Controller
             Expires = expiresAt
         });
 
-        // Guardar email del usuario (NO HttpOnly para mostrarlo en el UI)
+        // Guardar email del usuario
         Response.Cookies.Append(UserEmailCookie, json.Email ?? "", new CookieOptions
         {
             HttpOnly = false,
@@ -107,7 +107,7 @@ public class AccountController : Controller
             Expires = expiresAt
         });
 
-        // ✅ Loguear la WEB (cookie auth) para poder usar [Authorize] y User.IsInRole(...)
+        // Loguear la WEB (cookie auth) para [Authorize] y User.IsInRole(...)
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, json.UserId.ToString()),
@@ -142,7 +142,6 @@ public class AccountController : Controller
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-        // Eliminar todas las cookies relacionadas con la sesión
         Response.Cookies.Delete(TokenCookie);
         Response.Cookies.Delete(ExpiresCookie);
         Response.Cookies.Delete(UserNameCookie);
@@ -160,28 +159,20 @@ public class AccountController : Controller
     {
         if (Request.Cookies.ContainsKey(TokenCookie))
             return RedirectToAction("Index", "Home");
-
         return View();
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Register(
-        string userName,
-        string email,
-        string password,
-        string confirmPassword,
-        string taxId,
-        string? phoneNumber,
-        [FromServices] IHttpClientFactory httpClientFactory)
+        string userName, string email, string password,
+        string confirmPassword, string taxId, string? phoneNumber)
     {
-        // Preservar valores en caso de error
         ViewBag.UserName = userName;
         ViewBag.Email = email;
         ViewBag.TaxId = taxId;
         ViewBag.PhoneNumber = phoneNumber;
 
-        // Validación básica client-side
         if (string.IsNullOrWhiteSpace(userName) ||
             string.IsNullOrWhiteSpace(email) ||
             string.IsNullOrWhiteSpace(password) ||
@@ -197,9 +188,7 @@ public class AccountController : Controller
             return View();
         }
 
-        var client = httpClientFactory.CreateClient("AgroApi");
-
-        var resp = await client.PostAsJsonAsync("/api/auth/register", new
+        var result = await _api.RegisterAsync(new
         {
             userName = userName.Trim(),
             email = email.Trim(),
@@ -209,43 +198,13 @@ public class AccountController : Controller
             phoneNumber = phoneNumber?.Trim()
         });
 
-        if (resp.IsSuccessStatusCode)
+        if (result.Success)
         {
             TempData["Success"] = "¡Cuenta creada exitosamente! Ya podés iniciar sesión.";
             return RedirectToAction("Login");
         }
 
-        // Manejar errores de la API
-        try
-        {
-            var body = await resp.Content.ReadAsStringAsync();
-            var doc = JsonDocument.Parse(body);
-
-            // Error de conflicto (email o CUIT duplicado)
-            if (doc.RootElement.TryGetProperty("error", out var errorProp))
-            {
-                ViewBag.Error = errorProp.GetString();
-                return View();
-            }
-
-            // Errores de validación
-            if (doc.RootElement.TryGetProperty("errors", out var errorsProp))
-            {
-                var errorList = new List<string>();
-                foreach (var err in errorsProp.EnumerateArray())
-                {
-                    errorList.Add(err.GetString() ?? "Error desconocido");
-                }
-                ViewBag.Errors = errorList;
-                return View();
-            }
-        }
-        catch
-        {
-            // Si no se puede parsear el error
-        }
-
-        ViewBag.Error = $"Error al crear la cuenta. (HTTP {(int)resp.StatusCode})";
+        ViewBag.Error = result.Error;
         return View();
     }
 
