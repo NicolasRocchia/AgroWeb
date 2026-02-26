@@ -16,13 +16,13 @@
             @{
                 var statusClass = Model.Recipe.Status?.ToUpper() switch
                 {
-                    "ABIERTA" => "status-approved",
-                    "PENDIENTE" => "status-draft",
-                    "APROBADA" => "status-approved",
-                    "RECHAZADA" => "status-rejected",
-                    "OBSERVADA" => "status-warning",
-                    "CERRADA" => "status-expired",
-                    "ANULADA" => "status-rejected",
+                            "ABIERTA" => "status-approved",
+                            "PENDIENTE" => "status-draft",
+                            "APROBADA" => "status-approved",
+                            "RECHAZADA" => "status-rejected",
+                            "OBSERVADA" => "status-warning",
+                            "CERRADA" => "status-expired",
+                            "ANULADA" => "status-rejected",
                     _ => "status-draft"
                 };
             }
@@ -77,7 +77,7 @@
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                 @if (st == "ABIERTA")
                 {
-                    <a href="@Url.Action("AssignMunicipality", "RecipeView", new { id = Model.Recipe.Id })"
+                    <a href="@Url.Action("AssignMunicipality", "Applicator", new { id = Model.Recipe.Id })"
                        class="btn-status" style="background: #eff6ff; color: #1e40af; border: 2px solid #93c5fd; text-decoration: none;">
                         📤 Enviar a Municipio
                     </a>
@@ -140,18 +140,20 @@
                 <div style="display: flex; flex-direction: column; gap: 8px;">
                     @foreach (var log in Model.Recipe.ReviewLogs)
                     {
-                        var actionColor = log.Action switch {
-                            "APROBADA" => "#16a34a",
-                            "RECHAZADA" => "#dc2626",
-                            "OBSERVADA" => "#d97706",
-                            "REDIRIGIDA" => "#2563eb",
+                        var actionColor = log.Action switch
+                        {
+                                            "APROBADA" => "#16a34a",
+                                            "RECHAZADA" => "#dc2626",
+                                            "OBSERVADA" => "#d97706",
+                                            "REDIRIGIDA" => "#2563eb",
                             _ => "#64748b"
                         };
-                        var actionIcon = log.Action switch {
-                            "APROBADA" => "✅",
-                            "RECHAZADA" => "❌",
-                            "OBSERVADA" => "💬",
-                            "REDIRIGIDA" => "↪️",
+                        var actionIcon = log.Action switch
+                        {
+                                            "APROBADA" => "✅",
+                                            "RECHAZADA" => "❌",
+                                            "OBSERVADA" => "💬",
+                                            "REDIRIGIDA" => "↪️",
                             _ => "•"
                         };
                         <div style="padding: 10px 14px; background: white; border-radius: 8px; border-left: 3px solid @actionColor;">

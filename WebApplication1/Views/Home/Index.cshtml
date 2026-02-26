@@ -33,7 +33,7 @@
                     <div class="feature-icon">📋</div>
                     <h3>Recetas</h3>
                     <p>Visualizá y gestioná todas las recetas fitosanitarias del sistema. Filtrá por estado, solicitante, asesor o fecha.</p>
-                    <a asp-controller="Recipes" asp-action="Index" class="feature-btn">
+                    <a asp-controller="AdminRecipes" asp-action="Index" class="feature-btn">
                         Ver Recetas <span>→</span>
                     </a>
                 </div>
@@ -95,7 +95,7 @@ else if (isAplicador)
                     <div class="feature-icon">📤</div>
                     <h3>Subir Receta</h3>
                     <p>Cargá un PDF de receta fitosanitaria. El sistema extrae automáticamente toda la información: productos, lotes, condiciones y más.</p>
-                    <a asp-controller="RecipeView" asp-action="Upload" class="feature-btn">
+                    <a asp-controller="Applicator" asp-action="Upload" class="feature-btn">
                         Subir Receta <span>→</span>
                     </a>
                 </div>
@@ -104,7 +104,7 @@ else if (isAplicador)
                     <div class="feature-icon">🔍</div>
                     <h3>Mis Recetas</h3>
                     <p>Consultá el historial de recetas que cargaste. Buscá por número RFD, fecha, solicitante o cualquier criterio.</p>
-                    <a asp-controller="RecipeView" asp-action="Index" class="feature-btn">
+                    <a asp-controller="Applicator" asp-action="Index" class="feature-btn">
                         Ver Mis Recetas <span>→</span>
                     </a>
                 </div>

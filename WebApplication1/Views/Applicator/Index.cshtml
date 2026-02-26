@@ -81,7 +81,7 @@
                 <div class="empty-icon">📭</div>
                 <h3>No tenés recetas cargadas</h3>
                 <p>Subí tu primera receta fitosanitaria desde la sección de carga.</p>
-                <a asp-controller="RecipeView" asp-action="Upload" class="btn-upload-empty">
+                <a asp-controller="Applicator" asp-action="Upload" class="btn-upload-empty">
                     📤 Subir Receta
                 </a>
             </div>
@@ -108,13 +108,13 @@
                     {
                         var statusClass = r.Status?.ToUpper() switch
                         {
-                                        "ABIERTA" => "status-draft",
-                                        "PENDIENTE" => "status-pending",
-                                        "APROBADA" => "status-approved",
-                                        "RECHAZADA" => "status-rejected",
-                                        "OBSERVADA" => "status-warning",
-                                        "CERRADA" => "status-expired",
-                                        "ANULADA" => "status-rejected",
+                                                    "ABIERTA" => "status-draft",
+                                                    "PENDIENTE" => "status-pending",
+                                                    "APROBADA" => "status-approved",
+                                                    "RECHAZADA" => "status-rejected",
+                                                    "OBSERVADA" => "status-warning",
+                                                    "CERRADA" => "status-expired",
+                                                    "ANULADA" => "status-rejected",
                             _ => "status-draft"
                         };
 

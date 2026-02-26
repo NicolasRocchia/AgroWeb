@@ -10,7 +10,7 @@
 
 <div class="detail-container" style="max-width: 700px; margin: 0 auto;">
 
-    <a href="@Url.Action("Details", "RecipeView", new { id = recipe?.Id })" class="back-link">← Volver al detalle</a>
+    <a href="@Url.Action("Details", "Applicator", new { id = recipe?.Id })" class="back-link">← Volver al detalle</a>
 
     <h1 style="margin: 16px 0 8px;">📤 Enviar Receta a Municipio</h1>
 
@@ -82,6 +82,7 @@
         border-color: #2D5016;
         background: #f0fdf4;
     }
+
     .municipality-option:hover {
         border-color: #94a3b8;
         background: #f8fafc;
