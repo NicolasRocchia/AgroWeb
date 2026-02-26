@@ -20,6 +20,20 @@
     border-top-color: #764ba2;
 }
 
+/* ---- Aplicador Dashboard Hero ---- */
+.hero-aplicador {
+    background: linear-gradient(135deg, #065f46 0%, #047857 50%, #059669 100%) !important;
+}
+
+/* ---- Aplicador feature cards ---- */
+.aplicador-card {
+    border-top: 3px solid #059669;
+}
+
+.aplicador-card:hover {
+    border-top-color: #047857;
+}
+
 /* ---- Disabled button (Próximamente) ---- */
 .feature-btn-disabled {
     opacity: 0.5;

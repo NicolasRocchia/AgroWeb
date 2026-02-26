@@ -1,6 +1,7 @@
 @{
     ViewData["Title"] = "AGROCONNECT - Gestión de Recetas Fitosanitarias";
     var isAdmin = User.IsInRole("Admin");
+    var isProductor = User.IsInRole("Productor");
     var isAplicador = User.IsInRole("Aplicador");
     var isAuthenticated = User?.Identity?.IsAuthenticated ?? false;
     var userName = Context.Request.Cookies["agro_user_name"] ?? "Usuario";
@@ -69,9 +70,83 @@
     </div>
 }
 @* ======================================================
-   APLICADOR HOME
+   PRODUCTOR + APLICADOR (ambos roles)
    ====================================================== *@
-else if (isAplicador)
+else if (isProductor && isAplicador)
+{
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="logo-container">
+                <span class="logo-icon">🌾</span>
+                <h1 class="logo-text">AGROCONNECT</h1>
+            </div>
+            <p class="hero-subtitle">Bienvenido, @userName</p>
+            <p class="hero-description">
+                Gestioná tus recetas y tus servicios de aplicación desde un solo lugar.
+            </p>
+        </div>
+    </div>
+
+    <div class="features-section">
+        <div class="container">
+            <h2 class="section-title">Mis Recetas</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📤</div>
+                    <h3>Subir Receta</h3>
+                    <p>Cargá un PDF de receta fitosanitaria. El sistema extrae automáticamente toda la información.</p>
+                    <a asp-controller="Applicator" asp-action="Upload" class="feature-btn">
+                        Subir Receta <span>→</span>
+                    </a>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>Mis Recetas</h3>
+                    <p>Consultá el historial de recetas que cargaste. Buscá por número RFD, fecha o cualquier criterio.</p>
+                    <a asp-controller="Applicator" asp-action="Index" class="feature-btn">
+                        Ver Mis Recetas <span>→</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="features-section">
+        <div class="container">
+            <h2 class="section-title">Servicios de Aplicación</h2>
+            <div class="features-grid">
+                <div class="feature-card aplicador-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>Bolsa de Trabajo</h3>
+                    <p>Explorá trabajos de aplicación disponibles cerca de tus ubicaciones. Ofertá y conseguí nuevos clientes.</p>
+                    <a href="#" class="feature-btn feature-btn-disabled">
+                        Próximamente
+                    </a>
+                </div>
+                <div class="feature-card aplicador-card">
+                    <div class="feature-icon">📌</div>
+                    <h3>Mis Tareas</h3>
+                    <p>Gestioná las tareas de aplicación que tenés asignadas. Iniciá, pausá o completá trabajos.</p>
+                    <a href="#" class="feature-btn feature-btn-disabled">
+                        Próximamente
+                    </a>
+                </div>
+                <div class="feature-card aplicador-card">
+                    <div class="feature-icon">🚜</div>
+                    <h3>Mi Perfil de Aplicador</h3>
+                    <p>Configurá tu perfil, maquinaria disponible y ubicaciones para aparecer en la bolsa de trabajo.</p>
+                    <a href="#" class="feature-btn feature-btn-disabled">
+                        Próximamente
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@* ======================================================
+   PRODUCTOR HOME
+   ====================================================== *@
+else if (isProductor)
 {
     <div class="hero-section">
         <div class="hero-content">
@@ -106,6 +181,59 @@ else if (isAplicador)
                     <p>Consultá el historial de recetas que cargaste. Buscá por número RFD, fecha, solicitante o cualquier criterio.</p>
                     <a asp-controller="Applicator" asp-action="Index" class="feature-btn">
                         Ver Mis Recetas <span>→</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@* ======================================================
+   APLICADOR HOME
+   ====================================================== *@
+else if (isAplicador)
+{
+    <div class="hero-section hero-aplicador">
+        <div class="hero-content">
+            <div class="logo-container">
+                <span class="logo-icon">🚜</span>
+                <h1 class="logo-text">AGROCONNECT</h1>
+            </div>
+            <p class="hero-subtitle">Bienvenido, @userName</p>
+            <p class="hero-description">
+                Encontrá trabajos de aplicación, gestioná tus tareas y hacé crecer tu negocio.
+            </p>
+        </div>
+    </div>
+
+    <div class="features-section">
+        <div class="container">
+            <h2 class="section-title">¿Qué querés hacer?</h2>
+
+            <div class="features-grid">
+                <div class="feature-card aplicador-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>Bolsa de Trabajo</h3>
+                    <p>Explorá trabajos de aplicación disponibles cerca de tus ubicaciones. Filtrá por distancia, cultivo o tipo de aplicación y ofertá tu servicio.</p>
+                    <a href="#" class="feature-btn feature-btn-disabled">
+                        Próximamente
+                    </a>
+                </div>
+
+                <div class="feature-card aplicador-card">
+                    <div class="feature-icon">📌</div>
+                    <h3>Mis Tareas</h3>
+                    <p>Visualizá y gestioná las tareas de aplicación que tenés asignadas. Iniciá, pausá o completá trabajos en curso.</p>
+                    <a href="#" class="feature-btn feature-btn-disabled">
+                        Próximamente
+                    </a>
+                </div>
+
+                <div class="feature-card aplicador-card">
+                    <div class="feature-icon">🚜</div>
+                    <h3>Mi Perfil</h3>
+                    <p>Configurá tu perfil de aplicador, tu maquinaria disponible y tus ubicaciones para aparecer en la bolsa de trabajo.</p>
+                    <a href="#" class="feature-btn feature-btn-disabled">
+                        Próximamente
                     </a>
                 </div>
             </div>

@@ -166,12 +166,14 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Register(
         string userName, string email, string password,
-        string confirmPassword, string taxId, string? phoneNumber)
+        string confirmPassword, string taxId, string? phoneNumber,
+        string roleType = "productor")
     {
         ViewBag.UserName = userName;
         ViewBag.Email = email;
         ViewBag.TaxId = taxId;
         ViewBag.PhoneNumber = phoneNumber;
+        ViewBag.RoleType = roleType;
 
         if (string.IsNullOrWhiteSpace(userName) ||
             string.IsNullOrWhiteSpace(email) ||
@@ -195,7 +197,8 @@ public class AccountController : Controller
             password,
             confirmPassword,
             taxId = taxId.Trim(),
-            phoneNumber = phoneNumber?.Trim()
+            phoneNumber = phoneNumber?.Trim(),
+            roleType = roleType?.Trim() ?? "productor"
         });
 
         if (result.Success)

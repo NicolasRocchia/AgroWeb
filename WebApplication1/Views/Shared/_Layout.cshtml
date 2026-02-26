@@ -29,10 +29,16 @@
                     <ul class="navbar-nav-custom" id="navbarMenu">
                         <li><a class="nav-link-custom" asp-controller="Home" asp-action="Index">Inicio</a></li>
 
-                        @if (User.IsInRole("Aplicador"))
+                        @if (User.IsInRole("Productor"))
                         {
                             <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="Upload">Subir Receta</a></li>
                             <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="Index">Mis Recetas</a></li>
+                        }
+
+                        @if (User.IsInRole("Aplicador"))
+                        {
+                            <li><a class="nav-link-custom disabled-link" href="#">🚜 Bolsa de Trabajo</a></li>
+                            <li><a class="nav-link-custom disabled-link" href="#">📌 Mis Tareas</a></li>
                         }
 
                         @if (User.IsInRole("Admin"))

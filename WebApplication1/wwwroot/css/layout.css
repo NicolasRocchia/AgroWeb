@@ -67,6 +67,12 @@ body {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
 
+    .nav-link-custom.disabled-link {
+        opacity: 0.45;
+        pointer-events: none;
+        cursor: default;
+    }
+
 /* Bot�n de Login en Navbar */
 .btn-login {
     display: inline-flex;

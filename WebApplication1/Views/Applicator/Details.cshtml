@@ -16,13 +16,13 @@
             @{
                 var statusClass = Model.Recipe.Status?.ToUpper() switch
                 {
-                            "ABIERTA" => "status-approved",
-                            "PENDIENTE" => "status-draft",
-                            "APROBADA" => "status-approved",
-                            "RECHAZADA" => "status-rejected",
-                            "OBSERVADA" => "status-warning",
-                            "CERRADA" => "status-expired",
-                            "ANULADA" => "status-rejected",
+                                    "ABIERTA" => "status-draft",
+                    "PENDIENTE" => "status-pending",
+                    "APROBADA" => "status-approved",
+                    "RECHAZADA" => "status-rejected",
+                    "OBSERVADA" => "status-warning",
+                    "CERRADA" => "status-expired",
+                    "ANULADA" => "status-rejected",
                     _ => "status-draft"
                 };
             }
@@ -190,7 +190,7 @@
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; max-height: 400px; overflow-y: auto;">
                     @foreach (var msg in Model.Recipe.Messages)
                     {
-                        var isMe = msg.SenderRole == "Aplicador";
+                        var isMe = msg.SenderRole == "Productor";
                         <div style="align-self: @(isMe ? "flex-end" : "flex-start"); max-width: 80%; padding: 10px 14px; border-radius: 12px; background: @(isMe ? "#dcfce7" : "#f1f5f9");">
                             <div style="font-size: 12px; font-weight: 600; color: @(isMe ? "#166534" : "#1e40af"); margin-bottom: 4px;">
                                 @msg.SenderName (@msg.SenderRole)

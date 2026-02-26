@@ -10,7 +10,7 @@ using WebApplication1.Services;
 
 namespace WebApplication1.Controllers;
 
-[Authorize(Roles = "Aplicador")]
+[Authorize(Roles = "Productor")]
 public class ApplicatorController : Controller
 {
     private readonly AgroApiClient _api;
