@@ -4,6 +4,7 @@ public class RecipeListItemDto
 {
     public long Id { get; set; }
     public long? RfdNumber { get; set; }
+    public string PublicCode { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
 
     public DateTime IssueDate { get; set; }

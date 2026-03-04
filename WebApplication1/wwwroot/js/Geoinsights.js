@@ -184,7 +184,7 @@ window.GeoInsights = (function () {
         ).join('');
 
         const statusClass = (app.status || '').toLowerCase();
-        const detailUrl = config.detailUrlBase + app.recipeId;
+        const detailUrl = config.detailUrlBase + '?code=' + encodeURIComponent(app.publicCode);
 
         return '<div class="geo-popup">' +
             '<div class="geo-popup-header">' +
@@ -247,7 +247,7 @@ window.GeoInsights = (function () {
                     ? new Date(app.applicationDate).toLocaleDateString('es-AR')
                     : new Date(app.issueDate).toLocaleDateString('es-AR');
                 const prods = (app.products || []).map(p => p.productName).join(', ');
-                const detailUrl = config.detailUrlBase + app.recipeId;
+                const detailUrl = config.detailUrlBase + '?code=' + encodeURIComponent(app.publicCode);
 
                 body += '<div style="margin-bottom:4px; padding:3px 0; border-bottom:1px solid #f5f5f5;">' +
                     '<a href="' + detailUrl + '" style="font-weight:600; color:#2c3e50;">RFD #' + app.rfdNumber + '</a>' +

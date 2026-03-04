@@ -39,6 +39,7 @@
 
         <form asp-action="AssignMunicipality" method="post" style="margin: 0;">
             <input type="hidden" name="id" value="@recipe?.Id" />
+            <input type="hidden" name="code" value="@recipe?.PublicCode" />
 
             <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px;">
                 @foreach (var m in municipalities)

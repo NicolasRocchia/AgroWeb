@@ -219,7 +219,7 @@
             lots.forEach(function (lot, index) {
                 const card = document.createElement('a');
                 card.className = 'lot-card';
-                card.href = '@Url.Action("LotDetails", "Applicator")/' + lot.id;
+                card.href = '@Url.Action("LotDetails", "Applicator")' + '?code=' + encodeURIComponent(lot.code);
 
                 const name = lot.name || ('Lote #' + lot.id);
                 const locality = lot.locality || '';

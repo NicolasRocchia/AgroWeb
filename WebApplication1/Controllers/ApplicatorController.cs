@@ -51,9 +51,9 @@ public class ApplicatorController : Controller
     // =============================================
 
     [HttpGet]
-    public async Task<IActionResult> Details(long id)
+    public async Task<IActionResult> Details(string code)
     {
-        var result = await _api.GetRecipeAsync(id);
+        var result = await _api.GetRecipeByCodeAsync(code);
 
         if (result.IsNotFound)
         {
@@ -82,7 +82,7 @@ public class ApplicatorController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ChangeStatus(long id, string status)
+    public async Task<IActionResult> ChangeStatus(long id, string status, string code)
     {
         var result = await _api.ChangeRecipeStatusAsync(id, status);
 
@@ -100,7 +100,7 @@ public class ApplicatorController : Controller
             TempData["Error"] = result.Error;
         }
 
-        return RedirectToAction("Details", new { id });
+        return RedirectToAction("Details", new { code });
     }
 
     // =============================================
@@ -108,13 +108,13 @@ public class ApplicatorController : Controller
     // =============================================
 
     [HttpGet]
-    public async Task<IActionResult> AssignMunicipality(long id)
+    public async Task<IActionResult> AssignMunicipality(long id, string code)
     {
         var recipeResult = await _api.GetRecipeAsync(id);
         if (!recipeResult.Success)
         {
             TempData["Error"] = "No se pudo obtener la receta.";
-            return RedirectToAction("Details", new { id });
+            return RedirectToAction("Details", new { code });
         }
 
         var recipe = recipeResult.Data!;
@@ -141,14 +141,14 @@ public class ApplicatorController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> AssignMunicipality(long id, long municipalityId)
+    public async Task<IActionResult> AssignMunicipality(long id, long municipalityId, string code)
     {
         var result = await _api.AssignRecipeToMunicipalityAsync(id, municipalityId);
 
         TempData[result.Success ? "Success" : "Error"] =
             result.Success ? "Receta enviada al municipio correctamente. ✅" : result.Error;
 
-        return RedirectToAction("Details", new { id });
+        return RedirectToAction("Details", new { code });
     }
 
     // =============================================
@@ -157,14 +157,14 @@ public class ApplicatorController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SendMessage(long id, string message)
+    public async Task<IActionResult> SendMessage(long id, string message, string code)
     {
         var result = await _api.SendRecipeMessageAsync(id, message);
 
         TempData[result.Success ? "Success" : "Error"] =
             result.Success ? "Mensaje enviado." : result.Error;
 
-        return RedirectToAction("Details", new { id });
+        return RedirectToAction("Details", new { code });
     }
 
     // =============================================
@@ -209,21 +209,21 @@ public class ApplicatorController : Controller
             }
             else
             {
-                long recipeId = 0;
+                string publicCode = "";
                 try
                 {
                     var doc = JsonDocument.Parse(result.Data!);
-                    recipeId = doc.RootElement.TryGetProperty("recipeId", out var rid) ? rid.GetInt64() : 0;
+                    publicCode = doc.RootElement.TryGetProperty("publicCode", out var pc) ? pc.GetString() ?? "" : "";
                     var rfdNumber = doc.RootElement.TryGetProperty("rfdNumber", out var rfd) ? rfd.GetInt64() : 0;
-                    TempData["Success"] = $"Receta RFD #{rfdNumber} importada exitosamente (ID: {recipeId}).";
+                    TempData["Success"] = $"Receta RFD #{rfdNumber} importada exitosamente.";
                 }
                 catch
                 {
                     TempData["Success"] = "Receta importada exitosamente.";
                 }
 
-                if (recipeId > 0)
-                    return RedirectToAction("Details", new { id = recipeId });
+                if (!string.IsNullOrEmpty(publicCode))
+                    return RedirectToAction("Details", new { code = publicCode });
 
                 return RedirectToAction("Index");
             }
@@ -466,9 +466,9 @@ public class ApplicatorController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> LotDetails(long id)
+    public async Task<IActionResult> LotDetails(string code)
     {
-        var result = await _api.GetLotDetailAsync(id);
+        var result = await _api.GetLotByCodeAsync(code);
 
         if (result.IsNotFound)
         {

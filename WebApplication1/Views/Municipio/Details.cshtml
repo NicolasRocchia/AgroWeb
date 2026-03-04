@@ -70,6 +70,7 @@
                 <form asp-action="Review" method="post" style="margin: 0;"
                       onsubmit="return confirm('¿Aprobar esta receta?');">
                     <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                    <input type="hidden" name="code" value="@Model.Recipe.PublicCode" />
                     <input type="hidden" name="action" value="APROBADA" />
                     <button type="submit" class="btn-status btn-cerrar">✅ Aprobar</button>
                 </form>
@@ -96,6 +97,7 @@
             <div id="rejectSection" style="display: none; margin-top: 12px;">
                 <form asp-action="Review" method="post">
                     <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                    <input type="hidden" name="code" value="@Model.Recipe.PublicCode" />
                     <input type="hidden" name="action" value="RECHAZADA" />
                     <textarea name="observation" required rows="3" placeholder="Motivo del rechazo..."
                           style="width: 100%; padding: 10px; border: 2px solid #fca5a5; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
@@ -113,6 +115,7 @@
             <div id="observeSection" style="display: none; margin-top: 12px;">
                 <form asp-action="Review" method="post">
                     <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                    <input type="hidden" name="code" value="@Model.Recipe.PublicCode" />
                     <input type="hidden" name="action" value="OBSERVADA" />
                     <textarea name="observation" required rows="3" placeholder="¿Qué información necesitás del aplicador?"
                           style="width: 100%; padding: 10px; border: 2px solid #fbbf24; border-radius: 8px; font-size: 14px; resize: vertical;"></textarea>
@@ -130,6 +133,7 @@
             <div id="redirectSection" style="display: none; margin-top: 12px;">
                 <form asp-action="Review" method="post" id="redirectForm">
                     <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                    <input type="hidden" name="code" value="@Model.Recipe.PublicCode" />
                     <input type="hidden" name="action" value="REDIRIGIDA" />
                     <p style="font-size: 14px; color: #475569; margin-bottom: 8px;">Seleccioná el municipio destino:</p>
                     <select name="targetMunicipalityId" required id="targetMunSelect"
@@ -225,6 +229,7 @@
             {
                 <form asp-action="SendMessage" method="post" style="display: flex; gap: 8px;">
                     <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                    <input type="hidden" name="code" value="@Model.Recipe.PublicCode" />
                     <input type="text" name="message" required maxlength="1000"
                            placeholder="Escribí un mensaje..."
                            style="flex: 1; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px;" />

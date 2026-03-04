@@ -178,7 +178,7 @@
             GeoInsights.init({
                 geoData: @Html.Raw(Model.JsonData),
                 geoDataUrlBase: null,
-                detailUrlBase: '@Url.Action("Details", "Municipio")' + '/',
+                detailUrlBase: '@Url.Action("Details", "Municipio")',
                 serverError: @Html.Raw(ViewBag.Error != null
                     ? System.Text.Json.JsonSerializer.Serialize(ViewBag.Error.ToString())
                     : "null"),

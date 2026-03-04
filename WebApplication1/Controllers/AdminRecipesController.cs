@@ -32,9 +32,9 @@ public class AdminRecipesController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Details(long id)
+    public async Task<IActionResult> Details(string code)
     {
-        var result = await _api.GetRecipeAsync(id);
+        var result = await _api.GetRecipeByCodeAsync(code);
 
         if (result.IsNotFound)
         {

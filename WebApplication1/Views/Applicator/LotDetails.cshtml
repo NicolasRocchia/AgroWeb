@@ -365,7 +365,7 @@
                 var st = (r.status || '').toUpperCase();
                 var date = r.issueDate ? new Date(r.issueDate).toLocaleDateString('es-AR') : '-';
                 html += '<tr>'
-                    + '<td><a href="/Applicator/Details/' + r.id + '">#' + (r.rfdNumber || r.id) + '</a></td>'
+                    + '<td><a href="/Applicator/Details?code=' + encodeURIComponent(r.publicCode) + '">#' + (r.rfdNumber || r.publicCode) + '</a></td>'
                     + '<td>' + date + '</td>'
                     + '<td>' + (r.crop || '-') + '</td>'
                     + '<td>' + (r.requesterName || '-') + '</td>'

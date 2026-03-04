@@ -6,4 +6,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Content Include="Properties\launchSettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Properties\PublishProfiles\agroconnect-web - Zip Deploy.pubxml.user" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="js\" />
+  </ItemGroup>
+
 </Project>

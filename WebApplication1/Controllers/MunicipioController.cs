@@ -61,9 +61,9 @@ public class MunicipioController : Controller
     // =============================================
 
     [HttpGet]
-    public async Task<IActionResult> Details(long id)
+    public async Task<IActionResult> Details(string code)
     {
-        var result = await _api.GetRecipeAsync(id);
+        var result = await _api.GetRecipeByCodeAsync(code);
 
         if (result.IsNotFound)
         {
@@ -87,7 +87,7 @@ public class MunicipioController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Review(
-        long id, string action, string? observation, long? targetMunicipalityId)
+        long id, string action, string? observation, long? targetMunicipalityId, string code)
     {
         var result = await _api.ReviewRecipeAsync(id, action, observation, targetMunicipalityId);
 
@@ -107,7 +107,7 @@ public class MunicipioController : Controller
             TempData["Error"] = result.Error;
         }
 
-        return RedirectToAction("Details", new { id });
+        return RedirectToAction("Details", new { code });
     }
 
     // =============================================
@@ -116,13 +116,13 @@ public class MunicipioController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SendMessage(long id, string message)
+    public async Task<IActionResult> SendMessage(long id, string message, string code)
     {
         var result = await _api.SendRecipeMessageAsync(id, message);
 
         TempData[result.Success ? "Success" : "Error"] =
             result.Success ? "Mensaje enviado." : result.Error;
 
-        return RedirectToAction("Details", new { id });
+        return RedirectToAction("Details", new { code });
     }
 }

@@ -77,19 +77,21 @@
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
                 @if (st == "ABIERTA")
                 {
-                    <a href="@Url.Action("AssignMunicipality", "Applicator", new { id = Model.Recipe.Id })"
+                    <a href="@Url.Action("AssignMunicipality", "Applicator", new { id = Model.Recipe.Id, code = Model.Recipe.PublicCode })"
                        class="btn-status" style="background: #eff6ff; color: #1e40af; border: 2px solid #93c5fd; text-decoration: none;">
                         📤 Enviar a Municipio
                     </a>
                     <form asp-action="ChangeStatus" method="post" style="margin: 0;"
                           onsubmit="return confirm('¿Cerrar esta receta sin enviarla a un municipio?');">
                         <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                        <input type="hidden" name="code" value="@Model.Recipe.PublicCode" />
                         <input type="hidden" name="status" value="CERRADA" />
                         <button type="submit" class="btn-status btn-cerrar">✅ Cerrar Receta</button>
                     </form>
                     <form asp-action="ChangeStatus" method="post" style="margin: 0;"
                           onsubmit="return confirm('¿Anular esta receta?');">
                         <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                        <input type="hidden" name="code" value="@Model.Recipe.PublicCode" />
                         <input type="hidden" name="status" value="ANULADA" />
                         <button type="submit" class="btn-status btn-anular">❌ Anular Receta</button>
                     </form>
@@ -99,6 +101,7 @@
                     <form asp-action="ChangeStatus" method="post" style="margin: 0;"
                           onsubmit="return confirm('¿Confirmar que la aplicación fue realizada?');">
                         <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                        <input type="hidden" name="code" value="@Model.Recipe.PublicCode" />
                         <input type="hidden" name="status" value="CERRADA" />
                         <button type="submit" class="btn-status btn-cerrar">✅ Cerrar Receta (Aplicada)</button>
                     </form>
@@ -108,6 +111,7 @@
                     <form asp-action="ChangeStatus" method="post" style="margin: 0;"
                           onsubmit="return confirm('¿Anular esta receta rechazada?');">
                         <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                        <input type="hidden" name="code" value="@Model.Recipe.PublicCode" />
                         <input type="hidden" name="status" value="ANULADA" />
                         <button type="submit" class="btn-status btn-anular">❌ Anular Receta</button>
                     </form>
@@ -208,6 +212,7 @@
             {
                 <form asp-action="SendMessage" method="post" style="display: flex; gap: 8px;">
                     <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                        <input type="hidden" name="code" value="@Model.Recipe.PublicCode" />
                     <input type="text" name="message" required maxlength="1000"
                            placeholder="Respondé al municipio..."
                            style="flex: 1; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px;" />

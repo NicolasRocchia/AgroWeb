@@ -120,6 +120,9 @@ public class AgroApiClient
     public Task<ApiResult<RecipeDetailDto>> GetRecipeAsync(long id)
         => GetAsync<RecipeDetailDto>($"/api/recipes/{id}");
 
+    public Task<ApiResult<RecipeDetailDto>> GetRecipeByCodeAsync(string code)
+        => GetAsync<RecipeDetailDto>($"/api/recipes/by-code/{code}");
+
     public Task<ApiResult<string>> ChangeRecipeStatusAsync(long id, string status)
         => PutAsync($"/api/recipes/{id}/status", new { status });
 
@@ -257,6 +260,9 @@ public class AgroApiClient
 
     public Task<ApiResult<string>> GetLotDetailAsync(long id)
         => GetRawJsonAsync($"/api/lots/{id}");
+
+    public Task<ApiResult<string>> GetLotByCodeAsync(string code)
+        => GetRawJsonAsync($"/api/lots/by-code/{code}");
 
     public Task<ApiResult<string>> UpdateLotAsync(long id, object body)
         => PutAsync($"/api/lots/{id}", body);
