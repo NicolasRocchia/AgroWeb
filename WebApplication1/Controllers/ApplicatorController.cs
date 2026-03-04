@@ -209,10 +209,11 @@ public class ApplicatorController : Controller
             }
             else
             {
+                long recipeId = 0;
                 try
                 {
                     var doc = JsonDocument.Parse(result.Data!);
-                    var recipeId = doc.RootElement.TryGetProperty("recipeId", out var rid) ? rid.GetInt64() : 0;
+                    recipeId = doc.RootElement.TryGetProperty("recipeId", out var rid) ? rid.GetInt64() : 0;
                     var rfdNumber = doc.RootElement.TryGetProperty("rfdNumber", out var rfd) ? rfd.GetInt64() : 0;
                     TempData["Success"] = $"Receta RFD #{rfdNumber} importada exitosamente (ID: {recipeId}).";
                 }
@@ -220,7 +221,11 @@ public class ApplicatorController : Controller
                 {
                     TempData["Success"] = "Receta importada exitosamente.";
                 }
-                return RedirectToAction("Upload");
+
+                if (recipeId > 0)
+                    return RedirectToAction("Details", new { id = recipeId });
+
+                return RedirectToAction("Index");
             }
         }
         else
@@ -426,7 +431,6 @@ public class ApplicatorController : Controller
             }
 
             ViewBag.Error = result.Error ?? "Error desconocido al crear la receta.";
-            TempData["Debug"] = $"API Status: {(int)result.StatusCode} | Error: {result.Error} | Products: {products.Count} | Vertices: {lotVertices.Count} | Crop: {Crop}";
             return View();
         }
         catch (Exception ex)

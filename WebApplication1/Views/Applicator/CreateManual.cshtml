@@ -18,12 +18,6 @@
                     <strong>⚠️ Error:</strong> @ViewBag.Error
                 </div>
             }
-            @if (TempData["Debug"] != null)
-            {
-                <div style="background:#fefce8; border:1px solid #d69e2e; color:#744210; padding:1rem; border-radius:10px; margin-bottom:1.5rem; font-size:0.85rem; font-family:monospace; word-break:break-all;">
-                    <strong>🔍 Debug:</strong> @TempData["Debug"]
-                </div>
-            }
 
             @* ══════════════════════════════════════════════════════════
                SECCIÓN 1: INFORMACIÓN DE LA APLICACIÓN
@@ -943,7 +937,7 @@
         // ══════════════════════════════════════════════════════════════
 
         function searchProducts(input, idx) {
-            console.log('[AgroConnect] searchProducts fired, idx:', idx, 'value:', input.value, 'readOnly:', input.readOnly);
+
             if (input.readOnly) return;
 
             const query = input.value.trim();
@@ -958,12 +952,12 @@
             searchTimeout = setTimeout(async () => {
                 try {
                     const url = `/Applicator/SearchProducts?q=${encodeURIComponent(query)}`;
-                    console.log('[AgroConnect] Fetching:', url);
+
                     const resp = await fetch(url);
-                    console.log('[AgroConnect] Response status:', resp.status);
+
                     if (!resp.ok) { listEl.style.display = 'none'; return; }
                     const products = await resp.json();
-                    console.log('[AgroConnect] Response data:', JSON.stringify(products).substring(0, 300));
+
 
                     // Check if API returned debug error info
                     if (products.debug) {
