@@ -457,13 +457,7 @@ public class ApplicatorController : Controller
             return Content(result.Data, "application/json");
         }
 
-        // DEBUG: devolver el error real de la API para diagnosticar
-        return Json(new
-        {
-            debug = true,
-            apiStatusCode = (int)result.StatusCode,
-            apiError = result.Error ?? "(sin mensaje de error)",
-            query = q
-        });
+        // Si la API falla, devolver array vacío (no exponer detalles internos)
+        return Json(Array.Empty<object>());
     }
 }
