@@ -443,6 +443,73 @@ public class ApplicatorController : Controller
     }
 
     // =============================================
+    // MIS LOTES
+    // =============================================
+
+    [HttpGet]
+    public async Task<IActionResult> Lots()
+    {
+        var result = await _api.GetMyLotsAsync();
+
+        if (result.Success && !string.IsNullOrEmpty(result.Data))
+        {
+            ViewBag.LotsJson = result.Data;
+        }
+        else
+        {
+            ViewBag.LotsJson = "[]";
+            if (!result.Success)
+                ViewBag.Error = "No se pudieron cargar los lotes.";
+        }
+
+        return View();
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> LotDetails(long id)
+    {
+        var result = await _api.GetLotDetailAsync(id);
+
+        if (result.IsNotFound)
+        {
+            TempData["Error"] = "El lote no existe.";
+            return RedirectToAction("Lots");
+        }
+
+        if (result.IsForbidden)
+        {
+            TempData["Error"] = "No tenés permisos para ver este lote.";
+            return RedirectToAction("Lots");
+        }
+
+        if (!result.Success)
+        {
+            ViewBag.Error = "No se pudo cargar el detalle del lote.";
+            return View();
+        }
+
+        ViewBag.LotJson = result.Data;
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditLot(long id, string? name, string? locality, string? department)
+    {
+        var result = await _api.UpdateLotAsync(id, new
+        {
+            name = name?.Trim(),
+            locality = locality?.Trim(),
+            department = department?.Trim()
+        });
+
+        TempData[result.Success ? "Success" : "Error"] =
+            result.Success ? "Lote actualizado correctamente." : (result.Error ?? "Error al actualizar.");
+
+        return RedirectToAction("LotDetails", new { id });
+    }
+
+    // =============================================
     // BÚSQUEDA DE PRODUCTOS (proxy para autocomplete)
     // =============================================
 

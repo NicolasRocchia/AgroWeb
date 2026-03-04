@@ -255,6 +255,12 @@ public class AgroApiClient
     public Task<ApiResult<string>> GetMyLotsAsync()
         => GetRawJsonAsync("/api/lots/my-lots");
 
+    public Task<ApiResult<string>> GetLotDetailAsync(long id)
+        => GetRawJsonAsync($"/api/lots/{id}");
+
+    public Task<ApiResult<string>> UpdateLotAsync(long id, object body)
+        => PutAsync($"/api/lots/{id}", body);
+
     // ══════════════════════════════════════════════
     // ERROR EXTRACTION (private)
     // ══════════════════════════════════════════════
