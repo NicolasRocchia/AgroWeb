@@ -1,0 +1,153 @@
+@{
+    ViewData["Title"] = "Registrarme como Aplicador";
+}
+
+<div class="page-container" style="max-width: 700px; margin: 0 auto; padding: 0 20px 40px;">
+    <a asp-action="Index" asp-controller="Home" class="back-link">← Volver al Inicio</a>
+
+    <div class="create-user-form">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <span style="font-size: 2.5rem;">🚜</span>
+            <h2 style="margin: 0.5rem 0 0.25rem;">Registrarme como Aplicador</h2>
+            <p style="color: #64748b; font-size: 0.9rem;">Completá los datos de tu empresa para ofrecer servicios de aplicación</p>
+        </div>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger">@ViewBag.Error</div>
+        }
+
+        <form method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="form-section">
+                <h4 class="form-section-title">🏢 Datos de la Empresa</h4>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Razón Social *</label>
+                        <input name="businessName" type="text" class="form-control"
+                               placeholder="Fumigaciones del Sur S.R.L."
+                               value="@ViewBag.BusinessName" required maxlength="200" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">CUIT Empresa *</label>
+                        <input name="taxId" type="text" class="form-control"
+                               placeholder="30712345678"
+                               value="@ViewBag.TaxId" required
+                               pattern="\d{10,11}" title="10 u 11 dígitos sin guiones" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Teléfono de contacto <span class="optional-tag">(opcional)</span></label>
+                        <input name="contactPhone" type="tel" class="form-control"
+                               placeholder="3464 654321" value="@ViewBag.ContactPhone" maxlength="30" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email de contacto <span class="optional-tag">(opcional)</span></label>
+                        <input name="contactEmail" type="email" class="form-control"
+                               placeholder="contacto@@empresa.com" value="@ViewBag.ContactEmail" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Descripción del servicio <span class="optional-tag">(opcional)</span></label>
+                    <textarea name="description" class="form-control" rows="2"
+                              placeholder="Breve descripción de tus servicios, experiencia, etc."
+                              maxlength="500">@ViewBag.Description</textarea>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h4 class="form-section-title">🔧 Maquinaria Disponible</h4>
+                <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 0.75rem;">
+                    Seleccioná los tipos de maquinaria que tenés disponible:
+                </p>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    <label class="machine-chip"><input type="checkbox" name="machine_drone" value="drone" /> 🛸 Drone</label>
+                    <label class="machine-chip"><input type="checkbox" name="machine_mosquito" value="mosquito" /> 🦟 Mosquito</label>
+                    <label class="machine-chip"><input type="checkbox" name="machine_arrastre" value="arrastre" /> 🚜 Arrastre</label>
+                    <label class="machine-chip"><input type="checkbox" name="machine_autoprop" value="autopropulsada" /> 🚛 Autopropulsada</label>
+                    <label class="machine-chip"><input type="checkbox" name="machine_avion" value="avion" /> ✈️ Avión</label>
+                </div>
+                <input type="hidden" name="machineTypes" id="machineTypesHidden" />
+            </div>
+
+            <div class="form-section">
+                <h4 class="form-section-title">📍 Ubicación Principal</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Nombre de la base *</label>
+                        <input name="locationName" type="text" class="form-control"
+                               placeholder="Base central" maxlength="150" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Dirección <span class="optional-tag">(opcional)</span></label>
+                        <input name="locationAddress" type="text" class="form-control"
+                               placeholder="Ruta 9 km 435" maxlength="300" />
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Latitud</label>
+                        <input name="locationLat" type="text" class="form-control"
+                               placeholder="-32.6920" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Longitud</label>
+                        <input name="locationLng" type="text" class="form-control"
+                               placeholder="-62.1026" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a asp-controller="Home" asp-action="Index" class="btn-cancel">Cancelar</a>
+                <button type="submit" class="btn-submit">Crear Perfil de Aplicador</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <style>
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .machine-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            border: 2px solid var(--border-color, #e2e8f0);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .machine-chip:has(input:checked) {
+            border-color: #22c55e;
+            background: #f0fdf4;
+        }
+        .machine-chip input { display: none; }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        // Collect checked machines into hidden field before submit
+        document.querySelector('form').addEventListener('submit', function() {
+            var checked = document.querySelectorAll('.machine-chip input:checked');
+            var values = Array.from(checked).map(c => c.value);
+            document.getElementById('machineTypesHidden').value = values.join(',');
+        });
+    </script>
+}

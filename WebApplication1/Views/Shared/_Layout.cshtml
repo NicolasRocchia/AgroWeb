@@ -32,6 +32,7 @@
                         @if (User.IsInRole("Productor"))
                         {
                             <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="Upload">Subir Receta</a></li>
+                            <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="CreateManual">Receta Manual</a></li>
                             <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="Index">Mis Recetas</a></li>
                         }
 
@@ -46,6 +47,7 @@
                             <li><a class="nav-link-custom" asp-controller="AdminRecipes" asp-action="Index">Recetas</a></li>
                             <li><a class="nav-link-custom" asp-controller="Admin" asp-action="Users">Usuarios</a></li>
                             <li><a class="nav-link-custom" asp-controller="Admin" asp-action="Municipalities">🏛️ Municipios</a></li>
+                            <li><a class="nav-link-custom" asp-controller="Admin" asp-action="ApplicatorVerification">🚜 Aplicadores</a></li>
                             <li><a class="nav-link-custom" asp-controller="Admin" asp-action="GeoInsights">🗺️ Mapa Territorial</a></li>
                             <li><a class="nav-link-custom" href="/swagger" target="_blank">API Docs</a></li>
                         }

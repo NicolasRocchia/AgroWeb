@@ -1,10 +1,11 @@
-@* Partial view: Pronóstico climático para la fecha recomendada *@
+@* Partial view: Pronóstico climático para la fecha recomendada o de inicio posible *@
 @{
     var recipe = ViewData["Recipe"] as WebApplication1.Models.Recipes.RecipeDetailDto;
     if (recipe == null) return;
 
-    // Necesitamos fecha recomendada y al menos un lote con coordenadas
-    if (!recipe.RecommendedDate.HasValue) return;
+    // Usar RecommendedDate si existe, sino PossibleStartDate
+    var forecastDate = recipe.RecommendedDate ?? recipe.PossibleStartDate;
+    if (!forecastDate.HasValue) return;
 
     var lotWithCoords = recipe.Lots?.FirstOrDefault(l => l.Vertices != null && l.Vertices.Any());
     if (lotWithCoords == null) return;
@@ -14,18 +15,25 @@
     var centLat = vertices.Average(v => v.Latitude);
     var centLng = vertices.Average(v => v.Longitude);
 
-    var recDate = recipe.RecommendedDate.Value;
+    var recDate = forecastDate.Value;
     var dateStr = recDate.ToString("yyyy-MM-dd");
 
-    // Condiciones de la receta
+    // ¿Tiene rangos de la receta para comparar?
     var hasTempRange = recipe.TempMin.HasValue || recipe.TempMax.HasValue;
     var hasHumRange = recipe.HumidityMin.HasValue || recipe.HumidityMax.HasValue;
     var hasWindRange = recipe.WindMinKmh.HasValue || recipe.WindMaxKmh.HasValue;
+    var hasAnyRange = hasTempRange || hasHumRange || hasWindRange;
+
+    // Determinar el título según el tipo de fecha
+    var isRecommended = recipe.RecommendedDate.HasValue;
+    var sectionTitle = isRecommended
+        ? "Pronóstico para la fecha recomendada"
+        : "Pronóstico para la fecha de aplicación";
 }
 
 <section class="detail-section" id="weather-section" style="display: none;">
     <h2 class="section-title">
-        <span class="section-icon">⛅</span> Pronóstico para la fecha recomendada @recDate.ToString("dd/MM/yyyy")
+        <span class="section-icon">⛅</span> @sectionTitle @recDate.ToString("dd/MM/yyyy")
     </h2>
 
     <div id="weather-loading" style="text-align: center; padding: 30px; color: #888;">
@@ -58,6 +66,7 @@
     var section = document.getElementById('weather-section');
 
     // Condiciones de la receta (null si no están definidas)
+    var hasAnyRange = @(hasAnyRange ? "true" : "false");
     var recipeTempMin = @(recipe.TempMin.HasValue ? recipe.TempMin.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
     var recipeTempMax = @(recipe.TempMax.HasValue ? recipe.TempMax.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
     var recipeHumMin = @(recipe.HumidityMin.HasValue ? recipe.HumidityMin.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
@@ -163,6 +172,14 @@
 
             grid.innerHTML = html;
             document.getElementById('weather-content').style.display = '';
+
+            // Si no hay rangos, mostrar nota informativa
+            if (!hasAnyRange) {
+                var note = document.createElement('div');
+                note.style.cssText = 'background: #ebf8ff; border: 1px solid #90cdf4; border-radius: 8px; padding: 10px 14px; margin-top: 12px; font-size: 13px; color: #2b6cb0;';
+                note.innerHTML = 'ℹ️ Pronóstico informativo — esta receta no tiene condiciones climáticas recomendadas para comparar.';
+                document.getElementById('weather-content').appendChild(note);
+            }
         })
         .catch(function () {
             document.getElementById('weather-loading').style.display = 'none';

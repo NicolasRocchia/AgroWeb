@@ -1,9 +1,7 @@
 ﻿using System.Net;
-using System.Net.Http.Headers;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using WebApplication1.Models.Admin;
-using WebApplication1.Models.Municipio;
 using WebApplication1.Models.Recipes;
 using WebApplication1.Models.Users;
 
@@ -222,6 +220,35 @@ public class AgroApiClient
         => PostAsync("/api/auth/register", body);
 
     // ══════════════════════════════════════════════
+    // APPLICATOR PROFILE
+    // ══════════════════════════════════════════════
+
+    public Task<ApiResult<string>> GetApplicatorProfileAsync()
+        => GetRawJsonAsync("/api/applicator/profile");
+
+    public Task<ApiResult<string>> SaveApplicatorProfileAsync(object body)
+        => PostAsync("/api/applicator/profile", body);
+
+    public Task<ApiResult<string>> GetApplicatorHasRoleAsync()
+        => GetRawJsonAsync("/api/applicator/has-role");
+
+    public Task<ApiResult<string>> GetApplicatorProfilesAsync()
+        => GetRawJsonAsync("/api/applicator/profiles");
+
+    public Task<ApiResult<string>> VerifyApplicatorProfileAsync(long profileId, bool approve)
+        => PutAsync($"/api/applicator/profiles/{profileId}/verify", new { approve });
+
+    // ══════════════════════════════════════════════
+    // MANUAL RECIPES
+    // ══════════════════════════════════════════════
+
+    public Task<ApiResult<string>> CreateManualRecipeAsync(object body)
+        => PostAsync("/api/recipes/manual", body);
+
+    public Task<ApiResult<string>> SearchProductsAsync(string query, int limit = 10)
+        => GetRawJsonAsync($"/api/products/search?q={Uri.EscapeDataString(query)}&limit={limit}");
+
+    // ══════════════════════════════════════════════
     // ERROR EXTRACTION (private)
     // ══════════════════════════════════════════════
 
@@ -297,6 +324,8 @@ public class ApiResult<T>
         Error = error;
     }
 }
+
+
 
 /// <summary>
 /// Fluent querystring builder. Skips null/empty values automatically.

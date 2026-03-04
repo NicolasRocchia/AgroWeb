@@ -1,6 +1,6 @@
 @model WebApplication1.Models.Recipes.RecipeDetailViewModel
 @{
-    ViewData["Title"] = $"Receta RFD #{Model.Recipe.RfdNumber}";
+    ViewData["Title"] = Model.Recipe.RfdNumber.HasValue ? $"Receta RFD #{Model.Recipe.RfdNumber}" : "Receta Manual";
 }
 
 <!-- Header Sticky -->
@@ -10,19 +10,19 @@
             ← Volver a Mis Recetas
         </a>
         <h1 class="detail-title">
-            RFD #@Model.Recipe.RfdNumber
+            @(Model.Recipe.RfdNumber.HasValue ? $"RFD #{Model.Recipe.RfdNumber}" : "Receta Manual")
         </h1>
         <div class="detail-meta">
             @{
                 var statusClass = Model.Recipe.Status?.ToUpper() switch
                 {
-                                    "ABIERTA" => "status-draft",
-                    "PENDIENTE" => "status-pending",
-                    "APROBADA" => "status-approved",
-                    "RECHAZADA" => "status-rejected",
-                    "OBSERVADA" => "status-warning",
-                    "CERRADA" => "status-expired",
-                    "ANULADA" => "status-rejected",
+                            "ABIERTA" => "status-approved",
+                            "PENDIENTE" => "status-draft",
+                            "APROBADA" => "status-approved",
+                            "RECHAZADA" => "status-rejected",
+                            "OBSERVADA" => "status-warning",
+                            "CERRADA" => "status-expired",
+                            "ANULADA" => "status-rejected",
                     _ => "status-draft"
                 };
             }

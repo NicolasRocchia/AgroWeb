@@ -113,7 +113,7 @@
 
                         <tr>
                             <td><strong>#@r.Id</strong></td>
-                            <td><strong>@r.RfdNumber</strong></td>
+                            <td><strong>@(r.RfdNumber.HasValue ? r.RfdNumber.ToString() : "—")</strong></td>
                             <td>
                                 <span class="status-badge @statusClass">
                                     @r.Status

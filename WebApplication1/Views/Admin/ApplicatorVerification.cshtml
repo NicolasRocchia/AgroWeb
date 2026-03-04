@@ -1,0 +1,168 @@
+@{
+    ViewData["Title"] = "Verificación de Aplicadores";
+}
+
+<div class="page-container" style="max-width: 1000px; margin: 0 auto; padding: 0 20px 40px;">
+    <a asp-action="Users" class="back-link">← Volver a Usuarios</a>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h2 style="margin: 0;">🚜 Verificación de Aplicadores</h2>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">✅ @TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <div id="profilesContainer">
+        <p style="color: #64748b;">Cargando perfiles...</p>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <style>
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .profile-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 4px solid #94a3b8;
+        }
+        .profile-card.pending { border-left-color: #f59e0b; }
+        .profile-card.verified { border-left-color: #22c55e; }
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+        .profile-meta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 0.75rem;
+        }
+        .profile-meta span { display: flex; align-items: center; gap: 4px; }
+        .badge-verified {
+            background: #dcfce7; color: #166534;
+            padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-pending {
+            background: #fef3c7; color: #92400e;
+            padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;
+        }
+        .machine-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: #475569;
+        }
+        .verify-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+        .btn-approve, .btn-revoke {
+            padding: 6px 16px; border: none; border-radius: 8px;
+            font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-approve { background: #dcfce7; color: #166534; }
+        .btn-approve:hover { background: #bbf7d0; }
+        .btn-revoke { background: #fee2e2; color: #991b1b; }
+        .btn-revoke:hover { background: #fecaca; }
+        .empty-state {
+            text-align: center; padding: 3rem; color: #94a3b8;
+            background: #f8fafc; border-radius: 12px;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        async function loadProfiles() {
+            try {
+                const resp = await fetch('/api/applicator/profiles', {
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                // The web controller proxies this, so use the MVC action
+                const container = document.getElementById('profilesContainer');
+
+                const response = await fetch('@Url.Action("ApplicatorProfilesJson")');
+                if (!response.ok) {
+                    container.innerHTML = '<div class="alert alert-danger">Error al cargar perfiles.</div>';
+                    return;
+                }
+
+                const profiles = await response.json();
+
+                if (profiles.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>🎉 No hay perfiles pendientes de verificación.</p></div>';
+                    return;
+                }
+
+                container.innerHTML = profiles.map(p => `
+                    <div class="profile-card ${p.isVerified ? 'verified' : 'pending'}">
+                        <div class="profile-header">
+                            <div>
+                                <strong style="font-size: 1.05rem;">${p.businessName}</strong>
+                                <span class="${p.isVerified ? 'badge-verified' : 'badge-pending'}" style="margin-left: 8px;">
+                                    ${p.isVerified ? '✅ Verificado' : '⏳ Pendiente'}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="profile-meta">
+                            <span>👤 ${p.userName}</span>
+                            <span>📧 ${p.userEmail}</span>
+                            <span>🏢 CUIT: ${p.taxId}</span>
+                            ${p.contactPhone ? `<span>📞 ${p.contactPhone}</span>` : ''}
+                            <span>📍 ${p.locationCount} ubicación(es)</span>
+                        </div>
+                        ${p.machineTypes.length > 0 ? `
+                            <div style="margin-bottom: 0.5rem;">
+                                ${p.machineTypes.map(m => `<span class="machine-tag">${m}</span>`).join(' ')}
+                            </div>
+                        ` : ''}
+                        <div class="verify-actions">
+                            ${!p.isVerified ? `
+                                <form method="post" action="/Admin/VerifyApplicator" style="display:inline;">
+                                    <input type="hidden" name="profileId" value="${p.id}" />
+                                    <input type="hidden" name="approve" value="true" />
+                                    <input type="hidden" name="__RequestVerificationToken" value="${document.querySelector('input[name=__RequestVerificationToken]')?.value || ''}" />
+                                    <button type="submit" class="btn-approve">✅ Aprobar</button>
+                                </form>
+                            ` : `
+                                <form method="post" action="/Admin/VerifyApplicator" style="display:inline;">
+                                    <input type="hidden" name="profileId" value="${p.id}" />
+                                    <input type="hidden" name="approve" value="false" />
+                                    <input type="hidden" name="__RequestVerificationToken" value="${document.querySelector('input[name=__RequestVerificationToken]')?.value || ''}" />
+                                    <button type="submit" class="btn-revoke">❌ Revocar</button>
+                                </form>
+                            `}
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                document.getElementById('profilesContainer').innerHTML =
+                    '<div class="alert alert-danger">Error al cargar perfiles: ' + err.message + '</div>';
+            }
+        }
+
+        loadProfiles();
+    </script>
+    @Html.AntiForgeryToken()
+}

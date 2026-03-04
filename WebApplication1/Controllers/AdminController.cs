@@ -523,6 +523,46 @@ public class AdminController : Controller
     }
 
     // =============================================
+    // VERIFICACIÓN DE APLICADORES
+    // =============================================
+
+    [HttpGet]
+    public IActionResult ApplicatorVerification() => View();
+
+    [HttpGet]
+    public async Task<IActionResult> ApplicatorProfilesJson(
+        [FromServices] IHttpClientFactory httpClientFactory)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+        var resp = await client.GetAsync("/api/applicator/profiles");
+
+        if (!resp.IsSuccessStatusCode)
+            return StatusCode((int)resp.StatusCode);
+
+        var json = await resp.Content.ReadAsStringAsync();
+        return Content(json, "application/json");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyApplicator(
+        long profileId, bool approve,
+        [FromServices] IHttpClientFactory httpClientFactory)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+        var resp = await client.PutAsJsonAsync(
+            $"/api/applicator/profiles/{profileId}/verify",
+            new { approve });
+
+        TempData[resp.IsSuccessStatusCode ? "Success" : "Error"] =
+            resp.IsSuccessStatusCode
+                ? (approve ? "Aplicador aprobado." : "Verificación revocada.")
+                : "Error al procesar la verificación.";
+
+        return RedirectToAction("ApplicatorVerification");
+    }
+
+    // =============================================
     // GEO INSIGHTS (Mapa Territorial Global)
     // =============================================
 

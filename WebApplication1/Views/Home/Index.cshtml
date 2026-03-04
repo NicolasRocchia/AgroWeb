@@ -176,11 +176,29 @@ else if (isProductor)
                 </div>
 
                 <div class="feature-card">
+                    <div class="feature-icon">📝</div>
+                    <h3>Crear Receta de Registro</h3>
+                    <p>Cargá una receta manualmente para registro interno. No requiere aprobación municipal.</p>
+                    <a asp-controller="Applicator" asp-action="CreateManual" class="feature-btn">
+                        Crear Receta <span>→</span>
+                    </a>
+                </div>
+
+                <div class="feature-card">
                     <div class="feature-icon">🔍</div>
                     <h3>Mis Recetas</h3>
                     <p>Consultá el historial de recetas que cargaste. Buscá por número RFD, fecha, solicitante o cualquier criterio.</p>
                     <a asp-controller="Applicator" asp-action="Index" class="feature-btn">
                         Ver Mis Recetas <span>→</span>
+                    </a>
+                </div>
+
+                <div class="feature-card aplicador-card">
+                    <div class="feature-icon">🚜</div>
+                    <h3>Ofrecer Servicios de Aplicación</h3>
+                    <p>¿Tenés maquinaria? Registrate como aplicador para ofertar tus servicios y conseguir clientes.</p>
+                    <a asp-controller="Applicator" asp-action="BecomeApplicator" class="feature-btn">
+                        Registrarme como Aplicador <span>→</span>
                     </a>
                 </div>
             </div>

@@ -1,6 +1,6 @@
 ﻿@model WebApplication1.Models.Recipes.RecipeDetailViewModel
 @{
-    ViewData["Title"] = $"Receta RFD #{Model.Recipe.RfdNumber}";
+    ViewData["Title"] = Model.Recipe.RfdNumber.HasValue ? $"Receta RFD #{Model.Recipe.RfdNumber}" : "Receta Manual";
 }
 
 <!-- Header Sticky -->
@@ -10,7 +10,7 @@
             ← Volver al Listado
         </a>
         <h1 class="detail-title">
-            RFD #@Model.Recipe.RfdNumber
+            @(Model.Recipe.RfdNumber.HasValue ? $"RFD #{Model.Recipe.RfdNumber}" : "Receta Manual")
         </h1>
         <div class="detail-meta">
             @{
