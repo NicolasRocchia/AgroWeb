@@ -2,52 +2,35 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 using WebApplication1.Models.Admin;
+using WebApplication1.Models.Municipio;
 using WebApplication1.Models.Users;
+using WebApplication1.Services;
 
 namespace WebApplication1.Controllers;
 
 [Authorize(Roles = "Admin")]
 public class AdminController : Controller
 {
-    private static readonly JsonSerializerOptions JsonOpts = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
+    private readonly AgroApiClient _api;
+    public AdminController(AgroApiClient api) => _api = api;
 
     // =============================================
     // LISTADO DE USUARIOS
     // =============================================
 
     [HttpGet]
-    public async Task<IActionResult> Users(
-        [FromServices] IHttpClientFactory httpClientFactory)
+    public async Task<IActionResult> Users()
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
+        var usersResult = await _api.GetUsersAsync();
+        var rolesResult = await _api.GetRolesAsync();
 
-        var usersTask = client.GetAsync("/api/admin/users");
-        var rolesTask = client.GetAsync("/api/admin/roles");
-
-        await Task.WhenAll(usersTask, rolesTask);
-
-        var usersResp = usersTask.Result;
-        var rolesResp = rolesTask.Result;
-
-        var users = new List<UserListItemDto>();
-        var roles = new List<RoleDto>();
-
-        if (usersResp.IsSuccessStatusCode)
-            users = await usersResp.Content.ReadFromJsonAsync<List<UserListItemDto>>(JsonOpts) ?? new();
-
-        if (rolesResp.IsSuccessStatusCode)
-            roles = await rolesResp.Content.ReadFromJsonAsync<List<RoleDto>>(JsonOpts) ?? new();
-
-        if (!usersResp.IsSuccessStatusCode)
-            ViewBag.Error = $"No se pudo obtener el listado de usuarios. HTTP {(int)usersResp.StatusCode}";
+        if (!usersResult.Success)
+            ViewBag.Error = $"No se pudo obtener el listado de usuarios. {usersResult.Error}";
 
         return View(new UsersIndexViewModel
         {
-            Users = users,
-            Roles = roles
+            Users = usersResult.Data ?? new(),
+            Roles = rolesResult.Data ?? new()
         });
     }
 
@@ -56,41 +39,27 @@ public class AdminController : Controller
     // =============================================
 
     [HttpGet]
-    public async Task<IActionResult> CreateUser(
-        [FromServices] IHttpClientFactory httpClientFactory)
+    public async Task<IActionResult> CreateUser()
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
-        var rolesResp = await client.GetAsync("/api/admin/roles");
+        var rolesResult = await _api.GetRolesAsync();
 
-        var roles = new List<RoleDto>();
-        if (rolesResp.IsSuccessStatusCode)
-            roles = await rolesResp.Content.ReadFromJsonAsync<List<RoleDto>>(JsonOpts) ?? new();
-
-        return View(new CreateUserViewModel { Roles = roles });
+        return View(new CreateUserViewModel
+        {
+            Roles = rolesResult.Data ?? new()
+        });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateUser(
-        string userName,
-        string email,
-        string password,
-        string taxId,
-        string? phoneNumber,
-        long roleId,
-        [FromServices] IHttpClientFactory httpClientFactory)
+        string userName, string email, string password,
+        string taxId, string? phoneNumber, long roleId)
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
-
-        // Cargar roles para re-mostrar el form en caso de error
-        var rolesResp = await client.GetAsync("/api/admin/roles");
-        var roles = new List<RoleDto>();
-        if (rolesResp.IsSuccessStatusCode)
-            roles = await rolesResp.Content.ReadFromJsonAsync<List<RoleDto>>(JsonOpts) ?? new();
+        var rolesResult = await _api.GetRolesAsync();
 
         var model = new CreateUserViewModel
         {
-            Roles = roles,
+            Roles = rolesResult.Data ?? new(),
             UserName = userName,
             Email = email,
             TaxId = taxId,
@@ -98,7 +67,6 @@ public class AdminController : Controller
             RoleId = roleId
         };
 
-        // Validación básica
         if (string.IsNullOrWhiteSpace(userName) ||
             string.IsNullOrWhiteSpace(email) ||
             string.IsNullOrWhiteSpace(password) ||
@@ -109,7 +77,7 @@ public class AdminController : Controller
             return View(model);
         }
 
-        var resp = await client.PostAsJsonAsync("/api/admin/users", new
+        var result = await _api.CreateUserAsync(new
         {
             userName = userName.Trim(),
             email = email.Trim(),
@@ -119,36 +87,18 @@ public class AdminController : Controller
             roleId
         });
 
-        if (resp.IsSuccessStatusCode)
+        if (result.Success)
         {
             TempData["Success"] = "Usuario creado exitosamente.";
             return RedirectToAction("Users");
         }
 
-        // Manejar errores
-        try
-        {
-            var body = await resp.Content.ReadAsStringAsync();
-            var doc = JsonDocument.Parse(body);
+        // Si ExtractErrorDetailed unió múltiples errores con " | ", separarlos
+        if (result.Error?.Contains(" | ") == true)
+            ViewBag.Errors = result.Error.Split(" | ", StringSplitOptions.RemoveEmptyEntries).ToList();
+        else
+            ViewBag.Error = result.Error;
 
-            if (doc.RootElement.TryGetProperty("error", out var errorProp))
-            {
-                ViewBag.Error = errorProp.GetString();
-                return View(model);
-            }
-
-            if (doc.RootElement.TryGetProperty("errors", out var errorsProp))
-            {
-                var errorList = new List<string>();
-                foreach (var err in errorsProp.EnumerateArray())
-                    errorList.Add(err.GetString() ?? "Error desconocido");
-                ViewBag.Errors = errorList;
-                return View(model);
-            }
-        }
-        catch { }
-
-        ViewBag.Error = $"Error al crear el usuario. (HTTP {(int)resp.StatusCode})";
         return View(model);
     }
 
@@ -158,38 +108,14 @@ public class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ToggleBlock(
-        long id,
-        bool isBlocked,
-        [FromServices] IHttpClientFactory httpClientFactory)
+    public async Task<IActionResult> ToggleBlock(long id, bool isBlocked)
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
+        var result = await _api.ToggleBlockUserAsync(id, isBlocked);
 
-        var resp = await client.PutAsJsonAsync($"/api/admin/users/{id}/block", new
-        {
-            isBlocked
-        });
-
-        if (resp.IsSuccessStatusCode)
-        {
-            TempData["Success"] = isBlocked ? "Usuario bloqueado." : "Usuario desbloqueado.";
-        }
-        else
-        {
-            try
-            {
-                var body = await resp.Content.ReadAsStringAsync();
-                var doc = JsonDocument.Parse(body);
-                if (doc.RootElement.TryGetProperty("error", out var err))
-                    TempData["Error"] = err.GetString();
-                else
-                    TempData["Error"] = $"Error al cambiar estado. HTTP {(int)resp.StatusCode}";
-            }
-            catch
-            {
-                TempData["Error"] = $"Error al cambiar estado. HTTP {(int)resp.StatusCode}";
-            }
-        }
+        TempData[result.Success ? "Success" : "Error"] =
+            result.Success
+                ? (isBlocked ? "Usuario bloqueado." : "Usuario desbloqueado.")
+                : result.Error;
 
         return RedirectToAction("Users");
     }
@@ -200,38 +126,14 @@ public class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ChangeRole(
-        long id,
-        long roleId,
-        [FromServices] IHttpClientFactory httpClientFactory)
+    public async Task<IActionResult> ChangeRole(long id, long roleId)
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
+        var result = await _api.ChangeUserRoleAsync(id, roleId);
 
-        var resp = await client.PutAsJsonAsync($"/api/admin/users/{id}/role", new
-        {
-            roleId
-        });
-
-        if (resp.IsSuccessStatusCode)
-        {
-            TempData["Success"] = "Rol actualizado correctamente.";
-        }
-        else
-        {
-            try
-            {
-                var body = await resp.Content.ReadAsStringAsync();
-                var doc = JsonDocument.Parse(body);
-                if (doc.RootElement.TryGetProperty("error", out var err))
-                    TempData["Error"] = err.GetString();
-                else
-                    TempData["Error"] = $"Error al cambiar rol. HTTP {(int)resp.StatusCode}";
-            }
-            catch
-            {
-                TempData["Error"] = $"Error al cambiar rol. HTTP {(int)resp.StatusCode}";
-            }
-        }
+        TempData[result.Success ? "Success" : "Error"] =
+            result.Success
+                ? "Rol actualizado correctamente."
+                : result.Error;
 
         return RedirectToAction("Users");
     }
@@ -247,7 +149,6 @@ public class AdminController : Controller
 
         var s = raw.Trim();
 
-        // Aceptar "-32.692014" o "-32,692014"
         if (decimal.TryParse(s, System.Globalization.NumberStyles.Number,
                 System.Globalization.CultureInfo.CurrentCulture, out var v))
             return v;
@@ -272,60 +173,49 @@ public class AdminController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Municipalities(
-        [FromServices] IHttpClientFactory httpClientFactory)
+    public async Task<IActionResult> Municipalities()
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
+        var result = await _api.GetMunicipalitiesAsync();
 
-        var munResp = await client.GetAsync("/api/municipalities");
-        var municipalities = new List<WebApplication1.Models.Admin.MunicipalityAdminDto>();
+        if (!result.Success)
+            ViewBag.Error = $"No se pudo obtener el listado de municipios. {result.Error}";
 
-        if (munResp.IsSuccessStatusCode)
-            municipalities = await munResp.Content.ReadFromJsonAsync<List<WebApplication1.Models.Admin.MunicipalityAdminDto>>(JsonOpts) ?? new();
-
-        return View(new WebApplication1.Models.Admin.MunicipalitiesViewModel
+        return View(new MunicipalitiesViewModel
         {
-            Municipalities = municipalities
+            Municipalities = result.Data ?? new()
         });
     }
 
     [HttpGet]
-    public async Task<IActionResult> CreateMunicipality(
-        [FromServices] IHttpClientFactory httpClientFactory)
+    public async Task<IActionResult> CreateMunicipality()
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
-        var users = await GetAvailableMunicipioUsers(client);
+        var usersResult = await _api.GetAvailableMunicipioUsersAsync();
 
-        return View(new WebApplication1.Models.Admin.CreateMunicipalityViewModel
+        return View(new CreateMunicipalityViewModel
         {
-            AvailableUsers = users
+            AvailableUsers = usersResult.Data ?? new()
         });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateMunicipality(
-        string name,
-        string? province,
-        string? department,
-        string? latitude,    // 👈 antes decimal?
-        string? longitude,   // 👈 antes decimal?
-        long? userId,
-        [FromServices] IHttpClientFactory httpClientFactory)
+        string name, string? province, string? department,
+        string? latitude, string? longitude, long? userId)
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
-
         var lat = ParseCoord(latitude);
         var lng = ParseCoord(longitude);
 
-        var model = new WebApplication1.Models.Admin.CreateMunicipalityViewModel
+        var usersResult = await _api.GetAvailableMunicipioUsersAsync();
+
+        var model = new CreateMunicipalityViewModel
         {
-            AvailableUsers = await GetAvailableMunicipioUsers(client),
+            AvailableUsers = usersResult.Data ?? new(),
             Name = name,
             Province = province,
             Department = department,
-            Latitude = lat,      // 👈 el VM sigue siendo decimal?
-            Longitude = lng,     // 👈 el VM sigue siendo decimal?
+            Latitude = lat,
+            Longitude = lng,
             UserId = userId
         };
 
@@ -354,7 +244,7 @@ public class AdminController : Controller
             return View(model);
         }
 
-        var resp = await client.PostAsJsonAsync("/api/municipalities", new
+        var result = await _api.CreateMunicipalityAsync(new
         {
             name = name.Trim(),
             province = province?.Trim(),
@@ -364,51 +254,37 @@ public class AdminController : Controller
             userId
         });
 
-        if (resp.IsSuccessStatusCode)
+        if (result.Success)
         {
             TempData["Success"] = $"Municipio '{name}' creado exitosamente.";
             return RedirectToAction("Municipalities");
         }
 
-        try
-        {
-            var body = await resp.Content.ReadAsStringAsync();
-            var doc = JsonDocument.Parse(body);
-            ViewBag.Error = doc.RootElement.TryGetProperty("error", out var err)
-                ? err.GetString()
-                : $"Error al crear municipio. (HTTP {(int)resp.StatusCode})";
-        }
-        catch
-        {
-            ViewBag.Error = $"Error al crear municipio. (HTTP {(int)resp.StatusCode})";
-        }
-
+        ViewBag.Error = result.Error;
         return View(model);
     }
 
     [HttpGet]
-    public async Task<IActionResult> EditMunicipality(
-        long id,
-        [FromServices] IHttpClientFactory httpClientFactory)
+    public async Task<IActionResult> EditMunicipality(long id)
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
+        var munResult = await _api.GetMunicipalityAsync(id);
 
-        var munResp = await client.GetAsync($"/api/municipalities/{id}");
-        if (!munResp.IsSuccessStatusCode)
+        if (!munResult.Success)
         {
             TempData["Error"] = "Municipio no encontrado.";
             return RedirectToAction("Municipalities");
         }
 
-        var municipality = await munResp.Content.ReadFromJsonAsync<WebApplication1.Models.Admin.MunicipalityAdminDto>(JsonOpts);
-        var users = await GetAvailableMunicipioUsers(client);
+        var municipality = munResult.Data!;
+        var usersResult = await _api.GetAvailableMunicipioUsersAsync();
+        var users = usersResult.Data ?? new();
 
         // Agregar el usuario actual asignado a la lista si existe
-        if (municipality?.UserId != null && municipality.UserName != null)
+        if (municipality.UserId != null && municipality.UserName != null)
         {
             if (!users.Any(u => u.Id == municipality.UserId))
             {
-                users.Insert(0, new WebApplication1.Models.Admin.MunicipioUserDto
+                users.Insert(0, new MunicipioUserDto
                 {
                     Id = municipality.UserId.Value,
                     UserName = municipality.UserName,
@@ -417,9 +293,9 @@ public class AdminController : Controller
             }
         }
 
-        return View(new WebApplication1.Models.Admin.EditMunicipalityViewModel
+        return View(new EditMunicipalityViewModel
         {
-            Municipality = municipality ?? new(),
+            Municipality = municipality,
             AvailableUsers = users
         });
     }
@@ -427,17 +303,9 @@ public class AdminController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditMunicipality(
-        long id,
-        string? name,
-        string? province,
-        string? department,
-        string? latitude,   // 👈 antes decimal?
-        string? longitude,  // 👈 antes decimal?
-        long? userId,
-        [FromServices] IHttpClientFactory httpClientFactory)
+        long id, string? name, string? province, string? department,
+        string? latitude, string? longitude, long? userId)
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
-
         var lat = ParseCoord(latitude);
         var lng = ParseCoord(longitude);
 
@@ -460,7 +328,7 @@ public class AdminController : Controller
             return RedirectToAction("EditMunicipality", new { id });
         }
 
-        var resp = await client.PutAsJsonAsync($"/api/municipalities/{id}", new
+        var result = await _api.UpdateMunicipalityAsync(id, new
         {
             name,
             province,
@@ -470,34 +338,14 @@ public class AdminController : Controller
             userId
         });
 
-        if (resp.IsSuccessStatusCode)
+        if (result.Success)
         {
             TempData["Success"] = "Municipio actualizado correctamente.";
             return RedirectToAction("Municipalities");
         }
 
-        try
-        {
-            var body = await resp.Content.ReadAsStringAsync();
-            var doc = JsonDocument.Parse(body);
-            TempData["Error"] = doc.RootElement.TryGetProperty("error", out var err)
-                ? err.GetString()
-                : $"Error al actualizar. (HTTP {(int)resp.StatusCode})";
-        }
-        catch
-        {
-            TempData["Error"] = $"Error al actualizar. (HTTP {(int)resp.StatusCode})";
-        }
-
+        TempData["Error"] = result.Error;
         return RedirectToAction("EditMunicipality", new { id });
-    }
-
-    private async Task<List<WebApplication1.Models.Admin.MunicipioUserDto>> GetAvailableMunicipioUsers(HttpClient client)
-    {
-        var resp = await client.GetAsync("/api/admin/users/available-municipio");
-        if (resp.IsSuccessStatusCode)
-            return await resp.Content.ReadFromJsonAsync<List<WebApplication1.Models.Admin.MunicipioUserDto>>(JsonOpts) ?? new();
-        return new();
     }
 
     // =============================================
@@ -505,20 +353,14 @@ public class AdminController : Controller
     // =============================================
 
     [HttpGet]
-    public async Task<IActionResult> Insights(
-        [FromServices] IHttpClientFactory httpClientFactory)
+    public async Task<IActionResult> Insights()
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
-        var resp = await client.GetAsync("/api/admin/insights");
+        var result = await _api.GetInsightsAsync();
 
-        if (!resp.IsSuccessStatusCode)
-        {
-            ViewBag.Error = $"No se pudieron obtener las estadísticas. HTTP {(int)resp.StatusCode}";
-            return View(new InsightsDto());
-        }
+        if (!result.Success)
+            ViewBag.Error = $"No se pudieron obtener las estadísticas. {result.Error}";
 
-        var data = await resp.Content.ReadFromJsonAsync<InsightsDto>(JsonOpts) ?? new InsightsDto();
-        return View(data);
+        return View(result.Data ?? new InsightsDto());
     }
 
     // =============================================
@@ -529,32 +371,24 @@ public class AdminController : Controller
     public IActionResult ApplicatorVerification() => View();
 
     [HttpGet]
-    public async Task<IActionResult> ApplicatorProfilesJson(
-        [FromServices] IHttpClientFactory httpClientFactory)
+    public async Task<IActionResult> ApplicatorProfilesJson()
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
-        var resp = await client.GetAsync("/api/applicator/profiles");
+        var result = await _api.GetApplicatorProfilesAsync();
 
-        if (!resp.IsSuccessStatusCode)
-            return StatusCode((int)resp.StatusCode);
+        if (!result.Success)
+            return StatusCode((int)result.StatusCode);
 
-        var json = await resp.Content.ReadAsStringAsync();
-        return Content(json, "application/json");
+        return Content(result.Data ?? "[]", "application/json");
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> VerifyApplicator(
-        long profileId, bool approve,
-        [FromServices] IHttpClientFactory httpClientFactory)
+    public async Task<IActionResult> VerifyApplicator(long profileId, bool approve)
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
-        var resp = await client.PutAsJsonAsync(
-            $"/api/applicator/profiles/{profileId}/verify",
-            new { approve });
+        var result = await _api.VerifyApplicatorProfileAsync(profileId, approve);
 
-        TempData[resp.IsSuccessStatusCode ? "Success" : "Error"] =
-            resp.IsSuccessStatusCode
+        TempData[result.Success ? "Success" : "Error"] =
+            result.Success
                 ? (approve ? "Aplicador aprobado." : "Verificación revocada.")
                 : "Error al procesar la verificación.";
 
@@ -567,50 +401,28 @@ public class AdminController : Controller
 
     [HttpGet]
     public async Task<IActionResult> GeoInsights(
-        [FromServices] IHttpClientFactory httpClientFactory,
         long? municipalityId = null,
-        string? dateFrom = null,
-        string? dateTo = null,
-        string? crop = null,
-        string? toxClass = null,
-        string? productName = null,
-        string? advisorName = null)
+        string? dateFrom = null, string? dateTo = null,
+        string? crop = null, string? toxClass = null,
+        string? productName = null, string? advisorName = null)
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
-
         // Cargar lista de municipios para el select
-        var munResp = await client.GetAsync("/api/municipalities");
-        var municipalities = new List<WebApplication1.Models.Admin.MunicipalityAdminDto>();
-        if (munResp.IsSuccessStatusCode)
-            municipalities = await munResp.Content.ReadFromJsonAsync<List<WebApplication1.Models.Admin.MunicipalityAdminDto>>(JsonOpts) ?? new();
-
-        ViewBag.Municipalities = municipalities;
+        var munResult = await _api.GetMunicipalitiesAsync();
+        ViewBag.Municipalities = munResult.Data ?? new List<MunicipalityAdminDto>();
         ViewBag.SelectedMunicipalityId = municipalityId;
 
-        // Construir query string para la API
-        var qs = new List<string>();
-        if (municipalityId.HasValue) qs.Add($"municipalityId={municipalityId.Value}");
-        if (!string.IsNullOrWhiteSpace(dateFrom)) qs.Add($"DateFrom={dateFrom}");
-        if (!string.IsNullOrWhiteSpace(dateTo)) qs.Add($"DateTo={dateTo}");
-        if (!string.IsNullOrWhiteSpace(crop)) qs.Add($"Crop={System.Text.Encodings.Web.UrlEncoder.Default.Encode(crop)}");
-        if (!string.IsNullOrWhiteSpace(toxClass)) qs.Add($"ToxClass={System.Text.Encodings.Web.UrlEncoder.Default.Encode(toxClass)}");
-        if (!string.IsNullOrWhiteSpace(productName)) qs.Add($"ProductName={System.Text.Encodings.Web.UrlEncoder.Default.Encode(productName)}");
-        if (!string.IsNullOrWhiteSpace(advisorName)) qs.Add($"AdvisorName={System.Text.Encodings.Web.UrlEncoder.Default.Encode(advisorName)}");
+        var result = await _api.GetGeoInsightsAsync(
+            municipalityId: municipalityId,
+            dateFrom: dateFrom, dateTo: dateTo,
+            crop: crop, toxClass: toxClass,
+            productName: productName, advisorName: advisorName);
 
-        var url = "/api/recipes/geo-insights" + (qs.Any() ? "?" + string.Join("&", qs) : "");
+        if (!result.Success)
+            ViewBag.Error = $"No se pudieron obtener datos geoespaciales. {result.Error}";
 
-        var resp = await client.GetAsync(url);
-        if (!resp.IsSuccessStatusCode)
+        return View(new GeoInsightsViewModel
         {
-            ViewBag.Error = $"No se pudieron obtener datos geoespaciales. HTTP {(int)resp.StatusCode}";
-            return View(new WebApplication1.Models.Municipio.GeoInsightsViewModel());
-        }
-
-        var jsonData = await resp.Content.ReadAsStringAsync();
-
-        return View(new WebApplication1.Models.Municipio.GeoInsightsViewModel
-        {
-            JsonData = jsonData
+            JsonData = result.Data ?? ""
         });
     }
 
@@ -620,41 +432,25 @@ public class AdminController : Controller
 
     [HttpGet]
     public async Task<IActionResult> GeoInsightsData(
-        [FromServices] IHttpClientFactory httpClientFactory,
         long? municipalityId = null,
-        string? dateFrom = null,
-        string? dateTo = null,
-        string? crop = null,
-        string? toxClass = null,
-        string? productName = null,
-        string? advisorName = null)
+        string? dateFrom = null, string? dateTo = null,
+        string? crop = null, string? toxClass = null,
+        string? productName = null, string? advisorName = null)
     {
-        var client = httpClientFactory.CreateClient("AgroApi");
+        var result = await _api.GetGeoInsightsAsync(
+            municipalityId: municipalityId,
+            dateFrom: dateFrom, dateTo: dateTo,
+            crop: crop, toxClass: toxClass,
+            productName: productName, advisorName: advisorName);
 
-        var qs = new List<string>();
-        if (municipalityId.HasValue) qs.Add($"municipalityId={municipalityId.Value}");
-        if (!string.IsNullOrWhiteSpace(dateFrom)) qs.Add($"DateFrom={dateFrom}");
-        if (!string.IsNullOrWhiteSpace(dateTo)) qs.Add($"DateTo={dateTo}");
-        if (!string.IsNullOrWhiteSpace(crop)) qs.Add($"Crop={System.Text.Encodings.Web.UrlEncoder.Default.Encode(crop)}");
-        if (!string.IsNullOrWhiteSpace(toxClass)) qs.Add($"ToxClass={System.Text.Encodings.Web.UrlEncoder.Default.Encode(toxClass)}");
-        if (!string.IsNullOrWhiteSpace(productName)) qs.Add($"ProductName={System.Text.Encodings.Web.UrlEncoder.Default.Encode(productName)}");
-        if (!string.IsNullOrWhiteSpace(advisorName)) qs.Add($"AdvisorName={System.Text.Encodings.Web.UrlEncoder.Default.Encode(advisorName)}");
-
-        var url = "/api/recipes/geo-insights" + (qs.Any() ? "?" + string.Join("&", qs) : "");
-
-        var resp = await client.GetAsync(url);
-        var body = await resp.Content.ReadAsStringAsync();
-
-        if (!resp.IsSuccessStatusCode)
+        if (!result.Success)
         {
-            return StatusCode((int)resp.StatusCode, new
+            return StatusCode(500, new
             {
-                message = $"No se pudieron obtener datos geoespaciales. HTTP {(int)resp.StatusCode}",
-                details = body
+                message = $"No se pudieron obtener datos geoespaciales. {result.Error}"
             });
         }
 
-        // Passthrough JSON
-        return Content(body, "application/json");
+        return Content(result.Data ?? "{}", "application/json");
     }
 }

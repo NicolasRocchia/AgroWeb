@@ -14,15 +14,15 @@
         </h1>
         <div class="detail-meta">
             @{
-                var statusClass = Model.Recipe.Status?.ToLower() switch
+                var statusClass = Model.Recipe.Status?.ToUpper() switch
                 {
-                                     "ABIERTA" => "status-draft",
-                    "PENDIENTE" => "status-pending",
-                    "APROBADA" => "status-approved",
-                    "RECHAZADA" => "status-rejected",
-                    "OBSERVADA" => "status-warning",
-                    "CERRADA" => "status-expired",
-                    "ANULADA" => "status-rejected",
+                                             "ABIERTA" => "status-draft",
+                            "PENDIENTE" => "status-pending",
+                            "APROBADA" => "status-approved",
+                            "RECHAZADA" => "status-rejected",
+                            "OBSERVADA" => "status-warning",
+                            "CERRADA" => "status-expired",
+                            "ANULADA" => "status-rejected",
                     _ => "status-draft"
                 };
             }

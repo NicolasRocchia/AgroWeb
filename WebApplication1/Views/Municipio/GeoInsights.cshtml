@@ -321,24 +321,24 @@
             ).join('');
 
             const popupHtml = `
-                <div class="geo-popup">
-                    <div class="geo-popup-header">
-                        <strong>RFD #${app.rfdNumber}</strong>
-                        <span class="geo-popup-status geo-popup-status-${app.status?.toLowerCase()}">${app.status}</span>
-                    </div>
-                    <div class="geo-popup-body">
-                        <div><strong>Lote:</strong> ${app.lotName}</div>
-                        <div><strong>Cultivo:</strong> ${app.crop || '-'}</div>
-                        <div><strong>Superficie:</strong> ${app.surfaceHa ? app.surfaceHa.toFixed(1) + ' ha' : '-'}</div>
-                        <div><strong>Fecha:</strong> ${new Date(app.issueDate).toLocaleDateString('es-AR')}</div>
-                        <div><strong>Asesor:</strong> ${app.advisorName || '-'}</div>
-                        <div><strong>Solicitante:</strong> ${app.requesterName || '-'}</div>
-                        <div class="geo-popup-products"><strong>Productos:</strong><br/>${productsHtml}</div>
-                        <div><strong>Toxicidad máx:</strong> <span style="color:${tc.color}; font-weight:700;">${app.maxToxClass || 'N/D'}</span></div>
-                    </div>
-                    <a href="/Municipio/Details/${app.recipeId}" class="geo-popup-link">Ver receta →</a>
-                </div>
-            `;
+                        <div class="geo-popup">
+                            <div class="geo-popup-header">
+                                <strong>RFD #${app.rfdNumber}</strong>
+                                <span class="geo-popup-status geo-popup-status-${app.status?.toLowerCase()}">${app.status}</span>
+                            </div>
+                            <div class="geo-popup-body">
+                                <div><strong>Lote:</strong> ${app.lotName}</div>
+                                <div><strong>Cultivo:</strong> ${app.crop || '-'}</div>
+                                <div><strong>Superficie:</strong> ${app.surfaceHa ? app.surfaceHa.toFixed(1) + ' ha' : '-'}</div>
+                                <div><strong>Fecha:</strong> ${new Date(app.issueDate).toLocaleDateString('es-AR')}</div>
+                                <div><strong>Asesor:</strong> ${app.advisorName || '-'}</div>
+                                <div><strong>Solicitante:</strong> ${app.requesterName || '-'}</div>
+                                <div class="geo-popup-products"><strong>Productos:</strong><br/>${productsHtml}</div>
+                                <div><strong>Toxicidad máx:</strong> <span style="color:${tc.color}; font-weight:700;">${app.maxToxClass || 'N/D'}</span></div>
+                            </div>
+                            <a href="/Municipio/Details/${app.recipeId}" class="geo-popup-link">Ver receta →</a>
+                        </div>
+                    `;
 
             polygon.bindPopup(popupHtml, { maxWidth: 320 });
             polygonLayers.addLayer(polygon);
@@ -346,8 +346,10 @@
             coords.forEach(c => bounds.extend(c));
 
             // Heatmap point: weight by inverse tox score (more toxic = more heat)
-            const weight = app.toxScore <= 2 ? 1.0 : app.toxScore <= 3 ? 0.6 : 0.3;
-            heatPoints.push([app.centerLat, app.centerLng, weight]);
+            if (app.centerLat != null && app.centerLng != null) {
+                const weight = app.toxScore <= 2 ? 1.0 : app.toxScore <= 3 ? 0.6 : 0.3;
+                heatPoints.push([app.centerLat, app.centerLng, weight]);
+            }
         });
 
         // ===== DRAW SENSITIVE POINTS =====
@@ -364,16 +366,16 @@
             const marker = L.marker([sp.latitude, sp.longitude], { icon });
 
             const popupHtml = `
-                <div class="geo-popup">
-                    <div class="geo-popup-header">
-                        <strong>📍 ${sp.name}</strong>
-                    </div>
-                    <div class="geo-popup-body">
-                        <div><strong>Tipo:</strong> ${sp.type || '-'}</div>
-                        <div><strong>Localidad:</strong> ${sp.locality || '-'}</div>
-                    </div>
-                </div>
-            `;
+                        <div class="geo-popup">
+                            <div class="geo-popup-header">
+                                <strong>📍 ${sp.name}</strong>
+                            </div>
+                            <div class="geo-popup-body">
+                                <div><strong>Tipo:</strong> ${sp.type || '-'}</div>
+                                <div><strong>Localidad:</strong> ${sp.locality || '-'}</div>
+                            </div>
+                        </div>
+                    `;
 
             marker.bindPopup(popupHtml, { maxWidth: 300 });
             sensitiveLayer.addLayer(marker);
@@ -417,7 +419,7 @@
         const legendEl = document.getElementById('mapLegend');
         const legendBtn = document.getElementById('legendToggleBtn');
         if (legendEl && legendBtn) {
-            legendBtn.addEventListener('click', function (e) {
+            legendBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 legendEl.classList.toggle('collapsed');
             });
@@ -438,8 +440,8 @@
                 if (mEl) mEl.checked = checked;
             }
 
-            if (dEl) dEl.addEventListener('change', function () { toggle(this.checked); });
-            if (mEl) mEl.addEventListener('change', function () { toggle(this.checked); });
+            if (dEl) dEl.addEventListener('change', function() { toggle(this.checked); });
+            if (mEl) mEl.addEventListener('change', function() { toggle(this.checked); });
         }
 
         setupToggle('toggleHeatmap', 'toggleHeatmapMobile', null, true);
