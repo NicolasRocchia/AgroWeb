@@ -1,12 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Threading.Tasks;
 using WebApplication1.Models.Recipes;
 using WebApplication1.Services;
 
@@ -459,5 +455,25 @@ public class ApplicatorController : Controller
 
         // Si la API falla, devolver array vacío (no exponer detalles internos)
         return Json(Array.Empty<object>());
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> MyLots()
+    {
+        try
+        {
+            var result = await _api.GetRawJsonAsync("/api/lots/my-lots");
+
+            if (result.Success && !string.IsNullOrEmpty(result.Data))
+            {
+                return Content(result.Data, "application/json");
+            }
+
+            return Json(Array.Empty<object>());
+        }
+        catch
+        {
+            return Json(Array.Empty<object>());
+        }
     }
 }

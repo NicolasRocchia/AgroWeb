@@ -77,39 +77,65 @@
             </div>
 
             @* ══════════════════════════════════════════════════════════
-               SECCIÓN 2: UBICACIÓN DEL LOTE (POLÍGONO EN MAPA)
+               SECCIÓN 2: UBICACIÓN DEL LOTE (SELECCIONAR EXISTENTE O DIBUJAR)
                ══════════════════════════════════════════════════════════ *@
             <div class="form-section">
                 <h3 class="section-title">📍 Ubicación del Lote</h3>
 
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="LotName">Nombre del Lote <span class="optional">(opcional)</span></label>
-                        <input type="text" id="LotName" name="LotName" maxlength="200"
-                               placeholder="Ej: Lote 5 - Campo Norte">
+                @* ── Selector: lote existente vs nuevo ── *@
+                <div class="lot-mode-selector">
+                    <button type="button" id="btnModeExisting" class="lot-mode-btn active" onclick="setLotMode('existing')">
+                        📂 Usar lote existente
+                    </button>
+                    <button type="button" id="btnModeNew" class="lot-mode-btn" onclick="setLotMode('new')">
+                        ✏️ Dibujar lote nuevo
+                    </button>
+                </div>
+
+                @* ── Panel: lote existente ── *@
+                <div id="existingLotPanel">
+                    <input type="hidden" id="ExistingLotId" name="ExistingLotId" value="" />
+                    <div id="existingLotsMessage" class="existing-lots-message">
+                        <span>⏳ Cargando tus lotes...</span>
                     </div>
-                    <div class="form-group">
-                        <label for="LotSurfaceHa">Superficie del Lote (ha)</label>
-                        <div class="surface-input-wrapper">
-                            <input type="number" id="LotSurfaceHa" name="LotSurfaceHa"
-                                   step="0.01" min="0" placeholder="Se calcula del polígono">
-                            <span id="surfaceAutoLabel" class="surface-auto-label" style="display:none;">
-                                📐 Calculada del polígono (editá si querés corregir)
-                            </span>
-                        </div>
+                    <div id="existingLotSelected" class="existing-lot-selected" style="display:none;">
+                        <span class="lot-selected-icon">✅</span>
+                        <span id="existingLotSelectedText">Lote seleccionado</span>
+                        <button type="button" class="btn-deselect-lot" onclick="deselectExistingLot()">✕ Cambiar</button>
                     </div>
                 </div>
 
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="LotLocality">Localidad <span class="optional">(opcional)</span></label>
-                        <input type="text" id="LotLocality" name="LotLocality" maxlength="150"
-                               placeholder="Marcos Juárez, Monte Buey...">
+                @* ── Panel: lote nuevo (campos de datos) ── *@
+                <div id="newLotPanel" style="display:none;">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="LotName">Nombre del Lote <span class="optional">(opcional)</span></label>
+                            <input type="text" id="LotName" name="LotName" maxlength="200"
+                                   placeholder="Ej: Lote 5 - Campo Norte">
+                        </div>
+                        <div class="form-group">
+                            <label for="LotSurfaceHa">Superficie del Lote (ha)</label>
+                            <div class="surface-input-wrapper">
+                                <input type="number" id="LotSurfaceHa" name="LotSurfaceHa"
+                                       step="0.01" min="0" placeholder="Se calcula del polígono">
+                                <span id="surfaceAutoLabel" class="surface-auto-label" style="display:none;">
+                                    📐 Calculada del polígono (editá si querés corregir)
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="LotDepartment">Departamento <span class="optional">(opcional)</span></label>
-                        <input type="text" id="LotDepartment" name="LotDepartment" maxlength="150"
-                               placeholder="Marcos Juárez">
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="LotLocality">Localidad <span class="optional">(opcional)</span></label>
+                            <input type="text" id="LotLocality" name="LotLocality" maxlength="150"
+                                   placeholder="Marcos Juárez, Monte Buey...">
+                        </div>
+                        <div class="form-group">
+                            <label for="LotDepartment">Departamento <span class="optional">(opcional)</span></label>
+                            <input type="text" id="LotDepartment" name="LotDepartment" maxlength="150"
+                                   placeholder="Marcos Juárez">
+                        </div>
                     </div>
                 </div>
 
@@ -127,10 +153,10 @@
                     <button type="button" id="btnGeolocate" class="btn-geo" onclick="geolocateUser()">
                         📡 Centrar en mi ubicación
                     </button>
-                    <button type="button" class="btn-geo btn-geo-clear" onclick="clearPolygon()">
+                    <button type="button" id="btnClearPolygon" class="btn-geo btn-geo-clear" onclick="clearPolygon()" style="display:none;">
                         🗑️ Borrar polígono
                     </button>
-                    <span class="map-hint">Usá la herramienta 🔷 del mapa para dibujar el lote</span>
+                    <span id="mapHintText" class="map-hint">Hacé click en un lote del mapa para seleccionarlo</span>
                 </div>
 
                 <div id="lotMap" class="lot-map"></div>
@@ -259,6 +285,87 @@
             color: #a0aec0;
             font-weight: 400;
             font-size: 0.8rem;
+        }
+
+        /* ═══════════════════════════════════════════════════
+                   LOT MODE SELECTOR (existing vs new)
+                   ═══════════════════════════════════════════════════ */
+        .lot-mode-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .lot-mode-btn {
+            flex: 1;
+            padding: 0.7rem 1rem;
+            border: 2px solid #d1d5db;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #4a5568;
+            transition: all 0.2s;
+        }
+
+        .lot-mode-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .lot-mode-btn.active {
+            border-color: #667eea;
+            background: #ebf0ff;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .existing-lots-message {
+            padding: 0.8rem;
+            background: #f7fafc;
+            border-radius: 8px;
+            color: #718096;
+            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .existing-lots-empty {
+            color: #a0aec0;
+        }
+
+        .existing-lot-selected {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1rem;
+            background: #f0fff4;
+            border: 1px solid #68d391;
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            font-size: 0.9rem;
+            color: #22543d;
+        }
+
+        .lot-selected-icon {
+            font-size: 1.1rem;
+        }
+
+        .btn-deselect-lot {
+            margin-left: auto;
+            background: none;
+            border: 1px solid #e53e3e;
+            color: #e53e3e;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .btn-deselect-lot:hover {
+            background: #fed7d7;
         }
 
         /* ═══════════════════════════════════════════════════
@@ -611,12 +718,152 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <script>
         // ══════════════════════════════════════════════════════════════
-        // MAP + LEAFLET.DRAW (Polygon)
+        // MAP + LEAFLET.DRAW (Polygon) + EXISTING LOTS
         // ══════════════════════════════════════════════════════════════
         let map, drawnItems, drawControl;
         let currentPolygon = null;
+        let existingLotsLayer = null;
+        let existingLots = [];
+        let currentMode = 'existing'; // 'existing' or 'new'
+        let selectedExistingLotId = null;
         const defaultLat = -32.69;
         const defaultLng = -62.10;
+
+        // ── Lot mode switching ──
+        function setLotMode(mode) {
+            currentMode = mode;
+            document.getElementById('btnModeExisting').classList.toggle('active', mode === 'existing');
+            document.getElementById('btnModeNew').classList.toggle('active', mode === 'new');
+            document.getElementById('existingLotPanel').style.display = mode === 'existing' ? 'block' : 'none';
+            document.getElementById('newLotPanel').style.display = mode === 'new' ? 'block' : 'none';
+            document.getElementById('btnClearPolygon').style.display = mode === 'new' ? 'inline-block' : 'none';
+            document.getElementById('mapHintText').textContent = mode === 'existing'
+                ? 'Hacé click en un lote del mapa para seleccionarlo'
+                : 'Usá la herramienta 🔷 del mapa para dibujar el lote';
+
+            if (mode === 'existing') {
+                // Hide draw control, show existing lots
+                if (drawControl) { map.removeControl(drawControl); drawControl = null; }
+                clearPolygon();
+                showExistingLots();
+            } else {
+                // Show draw control, hide existing lot selection
+                deselectExistingLot();
+                hideExistingLots();
+                addDrawControl();
+            }
+        }
+
+        function showExistingLots() {
+            if (existingLotsLayer) existingLotsLayer.addTo(map);
+            if (existingLots.length > 0 && existingLotsLayer) {
+                try { map.fitBounds(existingLotsLayer.getBounds(), { padding: [50, 50], maxZoom: 14 }); } catch(e) {}
+            }
+        }
+
+        function hideExistingLots() {
+            if (existingLotsLayer) map.removeLayer(existingLotsLayer);
+        }
+
+        function selectExistingLot(lot) {
+            selectedExistingLotId = lot.id;
+            document.getElementById('ExistingLotId').value = lot.id;
+            document.getElementById('existingLotSelected').style.display = 'flex';
+            document.getElementById('existingLotSelectedText').textContent =
+                (lot.name || 'Lote') + (lot.areaHa ? ' · ' + lot.areaHa.toFixed(1) + ' ha' : '') +
+                (lot.locality ? ' · ' + lot.locality : '');
+            document.getElementById('existingLotsMessage').style.display = 'none';
+
+            // Clear vertices (not needed for existing lot)
+            document.getElementById('verticesContainer').innerHTML = '';
+
+            // Highlight selected lot on map
+            if (existingLotsLayer) {
+                existingLotsLayer.eachLayer(function(layer) {
+                    if (layer._lotId === lot.id) {
+                        layer.setStyle({ color: '#48bb78', weight: 3, fillOpacity: 0.3 });
+                    } else {
+                        layer.setStyle({ color: '#667eea', weight: 2, fillOpacity: 0.15 });
+                    }
+                });
+            }
+        }
+
+        function deselectExistingLot() {
+            selectedExistingLotId = null;
+            document.getElementById('ExistingLotId').value = '';
+            document.getElementById('existingLotSelected').style.display = 'none';
+            if (existingLots.length > 0) {
+                document.getElementById('existingLotsMessage').style.display = 'block';
+            }
+            // Reset styles
+            if (existingLotsLayer) {
+                existingLotsLayer.eachLayer(function(layer) {
+                    layer.setStyle({ color: '#667eea', weight: 2, fillOpacity: 0.15 });
+                });
+            }
+        }
+
+        async function loadExistingLots() {
+            const msgEl = document.getElementById('existingLotsMessage');
+            try {
+                const resp = await fetch('/Applicator/MyLots');
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                existingLots = await resp.json();
+
+                existingLotsLayer = L.featureGroup();
+
+                if (existingLots.length === 0) {
+                    msgEl.innerHTML = '<span class="existing-lots-empty">No tenés lotes guardados. Podés dibujar uno nuevo.</span>';
+                    return;
+                }
+
+                msgEl.innerHTML = '<span>📂 Tenés <strong>' + existingLots.length + '</strong> lote' +
+                    (existingLots.length !== 1 ? 's' : '') + ' guardado' +
+                    (existingLots.length !== 1 ? 's' : '') + '. Hacé click en uno para seleccionarlo.</span>';
+
+                existingLots.forEach(function(lot) {
+                    if (!lot.vertices || lot.vertices.length < 3) return;
+                    var coords = lot.vertices.map(function(v) { return [v.latitude, v.longitude]; });
+                    var polygon = L.polygon(coords, {
+                        color: '#667eea',
+                        weight: 2,
+                        fillColor: '#667eea',
+                        fillOpacity: 0.15
+                    });
+                    polygon._lotId = lot.id;
+                    polygon.bindTooltip((lot.name || 'Lote') + (lot.areaHa ? ' · ' + lot.areaHa.toFixed(1) + ' ha' : ''), {
+                        sticky: true, className: 'lot-tooltip'
+                    });
+                    polygon.on('click', function() { selectExistingLot(lot); });
+                    existingLotsLayer.addLayer(polygon);
+                });
+
+                existingLotsLayer.addTo(map);
+                try { map.fitBounds(existingLotsLayer.getBounds(), { padding: [50, 50], maxZoom: 14 }); } catch(e) {}
+
+            } catch (e) {
+                console.error('[AgroConnect] Error loading lots:', e);
+                msgEl.innerHTML = '<span style="color:#e53e3e;">Error al cargar lotes. Podés dibujar uno nuevo.</span>';
+            }
+        }
+
+        function addDrawControl() {
+            if (drawControl) return;
+            drawControl = new L.Control.Draw({
+                position: 'topright',
+                draw: {
+                    polygon: {
+                        allowIntersection: false,
+                        drawError: { color: '#e53e3e', message: 'Las líneas no pueden cruzarse' },
+                        shapeOptions: { color: '#667eea', weight: 2, fillColor: '#667eea', fillOpacity: 0.15 }
+                    },
+                    polyline: false, rectangle: false, circle: false, circlemarker: false, marker: false
+                },
+                edit: { featureGroup: drawnItems, remove: true, edit: true }
+            });
+            map.addControl(drawControl);
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize map
@@ -628,37 +875,6 @@
             // Feature group to hold drawn polygons
             drawnItems = new L.FeatureGroup();
             map.addLayer(drawnItems);
-
-            // Leaflet.draw control — only polygon
-            drawControl = new L.Control.Draw({
-                position: 'topright',
-                draw: {
-                    polygon: {
-                        allowIntersection: false,
-                        drawError: {
-                            color: '#e53e3e',
-                            message: 'Las líneas no pueden cruzarse'
-                        },
-                        shapeOptions: {
-                            color: '#667eea',
-                            weight: 2,
-                            fillColor: '#667eea',
-                            fillOpacity: 0.15
-                        }
-                    },
-                    polyline: false,
-                    rectangle: false,
-                    circle: false,
-                    circlemarker: false,
-                    marker: false
-                },
-                edit: {
-                    featureGroup: drawnItems,
-                    remove: true,
-                    edit: true
-                }
-            });
-            map.addControl(drawControl);
 
             // Localize draw toolbar
             L.drawLocal.draw.toolbar.buttons.polygon = 'Dibujar polígono del lote';
@@ -706,6 +922,9 @@
 
             // Start with one empty product
             addProduct();
+
+            // Load existing lots and start in "existing" mode
+            loadExistingLots();
         });
 
         // ── Calculate area using Shoelace formula (on WGS84 approximation) ──

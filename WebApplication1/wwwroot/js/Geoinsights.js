@@ -216,6 +216,54 @@ window.GeoInsights = (function () {
         '</div>';
     }
 
+    // ===== LOT POPUP (nuevo: muestra historial de aplicaciones del lote) =====
+
+    function buildLotPopupHtml(lot) {
+        const tc = toxColor(lot.lastToxScore || 99);
+        const apps = lot.applications || [];
+        const count = lot.applicationsCount || apps.length;
+
+        let header = '<div class="geo-popup-header">' +
+            '<strong>' + escapeHtml(lot.lotName || 'Lote') + '</strong>' +
+            '<span style="font-size:0.8rem; color:#666;"> (' + count + ' aplicacion' + (count !== 1 ? 'es' : '') + ')</span>' +
+        '</div>';
+
+        let body = '<div class="geo-popup-body">';
+        if (lot.locality) body += '<div><strong>Localidad:</strong> ' + escapeHtml(lot.locality) + '</div>';
+        if (lot.department) body += '<div><strong>Departamento:</strong> ' + escapeHtml(lot.department) + '</div>';
+        if (lot.surfaceHa) body += '<div><strong>Superficie:</strong> ' + lot.surfaceHa.toFixed(1) + ' ha</div>';
+        if (lot.lastApplicationDate) body += '<div><strong>Última aplicación:</strong> ' + new Date(lot.lastApplicationDate).toLocaleDateString('es-AR') + '</div>';
+        if (lot.lastMaxToxClass) body += '<div><strong>Toxicidad máx (última):</strong> <span style="color:' + tc.color + '; font-weight:700;">' + escapeHtml(lot.lastMaxToxClass) + '</span></div>';
+
+        // Lista de aplicaciones (últimas 5)
+        if (apps.length > 0) {
+            body += '<hr style="margin:6px 0; border:none; border-top:1px solid #eee;">';
+            body += '<div style="font-weight:600; margin-bottom:4px;">Aplicaciones:</div>';
+            const showing = apps.slice(0, 5);
+            showing.forEach(app => {
+                const appTc = toxColor(app.toxScore);
+                const date = app.applicationDate
+                    ? new Date(app.applicationDate).toLocaleDateString('es-AR')
+                    : new Date(app.issueDate).toLocaleDateString('es-AR');
+                const prods = (app.products || []).map(p => p.productName).join(', ');
+                const detailUrl = config.detailUrlBase + app.recipeId;
+
+                body += '<div style="margin-bottom:4px; padding:3px 0; border-bottom:1px solid #f5f5f5;">' +
+                    '<a href="' + detailUrl + '" style="font-weight:600; color:#2c3e50;">RFD #' + app.rfdNumber + '</a>' +
+                    ' <small>(' + date + ')</small>' +
+                    '<span style="color:' + appTc.color + '; font-weight:600; margin-left:6px;">' + escapeHtml(app.maxToxClass || '') + '</span>' +
+                    (prods ? '<div style="font-size:0.8rem; color:#666;">' + escapeHtml(prods) + '</div>' : '') +
+                '</div>';
+            });
+            if (apps.length > 5) {
+                body += '<div style="font-size:0.8rem; color:#999;">... y ' + (apps.length - 5) + ' más</div>';
+            }
+        }
+
+        body += '</div>';
+        return '<div class="geo-popup">' + header + body + '</div>';
+    }
+
     function redrawMap(data, preserveView) {
         const prevCenter = preserveView ? map.getCenter() : null;
         const prevZoom = preserveView ? map.getZoom() : null;
@@ -223,33 +271,66 @@ window.GeoInsights = (function () {
         clearMapLayers();
 
         const bounds = L.latLngBounds();
-        const apps = data?.applications || [];
         const heatPoints = [];
 
-        apps.forEach(app => {
-            if (!app.vertices || app.vertices.length === 0) return;
+        // Nuevo: usar lots[] si disponible (1 polígono por lote, sin duplicados)
+        const lots = data?.lots || [];
 
-            const coords = app.vertices.map(v => [v.lat, v.lng]);
-            const tc = toxColor(app.toxScore);
+        if (lots.length > 0) {
+            lots.forEach(lot => {
+                if (!lot.vertices || lot.vertices.length === 0) return;
 
-            const polygon = L.polygon(coords, {
-                color: tc.color,
-                weight: 2,
-                fillColor: tc.fill,
-                fillOpacity: 0.35,
-                className: 'geo-polygon'
+                const coords = lot.vertices.map(v => [v.lat, v.lng]);
+                const tc = toxColor(lot.lastToxScore || 99);
+
+                const polygon = L.polygon(coords, {
+                    color: tc.color,
+                    weight: 2,
+                    fillColor: tc.fill,
+                    fillOpacity: 0.35,
+                    className: 'geo-polygon'
+                });
+
+                polygon.bindPopup(buildLotPopupHtml(lot), { maxWidth: 360, maxHeight: 400 });
+                polygonLayers.addLayer(polygon);
+
+                coords.forEach(c => bounds.extend(c));
+
+                if (lot.centerLat != null && lot.centerLng != null) {
+                    // Heatmap weight = applicationsCount (más reincidencia = más intenso)
+                    const weight = lot.lastToxScore <= 2 ? 1.0 : lot.lastToxScore <= 3 ? 0.6 : 0.3;
+                    const appWeight = Math.min(lot.applicationsCount || 1, 5);
+                    heatPoints.push([lot.centerLat, lot.centerLng, weight * appWeight]);
+                }
             });
+        } else {
+            // Fallback legacy: applications[] (para datos sin lots)
+            const apps = data?.applications || [];
+            apps.forEach(app => {
+                if (!app.vertices || app.vertices.length === 0) return;
 
-            polygon.bindPopup(buildPopupHtml(app, tc), { maxWidth: 320 });
-            polygonLayers.addLayer(polygon);
+                const coords = app.vertices.map(v => [v.lat, v.lng]);
+                const tc = toxColor(app.toxScore);
 
-            coords.forEach(c => bounds.extend(c));
+                const polygon = L.polygon(coords, {
+                    color: tc.color,
+                    weight: 2,
+                    fillColor: tc.fill,
+                    fillOpacity: 0.35,
+                    className: 'geo-polygon'
+                });
 
-            if (app.centerLat != null && app.centerLng != null) {
-                const weight = app.toxScore <= 2 ? 1.0 : app.toxScore <= 3 ? 0.6 : 0.3;
-                heatPoints.push([app.centerLat, app.centerLng, weight]);
-            }
-        });
+                polygon.bindPopup(buildPopupHtml(app, tc), { maxWidth: 320 });
+                polygonLayers.addLayer(polygon);
+
+                coords.forEach(c => bounds.extend(c));
+
+                if (app.centerLat != null && app.centerLng != null) {
+                    const weight = app.toxScore <= 2 ? 1.0 : app.toxScore <= 3 ? 0.6 : 0.3;
+                    heatPoints.push([app.centerLat, app.centerLng, weight]);
+                }
+            });
+        }
 
         const sensitivePoints = data?.sensitivePoints || [];
         sensitivePoints.forEach(sp => {
@@ -280,6 +361,7 @@ window.GeoInsights = (function () {
     // ===== CHARTS =====
 
     function renderCharts(data) {
+        // Usar applications[] para charts (datos planos, 1 fila por receta/lote)
         const apps = data?.applications || [];
         if (!apps.length || typeof Chart === 'undefined') return;
 

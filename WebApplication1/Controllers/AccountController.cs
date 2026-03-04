@@ -147,6 +147,8 @@ public class AccountController : Controller
         Response.Cookies.Delete(UserNameCookie);
         Response.Cookies.Delete(UserEmailCookie);
 
+        TempData.Clear();
+
         return RedirectToAction("Login");
     }
 
