@@ -12,7 +12,7 @@ using WebApplication1.Services;
 
 namespace WebApplication1.Controllers;
 
-[Authorize(Roles = "Productor")]
+[Authorize(Roles = "Productor,Aplicador")]
 public class ApplicatorController : Controller
 {
     private static readonly JsonSerializerOptions JsonOpts = new()
@@ -28,6 +28,7 @@ public class ApplicatorController : Controller
     // =============================================
 
     [HttpGet]
+    [Authorize(Roles = "Productor")]
     public async Task<IActionResult> Index(
         int page = 1, int pageSize = 20,
         string? status = null, string? searchText = null, long? rfdNumber = null)
@@ -51,6 +52,7 @@ public class ApplicatorController : Controller
     // =============================================
 
     [HttpGet]
+    [Authorize(Roles = "Productor")]
     public async Task<IActionResult> Details(string code)
     {
         var result = await _api.GetRecipeByCodeAsync(code);
@@ -81,6 +83,7 @@ public class ApplicatorController : Controller
     // =============================================
 
     [HttpPost]
+    [Authorize(Roles = "Productor")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangeStatus(long id, string status, string code)
     {
@@ -108,6 +111,7 @@ public class ApplicatorController : Controller
     // =============================================
 
     [HttpGet]
+    [Authorize(Roles = "Productor")]
     public async Task<IActionResult> AssignMunicipality(long id, string code)
     {
         var recipeResult = await _api.GetRecipeAsync(id);
@@ -140,6 +144,7 @@ public class ApplicatorController : Controller
     }
 
     [HttpPost]
+    [Authorize(Roles = "Productor")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AssignMunicipality(long id, long municipalityId, string code)
     {
@@ -156,6 +161,7 @@ public class ApplicatorController : Controller
     // =============================================
 
     [HttpPost]
+    [Authorize(Roles = "Productor")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SendMessage(long id, string message, string code)
     {
@@ -172,9 +178,11 @@ public class ApplicatorController : Controller
     // =============================================
 
     [HttpGet]
+    [Authorize(Roles = "Productor")]
     public IActionResult Upload() => View();
 
     [HttpPost]
+    [Authorize(Roles = "Productor")]
     [ValidateAntiForgeryToken]
     [RequestSizeLimit(50_000_000)]
     public async Task<IActionResult> Upload(IFormFile pdf, bool dryRun)
@@ -237,6 +245,25 @@ public class ApplicatorController : Controller
     }
 
     // =============================================
+    // MI PERFIL DE APLICADOR
+    // =============================================
+
+    [HttpGet]
+    public async Task<IActionResult> MyProfile()
+    {
+        var profileResult = await _api.GetApplicatorProfileAsync();
+
+        if (!profileResult.Success || string.IsNullOrEmpty(profileResult.Data))
+        {
+            // No tiene perfil → llevarlo a crearlo
+            return RedirectToAction("BecomeApplicator");
+        }
+
+        ViewBag.ProfileJson = profileResult.Data;
+        return View();
+    }
+
+    // =============================================
     // REGISTRARME COMO APLICADOR (Ofrecer Servicios)
     // =============================================
 
@@ -246,8 +273,8 @@ public class ApplicatorController : Controller
         var profileResult = await _api.GetApplicatorProfileAsync();
         if (profileResult.Success && !string.IsNullOrEmpty(profileResult.Data))
         {
-            TempData["Success"] = "Ya tenés un perfil de aplicador.";
-            return RedirectToAction("Index", "Home");
+            // Ya tiene perfil → llevarlo a verlo
+            return RedirectToAction("MyProfile");
         }
 
         return View();
@@ -328,9 +355,11 @@ public class ApplicatorController : Controller
     // =============================================
 
     [HttpGet]
+    [Authorize(Roles = "Productor")]
     public IActionResult CreateManual() => View();
 
     [HttpPost]
+    [Authorize(Roles = "Productor")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateManual(
         string Crop,
@@ -447,6 +476,7 @@ public class ApplicatorController : Controller
     // =============================================
 
     [HttpGet]
+    [Authorize(Roles = "Productor")]
     public async Task<IActionResult> Lots()
     {
         var result = await _api.GetMyLotsAsync();
@@ -466,6 +496,7 @@ public class ApplicatorController : Controller
     }
 
     [HttpGet]
+    [Authorize(Roles = "Productor")]
     public async Task<IActionResult> LotDetails(string code)
     {
         var result = await _api.GetLotByCodeAsync(code);
@@ -493,6 +524,7 @@ public class ApplicatorController : Controller
     }
 
     [HttpPost]
+    [Authorize(Roles = "Productor")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditLot(long id, string? name, string? locality, string? department)
     {
@@ -514,6 +546,7 @@ public class ApplicatorController : Controller
     // =============================================
 
     [HttpGet]
+    [Authorize(Roles = "Productor")]
     public async Task<IActionResult> SearchProducts(string q)
     {
         if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
@@ -531,6 +564,7 @@ public class ApplicatorController : Controller
     }
 
     [HttpGet]
+    [Authorize(Roles = "Productor")]
     public async Task<IActionResult> MyLots()
     {
         try

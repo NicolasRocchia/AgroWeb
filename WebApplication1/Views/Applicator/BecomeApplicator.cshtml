@@ -17,7 +17,7 @@
             <div class="alert alert-danger">@ViewBag.Error</div>
         }
 
-        <form method="post">
+        <form method="post" id="applicatorForm">
             @Html.AntiForgeryToken()
 
             <div class="form-section">
@@ -66,22 +66,26 @@
                     Seleccioná los tipos de maquinaria que tenés disponible:
                 </p>
                 <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                    <label class="machine-chip"><input type="checkbox" name="machine_drone" value="drone" /> 🛸 Drone</label>
-                    <label class="machine-chip"><input type="checkbox" name="machine_mosquito" value="mosquito" /> 🦟 Mosquito</label>
-                    <label class="machine-chip"><input type="checkbox" name="machine_arrastre" value="arrastre" /> 🚜 Arrastre</label>
-                    <label class="machine-chip"><input type="checkbox" name="machine_autoprop" value="autopropulsada" /> 🚛 Autopropulsada</label>
-                    <label class="machine-chip"><input type="checkbox" name="machine_avion" value="avion" /> ✈️ Avión</label>
+                    <label class="machine-chip"><input type="checkbox" class="machine-check" value="drone" /> 🛸 Drone</label>
+                    <label class="machine-chip"><input type="checkbox" class="machine-check" value="mosquito" /> 🦟 Mosquito</label>
+                    <label class="machine-chip"><input type="checkbox" class="machine-check" value="arrastre" /> 🚜 Arrastre</label>
+                    <label class="machine-chip"><input type="checkbox" class="machine-check" value="autopropulsada" /> 🚛 Autopropulsada</label>
+                    <label class="machine-chip"><input type="checkbox" class="machine-check" value="avion" /> ✈️ Avión</label>
                 </div>
                 <input type="hidden" name="machineTypes" id="machineTypesHidden" />
             </div>
 
             <div class="form-section">
                 <h4 class="form-section-title">📍 Ubicación Principal</h4>
+                <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 0.75rem;">
+                    Hacé click en el mapa o usá los botones para seleccionar tu ubicación.
+                </p>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Nombre de la base *</label>
                         <input name="locationName" type="text" class="form-control"
-                               placeholder="Base central" maxlength="150" />
+                               placeholder="Base central" maxlength="150" required />
                     </div>
                     <div class="form-group">
                         <label class="form-label">Dirección <span class="optional-tag">(opcional)</span></label>
@@ -89,16 +93,28 @@
                                placeholder="Ruta 9 km 435" maxlength="300" />
                     </div>
                 </div>
+
+                <!-- Mapa interactivo -->
+                <div class="map-wrapper">
+                    <div id="locationMap" class="location-map"></div>
+                    <div class="map-actions">
+                        <button type="button" id="btnGeolocate" class="map-btn">
+                            📍 Mi ubicación
+                        </button>
+                        <span id="mapHint" class="map-hint">Hacé click en el mapa para marcar tu ubicación</span>
+                    </div>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Latitud</label>
-                        <input name="locationLat" type="text" class="form-control"
-                               placeholder="-32.6920" />
+                        <input name="locationLat" id="locationLat" type="text" class="form-control coord-input"
+                               placeholder="-32.6920" readonly />
                     </div>
                     <div class="form-group">
                         <label class="form-label">Longitud</label>
-                        <input name="locationLng" type="text" class="form-control"
-                               placeholder="-62.1026" />
+                        <input name="locationLng" id="locationLng" type="text" class="form-control coord-input"
+                               placeholder="-62.1026" readonly />
                     </div>
                 </div>
             </div>
@@ -112,6 +128,7 @@
 </div>
 
 @section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
     <style>
         .back-link {
@@ -121,6 +138,8 @@
             text-decoration: none;
             font-weight: 600;
         }
+        .back-link:hover { text-decoration: underline; }
+
         .machine-chip {
             display: inline-flex;
             align-items: center;
@@ -138,16 +157,154 @@
             background: #f0fdf4;
         }
         .machine-chip input { display: none; }
+
+        /* Map styles */
+        .map-wrapper {
+            margin-bottom: 16px;
+        }
+        .location-map {
+            height: 300px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            cursor: crosshair;
+            z-index: 0;
+        }
+        .map-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .map-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+            color: #166534;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .map-btn:hover {
+            background: #dcfce7;
+            border-color: #4ade80;
+        }
+        .map-btn:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
+        .map-hint {
+            color: #94a3b8;
+            font-size: 0.82rem;
+            font-style: italic;
+        }
+        .coord-input {
+            background: #f8fafc;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
     </style>
 }
 
 @section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Collect checked machines into hidden field before submit
-        document.querySelector('form').addEventListener('submit', function() {
-            var checked = document.querySelectorAll('.machine-chip input:checked');
-            var values = Array.from(checked).map(c => c.value);
-            document.getElementById('machineTypesHidden').value = values.join(',');
-        });
+        (function () {
+            // ── Maquinaria: sync on every change ──
+            var machineHidden = document.getElementById('machineTypesHidden');
+            function syncMachines() {
+                var checked = document.querySelectorAll('.machine-check:checked');
+                machineHidden.value = Array.from(checked).map(function (c) { return c.value; }).join(',');
+            }
+            document.querySelectorAll('.machine-check').forEach(function (cb) {
+                cb.addEventListener('change', syncMachines);
+            });
+            // Also sync on submit as safety net
+            document.getElementById('applicatorForm').addEventListener('submit', syncMachines);
+
+            // ── Mapa interactivo ──
+            var latInput = document.getElementById('locationLat');
+            var lngInput = document.getElementById('locationLng');
+            var hint = document.getElementById('mapHint');
+            var marker = null;
+
+            // Centro default: Marcos Juárez, Córdoba
+            var defaultLat = -32.69;
+            var defaultLng = -62.10;
+
+            var map = L.map('locationMap').setView([defaultLat, defaultLng], 8);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
+
+            function setLocation(lat, lng, zoom) {
+                // Redondear a 4 decimales (~11m precisión)
+                lat = parseFloat(lat.toFixed(4));
+                lng = parseFloat(lng.toFixed(4));
+
+                latInput.value = lat;
+                lngInput.value = lng;
+
+                if (marker) {
+                    marker.setLatLng([lat, lng]);
+                } else {
+                    marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+                    marker.on('dragend', function (e) {
+                        var pos = e.target.getLatLng();
+                        setLocation(pos.lat, pos.lng);
+                    });
+                }
+
+                if (zoom) {
+                    map.setView([lat, lng], zoom);
+                } else {
+                    map.panTo([lat, lng]);
+                }
+
+                hint.textContent = 'Ubicación seleccionada. Podés arrastrar el marcador para ajustar.';
+            }
+
+            // Click en el mapa
+            map.on('click', function (e) {
+                setLocation(e.latlng.lat, e.latlng.lng, map.getZoom() < 12 ? 13 : undefined);
+            });
+
+            // Botón geolocalización
+            document.getElementById('btnGeolocate').addEventListener('click', function () {
+                var btn = this;
+                if (!navigator.geolocation) {
+                    hint.textContent = 'Tu navegador no soporta geolocalización.';
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.textContent = '⏳ Buscando...';
+                hint.textContent = 'Obteniendo tu ubicación...';
+
+                navigator.geolocation.getCurrentPosition(
+                    function (pos) {
+                        setLocation(pos.coords.latitude, pos.coords.longitude, 14);
+                        btn.disabled = false;
+                        btn.textContent = '📍 Mi ubicación';
+                    },
+                    function (err) {
+                        btn.disabled = false;
+                        btn.textContent = '📍 Mi ubicación';
+                        var msgs = {
+                            1: 'Permiso de ubicación denegado.',
+                            2: 'No se pudo determinar tu ubicación.',
+                            3: 'Tiempo de espera agotado.'
+                        };
+                        hint.textContent = msgs[err.code] || 'Error al obtener ubicación.';
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            });
+        })();
     </script>
 }

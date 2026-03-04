@@ -135,8 +135,8 @@ else if (isProductor && isAplicador)
                     <div class="feature-icon">🚜</div>
                     <h3>Mi Perfil de Aplicador</h3>
                     <p>Configurá tu perfil, maquinaria disponible y ubicaciones para aparecer en la bolsa de trabajo.</p>
-                    <a href="#" class="feature-btn feature-btn-disabled">
-                        Próximamente
+                    <a asp-controller="Applicator" asp-action="MyProfile" class="feature-btn">
+                        Ver Mi Perfil <span>→</span>
                     </a>
                 </div>
             </div>
@@ -249,9 +249,9 @@ else if (isAplicador)
                 <div class="feature-card aplicador-card">
                     <div class="feature-icon">🚜</div>
                     <h3>Mi Perfil</h3>
-                    <p>Configurá tu perfil de aplicador, tu maquinaria disponible y tus ubicaciones para aparecer en la bolsa de trabajo.</p>
-                    <a href="#" class="feature-btn feature-btn-disabled">
-                        Próximamente
+                    <p>Consultá tu perfil de aplicador, tu maquinaria disponible y tus ubicaciones. Verificá el estado de tu cuenta.</p>
+                    <a asp-controller="Applicator" asp-action="MyProfile" class="feature-btn">
+                        Ver Mi Perfil <span>→</span>
                     </a>
                 </div>
             </div>

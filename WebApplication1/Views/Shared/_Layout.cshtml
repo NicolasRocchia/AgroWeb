@@ -39,7 +39,8 @@
 
                         @if (User.IsInRole("Aplicador"))
                         {
-                            <li><a class="nav-link-custom disabled-link" href="#">🚜 Bolsa de Trabajo</a></li>
+                            <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="MyProfile">🚜 Mi Perfil</a></li>
+                            <li><a class="nav-link-custom disabled-link" href="#">📋 Bolsa de Trabajo</a></li>
                             <li><a class="nav-link-custom disabled-link" href="#">📌 Mis Tareas</a></li>
                         }
 

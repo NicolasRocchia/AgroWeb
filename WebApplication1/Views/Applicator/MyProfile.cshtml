@@ -1,0 +1,404 @@
+@{
+    ViewData["Title"] = "Mi Perfil de Aplicador";
+    var profileJson = ViewBag.ProfileJson as string ?? "{}";
+}
+
+<div class="page-container" style="max-width: 900px; margin: 0 auto; padding: 0 20px 40px;">
+    <a asp-action="Index" asp-controller="Home" class="back-link">← Volver al Inicio</a>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-success-box">
+            <span>✅</span>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    <!-- Header del perfil -->
+    <div id="profile-header" class="profile-header">
+        <div class="profile-header-left">
+            <span class="profile-avatar">🚜</span>
+            <div>
+                <h1 id="profile-business-name" class="profile-title">Cargando...</h1>
+                <p id="profile-tax-id" class="profile-subtitle"></p>
+            </div>
+        </div>
+        <div id="profile-badge" class="verification-badge badge-pending">
+            ⏳ Pendiente de verificación
+        </div>
+    </div>
+
+    <!-- Grid de información -->
+    <div class="profile-grid">
+        <!-- Datos de contacto -->
+        <div class="profile-card">
+            <h3 class="card-section-title">📞 Contacto</h3>
+            <div class="info-row">
+                <span class="info-label">Teléfono</span>
+                <span id="profile-phone" class="info-value">—</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email</span>
+                <span id="profile-email" class="info-value">—</span>
+            </div>
+        </div>
+
+        <!-- Maquinaria -->
+        <div class="profile-card">
+            <h3 class="card-section-title">🔧 Maquinaria Disponible</h3>
+            <div id="profile-machines" class="machines-container">
+                <span class="info-value">—</span>
+            </div>
+        </div>
+
+        <!-- Descripción -->
+        <div class="profile-card profile-card-full">
+            <h3 class="card-section-title">📝 Descripción del Servicio</h3>
+            <p id="profile-description" class="info-value" style="line-height: 1.6;">—</p>
+        </div>
+
+        <!-- Ubicaciones -->
+        <div class="profile-card profile-card-full">
+            <h3 class="card-section-title">📍 Ubicaciones</h3>
+            <div id="profile-locations" class="locations-list">
+                <span class="info-value">Sin ubicaciones registradas</span>
+            </div>
+            <div id="profile-map" class="profile-map"></div>
+        </div>
+    </div>
+
+    <!-- Info de verificación -->
+    <div id="verification-info" class="verification-info" style="display: none;">
+        <p id="verification-text"></p>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <style>
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color, #667eea);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .back-link:hover { text-decoration: underline; }
+
+        .alert-success-box {
+            background: #ecfdf5;
+            border: 1px solid #6ee7b7;
+            border-radius: 10px;
+            padding: 14px 20px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #065f46;
+        }
+
+        /* Profile Header */
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            border-radius: 14px;
+            padding: 24px 28px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .profile-header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .profile-avatar {
+            font-size: 2.8rem;
+            background: #f0fdf4;
+            border-radius: 14px;
+            padding: 12px;
+            line-height: 1;
+        }
+        .profile-title {
+            margin: 0;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .profile-subtitle {
+            margin: 2px 0 0;
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        /* Verification Badge */
+        .verification-badge {
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            white-space: nowrap;
+        }
+        .badge-verified {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #86efac;
+        }
+        .badge-pending {
+            background: #fef9c3;
+            color: #854d0e;
+            border: 1px solid #fde047;
+        }
+
+        /* Grid */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .profile-card {
+            background: white;
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        .profile-card-full {
+            grid-column: 1 / -1;
+        }
+        .card-section-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #334155;
+            margin: 0 0 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        /* Info rows */
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        .info-row + .info-row {
+            border-top: 1px solid #f8fafc;
+        }
+        .info-label {
+            color: #64748b;
+            font-size: 0.88rem;
+            font-weight: 500;
+        }
+        .info-value {
+            color: #334155;
+            font-size: 0.92rem;
+        }
+
+        /* Machines */
+        .machines-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .machine-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 14px;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #166534;
+            font-weight: 500;
+        }
+
+        /* Locations */
+        .locations-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .location-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+        }
+        .location-icon {
+            font-size: 1.4rem;
+        }
+        .location-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.92rem;
+        }
+        .location-address {
+            color: #64748b;
+            font-size: 0.82rem;
+        }
+        .location-coords {
+            color: #94a3b8;
+            font-size: 0.78rem;
+            font-family: monospace;
+        }
+        .location-primary-tag {
+            margin-left: auto;
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Map */
+        .profile-map {
+            height: 280px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            display: none;
+        }
+
+        /* Verification info */
+        .verification-info {
+            margin-top: 20px;
+            padding: 16px 20px;
+            background: #f8fafc;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .verification-info p {
+            margin: 0;
+            color: #64748b;
+            font-size: 0.88rem;
+        }
+
+        @@media (max-width: 768px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+            .profile-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .profile-title {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        (function () {
+            const profileData = @Html.Raw(profileJson);
+
+            // Business name & tax ID
+            document.getElementById('profile-business-name').textContent = profileData.businessName || 'Sin nombre';
+            document.getElementById('profile-tax-id').textContent = profileData.taxId ? ('CUIT: ' + profileData.taxId) : '';
+
+            // Verification badge
+            const badge = document.getElementById('profile-badge');
+            if (profileData.isVerified) {
+                badge.className = 'verification-badge badge-verified';
+                badge.textContent = '✅ Verificado';
+                if (profileData.verifiedAt) {
+                    const vDate = new Date(profileData.verifiedAt);
+                    const infoDiv = document.getElementById('verification-info');
+                    const infoText = document.getElementById('verification-text');
+                    infoDiv.style.display = 'block';
+                    infoText.textContent = 'Perfil verificado el ' + vDate.toLocaleDateString('es-AR') + '.';
+                }
+            } else {
+                badge.className = 'verification-badge badge-pending';
+                badge.innerHTML = '⏳ Pendiente de verificación';
+                var infoDiv = document.getElementById('verification-info');
+                var infoText = document.getElementById('verification-text');
+                infoDiv.style.display = 'block';
+                infoText.textContent = 'Tu perfil está siendo revisado por un administrador. Una vez verificado, podrás acceder a la bolsa de trabajo.';
+            }
+
+            // Contact
+            document.getElementById('profile-phone').textContent = profileData.contactPhone || '—';
+            document.getElementById('profile-email').textContent = profileData.contactEmail || '—';
+
+            // Description
+            document.getElementById('profile-description').textContent = profileData.description || 'Sin descripción.';
+
+            // Machine types
+            const machineIcons = {
+                'drone': '🛸 Drone',
+                'mosquito': '🦟 Mosquito',
+                'arrastre': '🚜 Arrastre',
+                'autopropulsada': '🚛 Autopropulsada',
+                'avion': '✈️ Avión'
+            };
+            const machinesContainer = document.getElementById('profile-machines');
+            if (profileData.machineTypes && profileData.machineTypes.length > 0) {
+                machinesContainer.innerHTML = '';
+                profileData.machineTypes.forEach(function (m) {
+                    var tag = document.createElement('span');
+                    tag.className = 'machine-tag';
+                    tag.textContent = machineIcons[m] || m;
+                    machinesContainer.appendChild(tag);
+                });
+            }
+
+            // Locations
+            var locations = profileData.locations || [];
+            var locContainer = document.getElementById('profile-locations');
+            var mapDiv = document.getElementById('profile-map');
+
+            if (locations.length > 0) {
+                locContainer.innerHTML = '';
+                locations.forEach(function (loc) {
+                    var item = document.createElement('div');
+                    item.className = 'location-item';
+                    item.innerHTML =
+                        '<span class="location-icon">📍</span>' +
+                        '<div>' +
+                        '<div class="location-name">' + (loc.name || 'Sin nombre') + '</div>' +
+                        (loc.address ? '<div class="location-address">' + loc.address + '</div>' : '') +
+                        '<div class="location-coords">' + loc.latitude.toFixed(4) + ', ' + loc.longitude.toFixed(4) + '</div>' +
+                        '</div>' +
+                        (loc.isPrimary ? '<span class="location-primary-tag">Principal</span>' : '');
+                    locContainer.appendChild(item);
+                });
+
+                // Show map
+                mapDiv.style.display = 'block';
+                var map = L.map('profile-map');
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap'
+                }).addTo(map);
+
+                var bounds = [];
+                locations.forEach(function (loc) {
+                    var marker = L.marker([loc.latitude, loc.longitude]).addTo(map);
+                    var popupText = '<strong>' + (loc.name || '') + '</strong>';
+                    if (loc.address) popupText += '<br>' + loc.address;
+                    if (loc.isPrimary) popupText += '<br><em>📌 Ubicación principal</em>';
+                    marker.bindPopup(popupText);
+                    bounds.push([loc.latitude, loc.longitude]);
+                });
+
+                if (bounds.length === 1) {
+                    map.setView(bounds[0], 13);
+                } else {
+                    map.fitBounds(bounds, { padding: [40, 40] });
+                }
+            }
+        })();
+    </script>
+}
