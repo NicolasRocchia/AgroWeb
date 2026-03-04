@@ -500,7 +500,6 @@ public class AdminController : Controller
         return new();
     }
 
-
     // =============================================
     // INSIGHTS
     // =============================================
@@ -603,7 +602,6 @@ public class AdminController : Controller
         var resp = await client.GetAsync(url);
         if (!resp.IsSuccessStatusCode)
         {
-            var body = await resp.Content.ReadAsStringAsync();
             ViewBag.Error = $"No se pudieron obtener datos geoespaciales. HTTP {(int)resp.StatusCode}";
             return View(new WebApplication1.Models.Municipio.GeoInsightsViewModel());
         }
@@ -614,5 +612,49 @@ public class AdminController : Controller
         {
             JsonData = jsonData
         });
+    }
+
+    // =============================================
+    // GEO INSIGHTS DATA (AJAX JSON) - Proxy a AgroApi
+    // =============================================
+
+    [HttpGet]
+    public async Task<IActionResult> GeoInsightsData(
+        [FromServices] IHttpClientFactory httpClientFactory,
+        long? municipalityId = null,
+        string? dateFrom = null,
+        string? dateTo = null,
+        string? crop = null,
+        string? toxClass = null,
+        string? productName = null,
+        string? advisorName = null)
+    {
+        var client = httpClientFactory.CreateClient("AgroApi");
+
+        var qs = new List<string>();
+        if (municipalityId.HasValue) qs.Add($"municipalityId={municipalityId.Value}");
+        if (!string.IsNullOrWhiteSpace(dateFrom)) qs.Add($"DateFrom={dateFrom}");
+        if (!string.IsNullOrWhiteSpace(dateTo)) qs.Add($"DateTo={dateTo}");
+        if (!string.IsNullOrWhiteSpace(crop)) qs.Add($"Crop={System.Text.Encodings.Web.UrlEncoder.Default.Encode(crop)}");
+        if (!string.IsNullOrWhiteSpace(toxClass)) qs.Add($"ToxClass={System.Text.Encodings.Web.UrlEncoder.Default.Encode(toxClass)}");
+        if (!string.IsNullOrWhiteSpace(productName)) qs.Add($"ProductName={System.Text.Encodings.Web.UrlEncoder.Default.Encode(productName)}");
+        if (!string.IsNullOrWhiteSpace(advisorName)) qs.Add($"AdvisorName={System.Text.Encodings.Web.UrlEncoder.Default.Encode(advisorName)}");
+
+        var url = "/api/recipes/geo-insights" + (qs.Any() ? "?" + string.Join("&", qs) : "");
+
+        var resp = await client.GetAsync(url);
+        var body = await resp.Content.ReadAsStringAsync();
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            return StatusCode((int)resp.StatusCode, new
+            {
+                message = $"No se pudieron obtener datos geoespaciales. HTTP {(int)resp.StatusCode}",
+                details = body
+            });
+        }
+
+        // Passthrough JSON
+        return Content(body, "application/json");
     }
 }
