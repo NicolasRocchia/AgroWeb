@@ -16,13 +16,13 @@
             @{
                 var statusClass = Model.Recipe.Status?.ToUpper() switch
                 {
-                                    "ABIERTA" => "status-draft",
-                                    "PENDIENTE" => "status-pending",
-                                    "APROBADA" => "status-approved",
-                                    "RECHAZADA" => "status-rejected",
-                                    "OBSERVADA" => "status-warning",
-                                    "CERRADA" => "status-expired",
-                                    "ANULADA" => "status-rejected",
+                            "ABIERTA" => "status-draft",
+                            "PENDIENTE" => "status-pending",
+                            "APROBADA" => "status-approved",
+                            "RECHAZADA" => "status-rejected",
+                            "OBSERVADA" => "status-warning",
+                            "CERRADA" => "status-expired",
+                            "ANULADA" => "status-rejected",
                     _ => "status-draft"
                 };
             }
@@ -142,18 +142,18 @@
                     {
                         var actionColor = log.Action switch
                         {
-                                                            "APROBADA" => "#16a34a",
-                                                            "RECHAZADA" => "#dc2626",
-                                                            "OBSERVADA" => "#d97706",
-                                                            "REDIRIGIDA" => "#2563eb",
+                                            "APROBADA" => "#16a34a",
+                                            "RECHAZADA" => "#dc2626",
+                                            "OBSERVADA" => "#d97706",
+                                            "REDIRIGIDA" => "#2563eb",
                             _ => "#64748b"
                         };
                         var actionIcon = log.Action switch
                         {
-                                                            "APROBADA" => "✅",
-                                                            "RECHAZADA" => "❌",
-                                                            "OBSERVADA" => "💬",
-                                                            "REDIRIGIDA" => "↪️",
+                                            "APROBADA" => "✅",
+                                            "RECHAZADA" => "❌",
+                                            "OBSERVADA" => "💬",
+                                            "REDIRIGIDA" => "↪️",
                             _ => "•"
                         };
                         <div style="padding: 10px 14px; background: white; border-radius: 8px; border-left: 3px solid @actionColor;">

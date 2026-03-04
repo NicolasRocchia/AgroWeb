@@ -4,25 +4,13 @@
 }
 
 @section Styles {
-    <!-- Leaflet CSS (si ya lo tenés en _Layout, podés borrar este bloque) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
           crossorigin="" />
-
     <link rel="stylesheet" href="~/css/geoInsights.css" asp-append-version="true" />
-
-    <!-- Fallback CRÍTICO: asegurar altura del mapa -->
     <style>
-        /* Asegura que el contenedor del mapa NO colapse a 0 */
-        #geoMap {
-            width: 100%;
-            height: 65vh;
-            min-height: 520px;
-        }
-
-        .geo-map-container {
-            width: 100%;
-        }
+        #geoMap { width: 100%; height: 65vh; min-height: 520px; }
+        .geo-map-container { width: 100%; }
     </style>
 }
 
@@ -44,13 +32,6 @@
         <span>⚠️</span>
         <div><strong id="geoErrorText"></strong></div>
     </div>
-
-    @if (ViewBag.Error != null)
-    {
-        <script>
-            window.__GEO_SERVER_ERROR__ = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.Error?.ToString()));
-        </script>
-    }
 
     <!-- ===== KPI CARDS ===== -->
     <div class="geo-kpis">
@@ -118,27 +99,19 @@
             </div>
             <div class="geo-filter-group">
                 <label>Cultivo</label>
-                <select name="crop" id="filterCrop">
-                    <option value="">Todos</option>
-                </select>
+                <select name="crop" id="filterCrop"><option value="">Todos</option></select>
             </div>
             <div class="geo-filter-group">
                 <label>Clase Toxicológica</label>
-                <select name="toxClass" id="filterToxClass">
-                    <option value="">Todas</option>
-                </select>
+                <select name="toxClass" id="filterToxClass"><option value="">Todas</option></select>
             </div>
             <div class="geo-filter-group">
                 <label>Producto</label>
-                <select name="productName" id="filterProduct">
-                    <option value="">Todos</option>
-                </select>
+                <select name="productName" id="filterProduct"><option value="">Todos</option></select>
             </div>
             <div class="geo-filter-group">
                 <label>Asesor</label>
-                <select name="advisorName" id="filterAdvisor">
-                    <option value="">Todos</option>
-                </select>
+                <select name="advisorName" id="filterAdvisor"><option value="">Todos</option></select>
             </div>
             <div class="geo-filter-group geo-filter-actions">
                 <button type="submit" class="geo-btn-filter">🔎 Filtrar</button>
@@ -146,50 +119,13 @@
         </form>
     </div>
 
-    <!-- ===== MAP (full width) ===== -->
+    <!-- ===== MAP ===== -->
     <div class="geo-map-wrapper">
         <div class="geo-map-container">
             <div id="geoMap" class="geo-map"></div>
 
-            <!-- Desktop: overlay top-right -->
             <div class="geo-controls-desktop">
-                <div class="geo-map-legend" id="mapLegend">
-                    <h4 id="legendToggleBtn">
-                        Leyenda <span class="legend-toggle">▼</span>
-                    </h4>
-                    <div class="legend-items">
-                        <div class="legend-item">
-                            <span class="legend-color" style="background: rgba(0, 180, 0, 0.3); border: 2px solid #00b400;"></span>
-                            Clase IV
-                        </div>
-                        <div class="legend-item">
-                            <span class="legend-color" style="background: rgba(52, 152, 219, 0.3); border: 2px solid #3498db;"></span>
-                            Clase III
-                        </div>
-                        <div class="legend-item">
-                            <span class="legend-color" style="background: rgba(243, 156, 18, 0.3); border: 2px solid #f39c12;"></span>
-                            Clase II
-                        </div>
-                        <div class="legend-item">
-                            <span class="legend-color" style="background: rgba(231, 76, 60, 0.3); border: 2px solid #e74c3c;"></span>
-                            Clase Ib
-                        </div>
-                        <div class="legend-item">
-                            <span class="legend-color" style="background: rgba(142, 68, 173, 0.3); border: 2px solid #8e44ad;"></span>
-                            Clase Ia (extrema)
-                        </div>
-
-                        <div class="legend-item">
-                            <span class="legend-color sp-dot"></span>
-                            Punto sensible
-                        </div>
-                        <div class="legend-item">
-                            <span class="legend-color heat-dot"></span>
-                            Mapa de calor
-                        </div>
-                    </div>
-                </div>
-
+                @await Html.PartialAsync("_GeoMapLegend")
                 <div class="geo-map-toggles">
                     <label><input type="checkbox" id="toggleHeat" checked /> Mapa de calor</label>
                     <label><input type="checkbox" id="togglePolygons" checked /> Polígonos</label>
@@ -197,7 +133,6 @@
                 </div>
             </div>
 
-            <!-- Mobile: bottom sheet -->
             <div class="geo-controls-mobile" id="mobileControls">
                 <div class="geo-map-toggles">
                     <label><input type="checkbox" id="toggleHeatMobile" checked /> Mapa de calor</label>
@@ -205,529 +140,46 @@
                     <label><input type="checkbox" id="toggleSensitiveMobile" checked /> Puntos sensibles</label>
                 </div>
             </div>
-
         </div>
     </div>
 
-    <!-- ===== ANALYTICS SECTION ===== -->
+    <!-- ===== ANALYTICS ===== -->
     <div class="geo-analytics">
         <div class="geo-chart-card">
             <h3>📈 Evolución temporal</h3>
-            <div class="geo-chart">
-                <canvas id="timelineChart"></canvas>
-            </div>
+            <div class="geo-chart"><canvas id="timelineChart"></canvas></div>
         </div>
-
         <div class="geo-chart-card">
             <h3>☠️ Distribución por toxicidad</h3>
-            <div class="geo-chart">
-                <canvas id="toxChart"></canvas>
-            </div>
+            <div class="geo-chart"><canvas id="toxChart"></canvas></div>
         </div>
-
         <div class="geo-chart-card">
             <h3>🌱 Top cultivos</h3>
-            <div class="geo-chart">
-                <canvas id="cropChart"></canvas>
-            </div>
+            <div class="geo-chart"><canvas id="cropChart"></canvas></div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
             crossorigin=""></script>
-
-    <!-- Leaflet heat plugin -->
     <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
-
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="~/js/geoInsights.js" asp-append-version="true"></script>
 
     <script>
         window.addEventListener('load', () => {
-
-            const geoData = @Html.Raw(string.IsNullOrWhiteSpace(Model.JsonData) ? "null" : Model.JsonData);
-            const serverError = window.__GEO_SERVER_ERROR__ || null;
-            const geoDataUrlBase = '@Url.Action("GeoInsightsData", "Admin")';
-            const cleanUrl = window.location.pathname;
-
-            if (typeof L === 'undefined') {
-                console.error('Leaflet no está cargado (L undefined).');
-                const errorBar = document.getElementById('geoErrorBar');
-                const errorText = document.getElementById('geoErrorText');
-                if (errorText) errorText.textContent = 'No se pudo cargar el mapa (Leaflet no disponible).';
-                if (errorBar) errorBar.style.display = 'flex';
-                return;
-            }
-
-            const errorBar = document.getElementById('geoErrorBar');
-            const errorText = document.getElementById('geoErrorText');
-
-            function showError(msg) {
-                if (errorText) errorText.textContent = msg || 'Ocurrió un error.';
-                if (errorBar) errorBar.style.display = 'flex';
-            }
-
-            function hideError() {
-                if (errorBar) errorBar.style.display = 'none';
-                if (errorText) errorText.textContent = '';
-            }
-
-            function getFiltersFromForm() {
-                return {
-                    municipalityId: document.getElementById('filterMunicipality')?.value || '',
-                    dateFrom: document.getElementById('filterDateFrom')?.value || '',
-                    dateTo: document.getElementById('filterDateTo')?.value || '',
-                    crop: document.getElementById('filterCrop')?.value || '',
-                    toxClass: document.getElementById('filterToxClass')?.value || '',
-                    productName: document.getElementById('filterProduct')?.value || '',
-                    advisorName: document.getElementById('filterAdvisor')?.value || ''
-                };
-            }
-
-            function setFormFromFilters(filters) {
-                if (!filters) return;
-                const setIf = (id, val) => {
-                    const el = document.getElementById(id);
-                    if (!el) return;
-                    el.value = val ?? '';
-                };
-
-                setIf('filterMunicipality', filters.municipalityId || '');
-                setIf('filterDateFrom', filters.dateFrom || '');
-                setIf('filterDateTo', filters.dateTo || '');
-                setIf('filterCrop', filters.crop || '');
-                setIf('filterToxClass', filters.toxClass || '');
-                setIf('filterProduct', filters.productName || '');
-                setIf('filterAdvisor', filters.advisorName || '');
-            }
-
-            function buildQueryString(filters) {
-                const qs = new URLSearchParams();
-                if (filters.municipalityId) qs.set('municipalityId', filters.municipalityId);
-                if (filters.dateFrom) qs.set('dateFrom', filters.dateFrom);
-                if (filters.dateTo) qs.set('dateTo', filters.dateTo);
-                if (filters.crop) qs.set('crop', filters.crop);
-                if (filters.toxClass) qs.set('toxClass', filters.toxClass);
-                if (filters.productName) qs.set('productName', filters.productName);
-                if (filters.advisorName) qs.set('advisorName', filters.advisorName);
-                return qs.toString();
-            }
-
-            function replaceState(filters) {
-                try {
-                    history.replaceState({ geoFilters: filters }, '', cleanUrl);
-                } catch { }
-            }
-
-            function getInitialFiltersFromQuery() {
-                const p = new URLSearchParams(window.location.search);
-                return {
-                    municipalityId: p.get('municipalityId') || '',
-                    dateFrom: p.get('dateFrom') || '',
-                    dateTo: p.get('dateTo') || '',
-                    crop: p.get('crop') || '',
-                    toxClass: p.get('toxClass') || '',
-                    productName: p.get('productName') || '',
-                    advisorName: p.get('advisorName') || ''
-                };
-            }
-
-            function populateSelect(id, items, selectedValue) {
-                const select = document.getElementById(id);
-                if (!select) return;
-
-                while (select.options.length > 1) select.remove(1);
-
-                if (!items) items = [];
-                items.forEach(item => {
-                    const opt = document.createElement('option');
-                    opt.value = item;
-                    opt.textContent = item;
-                    select.appendChild(opt);
-                });
-
-                if (selectedValue) select.value = selectedValue;
-            }
-
-            // ===== MAP INIT (once) =====
-            const map = L.map('geoMap', { zoomControl: true });
-
-            // IMPORTANTE: después de crear el map, invalidar size (por si el layout todavía se está acomodando)
-            requestAnimationFrame(() => map.invalidateSize());
-            setTimeout(() => map.invalidateSize(), 150);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
-                maxZoom: 19
-            }).addTo(map);
-
-            const polygonLayers = L.layerGroup().addTo(map);
-            const sensitiveLayer = L.layerGroup().addTo(map);
-            let heatLayer = null;
-
-            let timelineChart = null;
-            let toxChart = null;
-            let cropChart = null;
-
-            function toxColor(score) {
-                if (score <= 1) return { color: '#8e44ad', fill: 'rgba(142, 68, 173, 0.25)' };
-                if (score <= 2) return { color: '#e74c3c', fill: 'rgba(231, 76, 60, 0.25)' };
-                if (score <= 3) return { color: '#f39c12', fill: 'rgba(243, 156, 18, 0.25)' };
-                if (score <= 4) return { color: '#3498db', fill: 'rgba(52, 152, 219, 0.25)' };
-                return { color: '#00b400', fill: 'rgba(0, 180, 0, 0.25)' };
-            }
-
-            function clearMapLayers() {
-                polygonLayers.clearLayers();
-                sensitiveLayer.clearLayers();
-                if (heatLayer) {
-                    try { map.removeLayer(heatLayer); } catch { }
-                    heatLayer = null;
-                }
-            }
-
-            function updateKpis(data) {
-                const k = data?.kpis;
-                if (!k) return;
-
-                document.getElementById('kpiTotalApps').textContent = k.totalApplications || 0;
-                document.getElementById('kpiHectares').textContent = (k.totalHectares || 0).toLocaleString('es-AR', { maximumFractionDigits: 0 });
-                document.getElementById('kpiProducts').textContent = k.uniqueProducts || 0;
-                document.getElementById('kpiHighTox').textContent = k.highToxApplications || 0;
-                document.getElementById('kpiAdvisors').textContent = k.uniqueAdvisors || 0;
-            }
-
-            function tryAddHeatLayer(heatPoints) {
-                // Si el mapa todavía mide 0, NO crear heat layer ahora (evita getImageData height 0)
-                const size = map.getSize();
-                if (!size || size.x <= 0 || size.y <= 0) {
-                    setTimeout(() => {
-                        map.invalidateSize();
-                        tryAddHeatLayer(heatPoints);
-                    }, 120);
-                    return;
-                }
-
-                if (heatPoints.length > 0 && typeof L.heatLayer === 'function') {
-                    heatLayer = L.heatLayer(heatPoints, {
-                        radius: 30,
-                        blur: 20,
-                        maxZoom: 15,
-                        max: 1.0
-                    }).addTo(map);
-                }
-            }
-
-            function redrawMap(data, preserveView) {
-                const prevCenter = preserveView ? map.getCenter() : null;
-                const prevZoom = preserveView ? map.getZoom() : null;
-
-                clearMapLayers();
-
-                const bounds = L.latLngBounds();
-                const apps = data?.applications || [];
-                const heatPoints = [];
-
-                apps.forEach(app => {
-                    if (!app.vertices || app.vertices.length === 0) return;
-
-                    const coords = app.vertices.map(v => [v.lat, v.lng]);
-                    const tc = toxColor(app.toxScore);
-
-                    const polygon = L.polygon(coords, {
-                        color: tc.color,
-                        weight: 2,
-                        fillColor: tc.fill,
-                        fillOpacity: 0.35,
-                        className: 'geo-polygon'
-                    });
-
-                    const productsHtml = (app.products || []).map(p =>
-                        `<span class="popup-product">${p.productName} <small>(${p.toxicologicalClass || '?'})</small></span>`
-                    ).join('');
-
-                    const popupHtml = `
-                                <div class="geo-popup">
-                                    <div class="geo-popup-header">
-                                        <strong>RFD #${app.rfdNumber}</strong>
-                                        <span class="geo-popup-status geo-popup-status-${app.status?.toLowerCase()}">${app.status}</span>
-                                    </div>
-                                    <div class="geo-popup-body">
-                                        <div><strong>Lote:</strong> ${app.lotName}</div>
-                                        <div><strong>Cultivo:</strong> ${app.crop || '-'}</div>
-                                        <div><strong>Superficie:</strong> ${app.surfaceHa ? app.surfaceHa.toFixed(1) + ' ha' : '-'}</div>
-                                        <div><strong>Fecha:</strong> ${new Date(app.issueDate).toLocaleDateString('es-AR')}</div>
-                                        <div><strong>Asesor:</strong> ${app.advisorName || '-'}</div>
-                                        <div><strong>Solicitante:</strong> ${app.requesterName || '-'}</div>
-                                        <div class="geo-popup-products"><strong>Productos:</strong><br/>${productsHtml}</div>
-                                        <div><strong>Toxicidad máx:</strong> <span style="color:${tc.color}; font-weight:700;">${app.maxToxClass || 'N/D'}</span></div>
-                                    </div>
-                                    <a href="/AdminRecipes/Details/${app.recipeId}" class="geo-popup-link">Ver receta →</a>
-                                </div>
-                            `;
-
-                    polygon.bindPopup(popupHtml, { maxWidth: 320 });
-                    polygonLayers.addLayer(polygon);
-
-                    coords.forEach(c => bounds.extend(c));
-
-                    // Importante: usar centerLat/centerLng solo si vienen bien
-                    if (app.centerLat != null && app.centerLng != null) {
-                        const weight = app.toxScore <= 2 ? 1.0 : app.toxScore <= 3 ? 0.6 : 0.3;
-                        heatPoints.push([app.centerLat, app.centerLng, weight]);
-                    }
-                });
-
-                const sensitivePoints = data?.sensitivePoints || [];
-                sensitivePoints.forEach(sp => {
-                    const icon = L.divIcon({
-                        html: '<div class="sp-marker"><span>📍</span></div>',
-                        className: '',
-                        iconSize: [28, 28],
-                        iconAnchor: [14, 14],
-                        popupAnchor: [0, -16]
-                    });
-
-                    const marker = L.marker([sp.latitude, sp.longitude], { icon });
-
-                    const popupHtml = `
-                                <div class="geo-popup">
-                                    <div class="geo-popup-header">
-                                        <strong>📍 ${sp.name}</strong>
-                                    </div>
-                                    <div class="geo-popup-body">
-                                        <div><strong>Tipo:</strong> ${sp.type || '-'}</div>
-                                        <div><strong>Localidad:</strong> ${sp.locality || '-'}</div>
-                                    </div>
-                                </div>
-                            `;
-
-                    marker.bindPopup(popupHtml, { maxWidth: 300 });
-                    sensitiveLayer.addLayer(marker);
-                    bounds.extend([sp.latitude, sp.longitude]);
-                });
-
-                // Heat: con guard anti-height-0
-                tryAddHeatLayer(heatPoints);
-
-                if (preserveView && prevCenter && prevZoom != null) {
-                    map.setView(prevCenter, prevZoom);
-                } else {
-                    if (bounds.isValid()) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
-                    else map.setView([-33.0, -61.0], 8);
-                }
-            }
-
-            function renderCharts(data) {
-                const apps = data?.applications || [];
-                if (!apps.length || typeof Chart === 'undefined') return;
-
-                if (timelineChart) { try { timelineChart.destroy(); } catch { } timelineChart = null; }
-                if (toxChart) { try { toxChart.destroy(); } catch { } toxChart = null; }
-                if (cropChart) { try { cropChart.destroy(); } catch { } cropChart = null; }
-
-                const timelineGroups = {};
-                apps.forEach(a => {
-                    const d = new Date(a.issueDate);
-                    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                    timelineGroups[key] = (timelineGroups[key] || 0) + 1;
-                });
-
-                const timelineLabels = Object.keys(timelineGroups).sort();
-                const timelineData = timelineLabels.map(k => timelineGroups[k]);
-
-                const tlEl = document.getElementById('timelineChart');
-                if (tlEl && timelineLabels.length) {
-                    timelineChart = new Chart(tlEl, {
-                        type: 'line',
-                        data: { labels: timelineLabels, datasets: [{ label: 'Aplicaciones', data: timelineData, tension: 0.3, fill: true }] },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { legend: { display: false } },
-                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } }
-                        }
-                    });
-                }
-
-                const toxGroups = { Ia: 0, Ib: 0, II: 0, III: 0, IV: 0, Unknown: 0 };
-                apps.forEach(a => {
-                    const s = a.toxScore;
-                    if (s <= 1) toxGroups.Ia++;
-                    else if (s <= 2) toxGroups.Ib++;
-                    else if (s <= 3) toxGroups.II++;
-                    else if (s <= 4) toxGroups.III++;
-                    else if (s <= 5) toxGroups.IV++;
-                    else toxGroups.Unknown++;
-                });
-
-                const toxLabels = Object.keys(toxGroups);
-                const toxData = toxLabels.map(l => toxGroups[l]);
-
-                const toxEl = document.getElementById('toxChart');
-                if (toxEl) {
-                    toxChart = new Chart(toxEl, {
-                        type: 'doughnut',
-                        data: { labels: toxLabels, datasets: [{ data: toxData }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-                    });
-                }
-
-                const cropGroups = {};
-                apps.forEach(a => {
-                    const c = (a.crop || 'Sin cultivo').trim();
-                    cropGroups[c] = (cropGroups[c] || 0) + 1;
-                });
-
-                const cropLabels = Object.keys(cropGroups).sort((a, b) => cropGroups[b] - cropGroups[a]).slice(0, 8);
-                const cropData = cropLabels.map(l => cropGroups[l]);
-
-                const cropEl = document.getElementById('cropChart');
-                if (cropEl && cropLabels.length) {
-                    cropChart = new Chart(cropEl, {
-                        type: 'bar',
-                        data: { labels: cropLabels, datasets: [{ label: 'Aplicaciones', data: cropData, borderRadius: 6, borderSkipped: false }] },
-                        options: {
-                            indexAxis: 'y',
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { legend: { display: false } },
-                            scales: { x: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } }
-                        }
-                    });
-                }
-            }
-
-            function applyGeoData(data, filters, preserveMapView) {
-                if (!data) return;
-
-                updateKpis(data);
-
-                if (data.availableFilters) {
-                    const f = data.availableFilters;
-                    populateSelect('filterCrop', f.crops, filters?.crop || '');
-                    populateSelect('filterToxClass', f.toxClasses, filters?.toxClass || '');
-                    populateSelect('filterProduct', f.products, filters?.productName || '');
-                    populateSelect('filterAdvisor', f.advisors, filters?.advisorName || '');
-                }
-
-                redrawMap(data, preserveMapView);
-                renderCharts(data);
-            }
-
-            let isLoading = false;
-
-            async function loadGeoInsights(filters, preserveMapView) {
-                if (isLoading) return;
-                isLoading = true;
-
-                hideError();
-
-                const qs = buildQueryString(filters);
-                const url = qs ? `${geoDataUrlBase}?${qs}` : geoDataUrlBase;
-
-                try {
-                    const resp = await fetch(url, { method: 'GET', headers: { 'Accept': 'application/json' } });
-
-                    if (!resp.ok) {
-                        let msg = `No se pudieron obtener datos geoespaciales. HTTP ${resp.status}`;
-                        try {
-                            const err = await resp.json();
-                            if (err?.message) msg = err.message;
-                            if (err?.error) msg = err.error;
-                        } catch { }
-                        showError(msg);
-                        return;
-                    }
-
-                    const data = await resp.json();
-                    applyGeoData(data, filters, preserveMapView);
-                    replaceState(filters);
-                } catch {
-                    showError('No se pudieron obtener datos geoespaciales. Error de red.');
-                } finally {
-                    isLoading = false;
-                }
-            }
-
-            const form = document.getElementById('filtersForm');
-            if (form) {
-                form.addEventListener('submit', async (ev) => {
-                    ev.preventDefault();
-                    const filters = getFiltersFromForm();
-                    await loadGeoInsights(filters, true);
-                });
-            }
-
-            document.getElementById('btnClearFilters')?.addEventListener('click', async () => {
-                if (form) form.reset();
-                const filters = getFiltersFromForm();
-                await loadGeoInsights(filters, true);
-                replaceState(filters);
+            GeoInsights.init({
+                geoData: @Html.Raw(string.IsNullOrWhiteSpace(Model.JsonData) ? "null" : Model.JsonData),
+                geoDataUrlBase: '@Url.Action("GeoInsightsData", "Admin")',
+                detailUrlBase: '@Url.Action("Details", "AdminRecipes")' + '/',
+                serverError: @Html.Raw(ViewBag.Error != null
+                    ? System.Text.Json.JsonSerializer.Serialize(ViewBag.Error.ToString())
+                    : "null"),
+                useAjaxFilters: true,
+                heatGradient: { 0.2: '#2ecc71', 0.4: '#f1c40f', 0.6: '#e67e22', 0.8: '#e74c3c', 1.0: '#8e44ad' }
             });
-
-            (function init() {
-                if (serverError) showError(serverError);
-
-                const stateFilters = history.state?.geoFilters;
-                const queryFilters = getInitialFiltersFromQuery();
-                const filters = stateFilters || queryFilters || {};
-
-                setFormFromFilters(filters);
-
-                if (geoData) {
-                    applyGeoData(geoData, filters, false);
-                    replaceState(filters);
-                    return;
-                }
-
-                loadGeoInsights(filters, false);
-            })();
-
-            const controlsEl = document.querySelector('.geo-controls-desktop');
-            if (controlsEl) L.DomEvent.disableClickPropagation(controlsEl);
-
-            const mobileCtrl = document.getElementById('mobileControls');
-            if (mobileCtrl) {
-                L.DomEvent.disableClickPropagation(mobileCtrl);
-                L.DomEvent.disableScrollPropagation(mobileCtrl);
-            }
-
-            const legendEl = document.getElementById('mapLegend');
-            const legendBtn = document.getElementById('legendToggleBtn');
-            if (legendEl && legendBtn) {
-                legendBtn.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    legendEl.classList.toggle('collapsed');
-                });
-            }
-
-            function setupToggle(desktopId, mobileId, layerRef, isHeat) {
-                const dEl = document.getElementById(desktopId);
-                const mEl = document.getElementById(mobileId);
-
-                function toggle(checked) {
-                    if (isHeat && heatLayer) {
-                        checked ? map.addLayer(heatLayer) : map.removeLayer(heatLayer);
-                    } else if (!isHeat) {
-                        checked ? map.addLayer(layerRef) : map.removeLayer(layerRef);
-                    }
-                    if (dEl) dEl.checked = checked;
-                    if (mEl) mEl.checked = checked;
-                }
-
-                if (dEl) dEl.addEventListener('change', () => toggle(dEl.checked));
-                if (mEl) mEl.addEventListener('change', () => toggle(mEl.checked));
-            }
-
-            setupToggle('toggleHeat', 'toggleHeatMobile', null, true);
-            setupToggle('togglePolygons', 'togglePolygonsMobile', polygonLayers, false);
-            setupToggle('toggleSensitive', 'toggleSensitiveMobile', sensitiveLayer, false);
-
         });
     </script>
 }
