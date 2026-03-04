@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Threading.Tasks;
 using WebApplication1.Models.Recipes;
 using WebApplication1.Services;
 
@@ -340,7 +344,8 @@ public class ApplicatorController : Controller
         string? LotName,
         string? LotLocality,
         string? LotDepartment,
-        decimal? LotSurfaceHa)
+        decimal? LotSurfaceHa,
+        long? ExistingLotId)
     {
         if (string.IsNullOrWhiteSpace(Crop))
         {
@@ -410,6 +415,7 @@ public class ApplicatorController : Controller
                 unitSurfaceHa = UnitSurfaceHa,
                 notes = Notes?.Trim(),
                 issueDate = IssueDate,
+                existingLotId = ExistingLotId,
                 lotName = LotName?.Trim(),
                 lotLocality = LotLocality?.Trim(),
                 lotDepartment = LotDepartment?.Trim(),
@@ -462,7 +468,7 @@ public class ApplicatorController : Controller
     {
         try
         {
-            var result = await _api.GetRawJsonAsync("/api/lots/my-lots");
+            var result = await _api.GetMyLotsAsync();
 
             if (result.Success && !string.IsNullOrEmpty(result.Data))
             {

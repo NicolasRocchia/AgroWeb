@@ -125,6 +125,7 @@ window.GeoInsights = (function () {
         if (el('kpiProducts')) el('kpiProducts').textContent = k.uniqueProducts || 0;
         if (el('kpiHighTox')) el('kpiHighTox').textContent = k.highToxApplications || 0;
         if (el('kpiAdvisors')) el('kpiAdvisors').textContent = k.uniqueAdvisors || 0;
+        if (el('kpiLots')) el('kpiLots').textContent = k.uniqueLots || 0;
     }
 
     // ===== MAP =====

@@ -249,6 +249,13 @@ public class AgroApiClient
         => GetRawJsonAsync($"/api/products/search?q={Uri.EscapeDataString(query)}&limit={limit}");
 
     // ══════════════════════════════════════════════
+    // LOTS (LOTES FÍSICOS)
+    // ══════════════════════════════════════════════
+
+    public Task<ApiResult<string>> GetMyLotsAsync()
+        => GetRawJsonAsync("/api/lots/my-lots");
+
+    // ══════════════════════════════════════════════
     // ERROR EXTRACTION (private)
     // ══════════════════════════════════════════════
 
