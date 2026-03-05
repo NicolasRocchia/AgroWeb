@@ -64,8 +64,7 @@
 
                         @if (User?.Identity?.IsAuthenticated ?? false)
                         {
-                            var userName = User.Identity?.Name ?? "Usuario";
-                            var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
+                            var userName = Context.Request.Cookies["agro_user_name"] ?? "Usuario";
                             <li class="user-menu-container">
                                 <button class="btn-user-menu" id="userMenuButton">
                                     <span class="user-icon">👤</span>
@@ -77,9 +76,14 @@
                                         <span class="user-icon-large">👤</span>
                                         <div class="user-info">
                                             <strong>@userName</strong>
-                                            <small>@userEmail</small>
+                                            <small>@Context.Request.Cookies["agro_user_email"]</small>
                                         </div>
                                     </div>
+                                    <div class="user-dropdown-divider"></div>
+                                    <a asp-controller="Account" asp-action="Profile" class="user-dropdown-item">
+                                        <span class="item-icon">⚙️</span>
+                                        Mi Perfil
+                                    </a>
                                     <div class="user-dropdown-divider"></div>
                                     <form method="post" asp-controller="Account" asp-action="Logout">
                                         @Html.AntiForgeryToken()

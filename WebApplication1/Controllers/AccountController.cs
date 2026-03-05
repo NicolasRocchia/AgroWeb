@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Text.Json;
@@ -89,19 +90,19 @@ public class AccountController : Controller
             });
         }
 
-        // Guardar nombre de usuario (HttpOnly)
+        // Guardar nombre de usuario
         Response.Cookies.Append(UserNameCookie, json.UserName ?? "Usuario", new CookieOptions
         {
-            HttpOnly = true,
+            HttpOnly = false,
             Secure = true,
             SameSite = SameSiteMode.Lax,
             Expires = expiresAt
         });
 
-        // Guardar email del usuario (HttpOnly)
+        // Guardar email del usuario
         Response.Cookies.Append(UserEmailCookie, json.Email ?? "", new CookieOptions
         {
-            HttpOnly = true,
+            HttpOnly = false,
             Secure = true,
             SameSite = SameSiteMode.Lax,
             Expires = expiresAt
@@ -211,6 +212,100 @@ public class AccountController : Controller
 
         ViewBag.Error = result.Error;
         return View();
+    }
+
+    // =============================================
+    // PERFIL DE USUARIO
+    // =============================================
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> Profile()
+    {
+        var result = await _api.GetProfileAsync();
+        ViewBag.ProfileJson = result.Success ? result.Data : "{}";
+        if (!result.Success) ViewBag.Error = result.Error;
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize]
+    public async Task<IActionResult> UpdateProfile(string userName, string email, string? phoneNumber, string? taxId)
+    {
+        var result = await _api.UpdateProfileAsync(new
+        {
+            userName = userName?.Trim(),
+            email = email?.Trim(),
+            phoneNumber = phoneNumber?.Trim(),
+            taxId = taxId?.Trim()
+        });
+
+        if (result.Success)
+        {
+            TempData["Success"] = "Perfil actualizado correctamente.";
+
+            // Update cookie claims with new name/email
+            var claims = new List<System.Security.Claims.Claim>
+            {
+                new(System.Security.Claims.ClaimTypes.NameIdentifier,
+                    User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0"),
+                new(System.Security.Claims.ClaimTypes.Name, userName?.Trim() ?? "Usuario"),
+                new(System.Security.Claims.ClaimTypes.Email, email?.Trim() ?? ""),
+            };
+
+            foreach (var role in User.Claims
+                .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role)
+                .Select(c => c.Value))
+            {
+                claims.Add(new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, role));
+            }
+
+            var identity = new System.Security.Claims.ClaimsIdentity(claims,
+                Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new System.Security.Claims.ClaimsPrincipal(identity);
+
+            await HttpContext.SignInAsync(
+                Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme,
+                principal,
+                new Microsoft.AspNetCore.Authentication.AuthenticationProperties { IsPersistent = true });
+        }
+        else
+        {
+            TempData["Error"] = result.Error;
+        }
+
+        return RedirectToAction("Profile");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(string currentPassword, string newPassword, string confirmPassword)
+    {
+        if (newPassword != confirmPassword)
+        {
+            TempData["Error"] = "Las contraseñas no coinciden.";
+            return RedirectToAction("Profile");
+        }
+
+        if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+        {
+            TempData["Error"] = "La nueva contraseña debe tener al menos 6 caracteres.";
+            return RedirectToAction("Profile");
+        }
+
+        var result = await _api.ChangePasswordAsync(new
+        {
+            currentPassword,
+            newPassword,
+            confirmPassword
+        });
+
+        TempData[result.Success ? "Success" : "Error"] =
+            result.Success ? "Contraseña actualizada correctamente." : result.Error;
+
+        return RedirectToAction("Profile");
     }
 
     private sealed class LoginResponseDto

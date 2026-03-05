@@ -313,6 +313,22 @@ public class AgroApiClient
         => DeleteAsync($"/api/jobs/{jobId}/apply");
 
     // ══════════════════════════════════════════════
+    // PERFIL DE USUARIO
+    // ══════════════════════════════════════════════
+
+    public Task<ApiResult<string>> GetProfileAsync()
+        => GetRawJsonAsync("/api/auth/profile");
+
+    public Task<ApiResult<string>> UpdateProfileAsync(object body)
+        => PutAsync("/api/auth/profile", body);
+
+    public Task<ApiResult<string>> ChangePasswordAsync(object body)
+        => PutAsync("/api/auth/change-password", body);
+
+    public Task<ApiResult<string>> AdminResetPasswordAsync(long userId)
+        => PostAsync("/api/auth/admin-reset-password", new { userId });
+
+    // ══════════════════════════════════════════════
     // ZONAS DE EXCLUSIÓN
     // ══════════════════════════════════════════════
 

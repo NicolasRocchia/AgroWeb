@@ -1,0 +1,270 @@
+@{
+    ViewData["Title"] = "Mi Perfil";
+    var profileJson = ViewBag.ProfileJson as string ?? "{}";
+}
+
+<div class="page-container" style="max-width: 650px; margin: 0 auto; padding: 0 20px 40px;">
+    <a asp-controller="Home" asp-action="Index" class="back-link">← Inicio</a>
+
+    <div class="profile-header">
+        <span class="profile-avatar">👤</span>
+        <div>
+            <h1 class="profile-title" id="profileName">Mi Perfil</h1>
+            <p class="profile-subtitle" id="profileRoles"></p>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-box alert-success-box"><span>✅</span> @TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-box alert-error-box"><span>⚠️</span> @TempData["Error"]</div>
+    }
+
+    <!-- Datos personales -->
+    <div class="profile-card">
+        <h3 class="card-title">📝 Datos Personales</h3>
+        <form method="post" asp-action="UpdateProfile">
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label class="form-label">Nombre de usuario *</label>
+                <input name="userName" id="fieldUserName" type="text" class="form-control"
+                       required maxlength="100" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email *</label>
+                <input name="email" id="fieldEmail" type="email" class="form-control"
+                       required maxlength="200"
+                       pattern="[a-zA-Z0-9._%+\-]+@@[a-zA-Z0-9.\-]+\.[a-zA-Z]{{2,}}"
+                       title="Ingresá un email válido (ej: usuario@dominio.com)" />
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Teléfono</label>
+                    <input name="phoneNumber" id="fieldPhone" type="text" class="form-control"
+                           placeholder="Ej: 3512050488" maxlength="30" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">CUIT/CUIL</label>
+                    <input name="taxId" id="fieldTaxId" type="text" class="form-control"
+                           placeholder="Ej: 20-12345678-6" maxlength="13" />
+                    <div id="cuitValidation" style="display:none; font-size:.78rem; margin-top:4px;"></div>
+                </div>
+            </div>
+            <div class="form-group" style="margin-top:8px;">
+                <button type="submit" id="btnSaveProfile" class="btn-save">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Cambiar contraseña -->
+    <div class="profile-card">
+        <h3 class="card-title">🔒 Cambiar Contraseña</h3>
+        <form method="post" asp-action="ChangePassword">
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label class="form-label">Contraseña actual *</label>
+                <input name="currentPassword" type="password" class="form-control"
+                       required placeholder="Tu contraseña actual" />
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Nueva contraseña *</label>
+                    <input name="newPassword" id="newPass" type="password" class="form-control"
+                           required minlength="6" placeholder="Mínimo 6 caracteres" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirmar nueva contraseña *</label>
+                    <input name="confirmPassword" id="confirmPass" type="password" class="form-control"
+                           required minlength="6" placeholder="Repetí la contraseña" />
+                </div>
+            </div>
+            <div id="passMatch" style="display:none; font-size:.82rem; margin-bottom:8px;"></div>
+            <div class="form-group" style="margin-top:8px;">
+                <button type="submit" class="btn-save btn-password">Cambiar Contraseña</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Info de cuenta -->
+    <div class="profile-card profile-info-card">
+        <div class="info-row">
+            <span class="info-label">Miembro desde</span>
+            <span class="info-value" id="profileCreatedAt">—</span>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <style>
+        .back-link { display:inline-block; margin-bottom:1.5rem; color:var(--primary-color,#667eea); text-decoration:none; font-weight:600; }
+        .back-link:hover { text-decoration:underline; }
+
+        .profile-header { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+        .profile-avatar { font-size:3rem; background:linear-gradient(135deg,#667eea,#764ba2); border-radius:50%; width:64px; height:64px; display:flex; align-items:center; justify-content:center; }
+        .profile-title { margin:0; font-size:1.4rem; font-weight:700; color:#1e293b; }
+        .profile-subtitle { margin:4px 0 0; color:#64748b; font-size:.85rem; }
+
+        .profile-card { background:white; border-radius:14px; padding:24px; box-shadow:0 2px 12px rgba(0,0,0,.06); margin-bottom:16px; }
+        .card-title { font-size:1rem; font-weight:600; color:#334155; margin:0 0 16px; padding-bottom:10px; border-bottom:1px solid #f1f5f9; }
+
+        .alert-box { border-radius:10px; padding:12px 18px; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+        .alert-success-box { background:#ecfdf5; border:1px solid #6ee7b7; color:#065f46; }
+        .alert-error-box { background:#fef2f2; border:1px solid #fca5a5; color:#991b1b; }
+
+        .btn-save { padding:10px 24px; background:#667eea; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:600; font-size:.9rem; transition:all .2s; }
+        .btn-save:hover { background:#5a67d8; }
+        .btn-save:disabled { opacity:.5; cursor:not-allowed; }
+        .btn-password { background:#059669; }
+        .btn-password:hover { background:#047857; }
+
+        .profile-info-card { background:#f8fafc; }
+        .info-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #e2e8f0; }
+        .info-row:last-child { border-bottom:none; }
+        .info-label { color:#64748b; font-size:.85rem; }
+        .info-value { color:#1e293b; font-weight:600; font-size:.85rem; }
+
+        .role-tag { display:inline-block; padding:2px 10px; border-radius:10px; font-size:.75rem; font-weight:600; margin-right:4px; }
+        .role-productor { background:#dcfce7; color:#166534; }
+        .role-aplicador { background:#dbeafe; color:#1e40af; }
+        .role-municipio { background:#ede9fe; color:#5b21b6; }
+        .role-admin { background:#fee2e2; color:#991b1b; }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            var profile = @Html.Raw(profileJson);
+
+            // Fill profile data
+            if (profile.userName) {
+                document.getElementById('profileName').textContent = profile.userName;
+                document.getElementById('fieldUserName').value = profile.userName;
+            }
+            if (profile.email) document.getElementById('fieldEmail').value = profile.email.toLowerCase();
+            if (profile.phoneNumber) document.getElementById('fieldPhone').value = profile.phoneNumber;
+            if (profile.taxId) document.getElementById('fieldTaxId').value = profile.taxId;
+            if (profile.createdAt) document.getElementById('profileCreatedAt').textContent = new Date(profile.createdAt).toLocaleDateString('es-AR');
+
+            if (profile.roles && profile.roles.length > 0) {
+                var rolesHtml = profile.roles.map(function (r) {
+                    var cls = 'role-' + r.toLowerCase();
+                    return '<span class="role-tag ' + cls + '">' + r + '</span>';
+                }).join(' ');
+                document.getElementById('profileRoles').innerHTML = rolesHtml;
+            }
+
+            // ── Email validation ──
+            var emailInput = document.getElementById('fieldEmail');
+            var emailRegex = new RegExp('^[a-zA-Z0-9._%+\\-]+@@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]' + '{2,}$');
+
+            emailInput.addEventListener('blur', function () {
+                var val = this.value.trim();
+                if (val && !emailRegex.test(val)) {
+                    this.style.borderColor = '#ef4444';
+                    this.setCustomValidity('Email inválido. Ej: usuario@dominio.com');
+                } else {
+                    this.style.borderColor = '';
+                    this.setCustomValidity('');
+                }
+            });
+
+            // ── CUIT/CUIL validation (client-side, Módulo 11) ──
+            var cuitInput = document.getElementById('fieldTaxId');
+            var cuitMsg = document.getElementById('cuitValidation');
+            var btnSave = document.getElementById('btnSaveProfile');
+
+            function validateCuit(value) {
+                if (!value || value.trim() === '') {
+                    cuitMsg.style.display = 'none';
+                    btnSave.disabled = false;
+                    return;
+                }
+
+                var digits = value.replace(/\D/g, '');
+
+                if (digits.length !== 11) {
+                    cuitMsg.style.display = 'block';
+                    cuitMsg.style.color = '#94a3b8';
+                    cuitMsg.textContent = 'El CUIT/CUIL debe tener 11 dígitos (' + digits.length + '/11)';
+                    btnSave.disabled = false;
+                    return;
+                }
+
+                var validPrefixes = ['20','23','24','27','30','33','34'];
+                var prefix = digits.substring(0, 2);
+                if (validPrefixes.indexOf(prefix) === -1) {
+                    cuitMsg.style.display = 'block';
+                    cuitMsg.style.color = '#ef4444';
+                    cuitMsg.textContent = '❌ Prefijo inválido. Los prefijos válidos son: 20, 23, 24, 27, 30, 33, 34';
+                    btnSave.disabled = true;
+                    return;
+                }
+
+                // Módulo 11
+                var weights = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+                var sum = 0;
+                for (var i = 0; i < 10; i++) {
+                    sum += parseInt(digits[i]) * weights[i];
+                }
+                var remainder = sum % 11;
+                var expected;
+                if (remainder === 0) expected = 0;
+                else if (remainder === 1) expected = 9;
+                else expected = 11 - remainder;
+
+                var actual = parseInt(digits[10]);
+
+                if (expected === actual) {
+                    cuitMsg.style.display = 'block';
+                    cuitMsg.style.color = '#059669';
+                    cuitMsg.textContent = '✅ CUIT/CUIL válido';
+                    btnSave.disabled = false;
+
+                    // Auto-format
+                    var formatted = digits.substring(0,2) + '-' + digits.substring(2,10) + '-' + digits[10];
+                    cuitInput.value = formatted;
+                } else {
+                    cuitMsg.style.display = 'block';
+                    cuitMsg.style.color = '#ef4444';
+                    cuitMsg.textContent = '❌ CUIT/CUIL inválido — el dígito verificador no coincide';
+                    btnSave.disabled = true;
+                }
+            }
+
+            cuitInput.addEventListener('blur', function () { validateCuit(this.value); });
+            cuitInput.addEventListener('input', function () {
+                // Reset validation on typing
+                if (cuitMsg.style.color === 'rgb(239, 68, 68)') {
+                    cuitMsg.style.display = 'none';
+                    btnSave.disabled = false;
+                }
+            });
+
+            // ── Password match validation ──
+            var newPass = document.getElementById('newPass');
+            var confirmPass = document.getElementById('confirmPass');
+            var matchDiv = document.getElementById('passMatch');
+
+            function checkMatch() {
+                if (!confirmPass.value) { matchDiv.style.display = 'none'; return; }
+                if (newPass.value === confirmPass.value) {
+                    matchDiv.style.display = 'block';
+                    matchDiv.style.color = '#059669';
+                    matchDiv.textContent = '✅ Las contraseñas coinciden';
+                } else {
+                    matchDiv.style.display = 'block';
+                    matchDiv.style.color = '#ef4444';
+                    matchDiv.textContent = '❌ Las contraseñas no coinciden';
+                }
+            }
+
+            newPass.addEventListener('input', checkMatch);
+            confirmPass.addEventListener('input', checkMatch);
+        })();
+    </script>
+}
