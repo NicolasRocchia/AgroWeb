@@ -355,6 +355,7 @@ window.GeoInsights = (function () {
             map.setView(prevCenter, prevZoom);
         } else {
             if (bounds.isValid()) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+            else if (data.mapCenterLat && data.mapCenterLng) map.setView([data.mapCenterLat, data.mapCenterLng], data.mapZoom || 12);
             else map.setView([-33.0, -61.0], 8);
         }
     }
@@ -693,19 +694,6 @@ window.GeoInsights = (function () {
                 );
                 exclusionLayer.addLayer(poly);
             });
-
-            // Setup toggle for exclusion zones layer
-            const dEl = document.getElementById('toggleExclusion');
-            const mEl = document.getElementById('toggleExclusionMobile');
-            function toggleEZ(checked) {
-                if (exclusionLayer) {
-                    checked ? map.addLayer(exclusionLayer) : map.removeLayer(exclusionLayer);
-                }
-                if (dEl) dEl.checked = checked;
-                if (mEl) mEl.checked = checked;
-            }
-            if (dEl) dEl.addEventListener('change', () => toggleEZ(dEl.checked));
-            if (mEl) mEl.addEventListener('change', () => toggleEZ(mEl.checked));
         } catch (e) {
             console.error('[GeoInsights] Error loading exclusion zones:', e);
         }

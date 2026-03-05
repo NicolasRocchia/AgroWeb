@@ -89,19 +89,19 @@ public class AccountController : Controller
             });
         }
 
-        // Guardar nombre de usuario
+        // Guardar nombre de usuario (HttpOnly)
         Response.Cookies.Append(UserNameCookie, json.UserName ?? "Usuario", new CookieOptions
         {
-            HttpOnly = false,
+            HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Lax,
             Expires = expiresAt
         });
 
-        // Guardar email del usuario
+        // Guardar email del usuario (HttpOnly)
         Response.Cookies.Append(UserEmailCookie, json.Email ?? "", new CookieOptions
         {
-            HttpOnly = false,
+            HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Lax,
             Expires = expiresAt

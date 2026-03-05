@@ -4,7 +4,7 @@
     var isProductor = User.IsInRole("Productor");
     var isAplicador = User.IsInRole("Aplicador");
     var isAuthenticated = User?.Identity?.IsAuthenticated ?? false;
-    var userName = Context.Request.Cookies["agro_user_name"] ?? "Usuario";
+    var userName = User?.Identity?.Name ?? "Usuario";
 }
 
 @* ======================================================

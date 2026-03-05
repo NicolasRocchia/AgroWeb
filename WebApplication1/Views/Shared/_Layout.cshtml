@@ -64,7 +64,8 @@
 
                         @if (User?.Identity?.IsAuthenticated ?? false)
                         {
-                            var userName = Context.Request.Cookies["agro_user_name"] ?? "Usuario";
+                            var userName = User.Identity?.Name ?? "Usuario";
+                            var userEmail = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
                             <li class="user-menu-container">
                                 <button class="btn-user-menu" id="userMenuButton">
                                     <span class="user-icon">👤</span>
@@ -76,7 +77,7 @@
                                         <span class="user-icon-large">👤</span>
                                         <div class="user-info">
                                             <strong>@userName</strong>
-                                            <small>@Context.Request.Cookies["agro_user_email"]</small>
+                                            <small>@userEmail</small>
                                         </div>
                                     </div>
                                     <div class="user-dropdown-divider"></div>
