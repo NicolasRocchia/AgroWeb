@@ -106,7 +106,7 @@
                                     <span class="status-badge status-approved">Activo</span>
                                 }
                             </td>
-                            <td>@(u.LastLoginAt?.ToString("dd/MM/yy HH:mm") ?? "Nunca")</td>
+                            <td>@DateHelper.FormatArg(u.LastLoginAt, "dd/MM/yy HH:mm", "Nunca")</td>
                             <td>@u.CreatedAt.ToString("dd/MM/yy")</td>
                             <td class="actions-cell">
                                 <!-- Cambiar Rol -->

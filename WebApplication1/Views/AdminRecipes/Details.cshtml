@@ -427,7 +427,7 @@
         <div class="info-grid">
             <div class="info-item">
                 <span class="info-label">Fecha de Creación</span>
-                <span class="info-value">@Model.Recipe.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                <span class="info-value">@DateHelper.FormatArg(Model.Recipe.CreatedAt)</span>
             </div>
             @if (!string.IsNullOrEmpty(Model.Recipe.CreatedByUserName))
             {
@@ -440,7 +440,7 @@
             {
                 <div class="info-item">
                     <span class="info-label">Última Actualización</span>
-                    <span class="info-value">@Model.Recipe.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                    <span class="info-value">@DateHelper.FormatArg(Model.Recipe.UpdatedAt)</span>
                 </div>
             }
             @if (!string.IsNullOrEmpty(Model.Recipe.UpdatedByUserName))

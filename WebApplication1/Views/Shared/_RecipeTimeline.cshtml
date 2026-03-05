@@ -100,7 +100,7 @@
                     <div class="tl-header">
                         <span class="tl-icon">@evt.Icon</span>
                         <span class="tl-title">@evt.Title</span>
-                        <span class="tl-date">@evt.Date.ToString("dd/MM/yyyy HH:mm")</span>
+                        <span class="tl-date">@DateHelper.FormatArg(evt.Date)</span>
                     </div>
                     @if (!string.IsNullOrEmpty(evt.Detail))
                     {

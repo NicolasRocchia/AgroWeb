@@ -154,9 +154,51 @@
         </section>
     }
 
-    <!-- Timeline de Auditoría -->
-    @{ ViewData["TimelineRecipe"] = Model.Recipe; }
-    @await Html.PartialAsync("_RecipeTimeline")
+    <!-- Historial de Revisiones -->
+    @if (Model.Recipe.ReviewLogs?.Any() == true)
+    {
+        <section class="detail-section" style="border-left: 4px solid #3b82f6;">
+            <h2 class="section-title">
+                <span class="section-icon">📋</span> Historial de Revisiones
+            </h2>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                @foreach (var log in Model.Recipe.ReviewLogs)
+                {
+                    var actionColor = log.Action switch
+                    {
+                                    "APROBADA" => "#16a34a",
+                                    "RECHAZADA" => "#dc2626",
+                                    "OBSERVADA" => "#d97706",
+                                    "REDIRIGIDA" => "#2563eb",
+                        _ => "#64748b"
+                    };
+                    var actionIcon = log.Action switch
+                    {
+                                    "APROBADA" => "✅",
+                                    "RECHAZADA" => "❌",
+                                    "OBSERVADA" => "💬",
+                                    "REDIRIGIDA" => "↪️",
+                        _ => "•"
+                    };
+                    <div style="padding: 10px 14px; background: #f8fafc; border-radius: 8px; border-left: 3px solid @actionColor;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 600; color: @actionColor;">@actionIcon @log.Action</span>
+                            <span style="font-size: 12px; color: #94a3b8;">@DateHelper.FormatArg(log.CreatedAt)</span>
+                        </div>
+                        <div style="font-size: 13px; color: #64748b;">@log.MunicipalityName</div>
+                        @if (log.Action == "REDIRIGIDA" && !string.IsNullOrEmpty(log.TargetMunicipalityName))
+                        {
+                            <div style="font-size: 13px; color: #2563eb;">→ @log.TargetMunicipalityName</div>
+                        }
+                        @if (!string.IsNullOrEmpty(log.Observation))
+                        {
+                            <div style="margin-top: 6px; font-size: 13px; color: #334155; background: white; padding: 8px; border-radius: 6px;">@log.Observation</div>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+    }
 
     <!-- Mensajes -->
     @if (Model.Recipe.Messages?.Any() == true || Model.Recipe.Status?.ToUpper() == "PENDIENTE")
@@ -177,7 +219,7 @@
                                 @msg.SenderName (@msg.SenderRole)
                             </div>
                             <div style="font-size: 14px; color: #1e293b;">@msg.Message</div>
-                            <div style="font-size: 11px; color: #94a3b8; text-align: right; margin-top: 4px;">@msg.CreatedAt.ToString("dd/MM HH:mm")</div>
+                            <div style="font-size: 11px; color: #94a3b8; text-align: right; margin-top: 4px;">@DateHelper.FormatArg(msg.CreatedAt, "dd/MM HH:mm")</div>
                         </div>
                     }
                 </div>
