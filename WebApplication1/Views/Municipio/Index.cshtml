@@ -8,9 +8,9 @@
     <div class="recipes-header-content">
         <h1 class="recipes-title">
             <span class="recipes-title-icon">📋</span>
-            Mis Recetas
+            Recetas Asignadas
         </h1>
-        <p class="recipes-subtitle">Consultá las recetas fitosanitarias que cargaste en el sistema</p>
+        <p class="recipes-subtitle">Recetas fitosanitarias asignadas a tu municipio</p>
     </div>
 </div>
 
@@ -108,25 +108,39 @@
                     {
                         var statusClass = r.Status?.ToUpper() switch
                         {
-                                        "ABIERTA" => "status-draft",
-                                        "PENDIENTE" => "status-pending",
-                                        "APROBADA" => "status-approved",
-                                        "RECHAZADA" => "status-rejected",
-                                        "OBSERVADA" => "status-warning",
-                                        "CERRADA" => "status-expired",
-                                        "ANULADA" => "status-rejected",
+                                                    "ABIERTA" => "status-draft",
+                                                    "PENDIENTE" => "status-pending",
+                                                    "APROBADA" => "status-approved",
+                                                    "RECHAZADA" => "status-rejected",
+                                                    "OBSERVADA" => "status-warning",
+                                                    "CERRADA" => "status-expired",
+                                                    "ANULADA" => "status-rejected",
                             _ => "status-draft"
                         };
 
                         <tr>
-                            <td><strong>@(r.RfdNumber.HasValue ? r.RfdNumber.ToString() : "—")</strong></td>
+                            <td><strong>@(r.RfdNumber.HasValue? r.RfdNumber.ToString() : "—")</strong></td>
                             <td>
                                 <span class="status-badge @statusClass">
                                     @r.Status
                                 </span>
                             </td>
                             <td>@r.IssueDate.ToString("dd/MM/yyyy")</td>
-                            <td>@(r.ExpirationDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td>
+                                @if (r.ExpirationDate.HasValue)
+                                {
+                                    var daysLeft = (r.ExpirationDate.Value - DateTime.UtcNow.Date).TotalDays;
+                                    var expStyle = daysLeft < 0 ? "color:#991b1b; font-weight:700;"
+                                    : daysLeft < 7 ? "color:#dc2626; font-weight:600;"
+                                    : "";
+                                    var expPrefix = daysLeft < 0 ? "⛔ " : daysLeft < 7 ? "⚠️ " : "";
+                                    <span style="@expStyle">@expPrefix@r.ExpirationDate.Value.ToString("dd/MM/yyyy")</span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
                             <td>@r.RequesterName</td>
                             <td>@r.AdvisorName</td>
                             <td>@(r.Crop ?? "-")</td>
