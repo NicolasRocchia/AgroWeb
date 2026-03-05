@@ -160,7 +160,8 @@ public class AgroApiClient
         long? municipalityId = null,
         string? dateFrom = null, string? dateTo = null,
         string? crop = null, string? toxClass = null,
-        string? productName = null, string? advisorName = null)
+        string? productName = null, string? advisorName = null,
+        int? nearSensitivePointMeters = null)
     {
         var qs = new QueryBuilder()
             .Add("municipalityId", municipalityId)
@@ -169,7 +170,8 @@ public class AgroApiClient
             .Add("Crop", crop)
             .Add("ToxClass", toxClass)
             .Add("ProductName", productName)
-            .Add("AdvisorName", advisorName);
+            .Add("AdvisorName", advisorName)
+            .Add("NearSensitivePointMeters", nearSensitivePointMeters);
 
         return GetRawJsonAsync($"/api/recipes/geo-insights{qs}");
     }
@@ -336,7 +338,7 @@ public class AgroApiClient
         => GetRawJsonAsync("/api/sensitive-points/mine");
 
     public Task<ApiResult<string>> GetActiveSensitivePointsAsync()
-        => GetRawJsonAsync("/api/sensitive-points/active");
+    => GetRawJsonAsync("/api/sensitive-points/active");
 
     public Task<ApiResult<string>> CreateSensitivePointAsync(object body)
         => PostAsync("/api/sensitive-points", body);

@@ -15,7 +15,7 @@ window.GeoInsights = (function () {
     'use strict';
 
     // ===== STATE =====
-    let map, polygonLayers, sensitiveLayer, heatLayer;
+    let map, polygonLayers, sensitiveLayer, sensitiveRecipeLayer, heatLayer;
     let timelineChart, toxChart, cropChart;
     let isLoading = false;
     let config = {};
@@ -142,12 +142,14 @@ window.GeoInsights = (function () {
         }).addTo(map);
 
         polygonLayers = L.layerGroup().addTo(map);
-        sensitiveLayer = L.layerGroup().addTo(map);
+        sensitiveLayer = L.layerGroup().addTo(map);       // Permanent (municipal)
+        sensitiveRecipeLayer = L.layerGroup();             // Recipe (off by default)
     }
 
     function clearMapLayers() {
         polygonLayers.clearLayers();
         sensitiveLayer.clearLayers();
+        sensitiveRecipeLayer.clearLayers();
         if (heatLayer) {
             try { map.removeLayer(heatLayer); } catch (e) { /* ignore */ }
             heatLayer = null;
@@ -215,8 +217,7 @@ window.GeoInsights = (function () {
                 '<strong>' + emoji + ' ' + escapeHtml(sp.name) + '</strong>' + badge +
             '</div>' +
             '<div class="geo-popup-body">' +
-                '<div><strong>Tipo:</strong> ' + escapeHtml(sp.type || '-') + '</div>' +
-                '<div><strong>Localidad:</strong> ' + escapeHtml(sp.locality || '-') + '</div>' +
+                '<div><strong>Tipo:</strong> ' + escapeHtml(sp.type || '-') + '</div>' +               
             '</div>' +
         '</div>';
     }
@@ -338,20 +339,35 @@ window.GeoInsights = (function () {
         }
 
         const sensitivePoints = data?.sensitivePoints || [];
+
+        // Type icons for permanent points
+        const spTypeIcons = {
+            'Escuela': '🏫', 'Hospital': '🏥', 'Pozo de agua': '💧',
+            'Curso de agua': '🌊', 'Apiario': '🐝', 'Vivienda': '🏠',
+            'Reserva': '🌿', 'Club': '⚽'
+        };
+
         sensitivePoints.forEach(sp => {
-            const emoji = sp.isPermanent ? '📌' : '📍';
-            const markerClass = sp.isPermanent ? 'sp-marker sp-permanent' : 'sp-marker';
+            const isPerm = sp.isPermanent;
+            const emoji = isPerm ? (spTypeIcons[sp.type] || '📌') : '📍';
+            const markerSize = isPerm ? 30 : 22;
             const icon = L.divIcon({
-                html: '<div class="' + markerClass + '"><span>' + emoji + '</span></div>',
+                html: '<div style="font-size:' + (isPerm ? '1.5rem' : '1rem') + '; text-align:center; ' +
+                    (isPerm ? 'filter:drop-shadow(0 1px 2px rgba(0,0,0,.3));' : 'opacity:0.7;') + '">' + emoji + '</div>',
                 className: '',
-                iconSize: [28, 28],
-                iconAnchor: [14, 14],
-                popupAnchor: [0, -16]
+                iconSize: [markerSize, markerSize],
+                iconAnchor: [markerSize/2, markerSize/2],
+                popupAnchor: [0, -markerSize/2]
             });
 
             const marker = L.marker([sp.latitude, sp.longitude], { icon });
             marker.bindPopup(buildSensitivePopupHtml(sp), { maxWidth: 300 });
-            sensitiveLayer.addLayer(marker);
+
+            if (isPerm) {
+                sensitiveLayer.addLayer(marker);
+            } else {
+                sensitiveRecipeLayer.addLayer(marker);
+            }
             bounds.extend([sp.latitude, sp.longitude]);
         });
 
@@ -586,6 +602,7 @@ window.GeoInsights = (function () {
 
         setupToggle('togglePolygons', 'togglePolygonsMobile', polygonLayers, false);
         setupToggle('toggleSensitive', 'toggleSensitiveMobile', sensitiveLayer, false);
+        setupToggle('toggleSensitiveRecipe', 'toggleSensitiveRecipeMobile', sensitiveRecipeLayer, false);
     }
 
     function setupLegendToggle() {

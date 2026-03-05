@@ -21,12 +21,14 @@ public class MunicipioController : Controller
     public async Task<IActionResult> GeoInsights(
         string? dateFrom = null, string? dateTo = null,
         string? crop = null, string? toxClass = null,
-        string? productName = null, string? advisorName = null)
+        string? productName = null, string? advisorName = null,
+        int? nearSensitivePointMeters = null)
     {
         var result = await _api.GetGeoInsightsAsync(
             dateFrom: dateFrom, dateTo: dateTo,
             crop: crop, toxClass: toxClass,
-            productName: productName, advisorName: advisorName);
+            productName: productName, advisorName: advisorName,
+            nearSensitivePointMeters: nearSensitivePointMeters);
 
         if (!result.Success)
             ViewBag.Error = $"No se pudieron obtener datos geoespaciales. {result.Error}";
