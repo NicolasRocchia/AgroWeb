@@ -206,9 +206,13 @@ window.GeoInsights = (function () {
     }
 
     function buildSensitivePopupHtml(sp) {
+        const emoji = sp.isPermanent ? '📌' : '📍';
+        const badge = sp.isPermanent
+            ? '<span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:8px;font-size:.7rem;font-weight:600;margin-left:6px;">Permanente</span>'
+            : '<span style="background:#fef9c3;color:#854d0e;padding:1px 6px;border-radius:8px;font-size:.7rem;font-weight:600;margin-left:6px;">De receta</span>';
         return '<div class="geo-popup">' +
             '<div class="geo-popup-header">' +
-                '<strong>📍 ' + escapeHtml(sp.name) + '</strong>' +
+                '<strong>' + emoji + ' ' + escapeHtml(sp.name) + '</strong>' + badge +
             '</div>' +
             '<div class="geo-popup-body">' +
                 '<div><strong>Tipo:</strong> ' + escapeHtml(sp.type || '-') + '</div>' +
@@ -335,8 +339,10 @@ window.GeoInsights = (function () {
 
         const sensitivePoints = data?.sensitivePoints || [];
         sensitivePoints.forEach(sp => {
+            const emoji = sp.isPermanent ? '📌' : '📍';
+            const markerClass = sp.isPermanent ? 'sp-marker sp-permanent' : 'sp-marker';
             const icon = L.divIcon({
-                html: '<div class="sp-marker"><span>📍</span></div>',
+                html: '<div class="' + markerClass + '"><span>' + emoji + '</span></div>',
                 className: '',
                 iconSize: [28, 28],
                 iconAnchor: [14, 14],

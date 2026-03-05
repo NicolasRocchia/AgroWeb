@@ -164,6 +164,10 @@
                 <!-- Exclusion zone alert -->
                 <div id="exclusionZoneAlert" style="display:none; align-items:flex-start; gap:12px; padding:14px 18px; background:#fef2f2; border:2px solid #fca5a5; border-radius:12px; margin-top:12px; color:#991b1b; font-size:.88rem; line-height:1.5;">
                 </div>
+
+                <!-- Sensitive point proximity alert -->
+                <div id="sensitivePointAlert" style="display:none; align-items:flex-start; gap:12px; padding:14px 18px; background:#fffbeb; border:2px solid #fbbf24; border-radius:12px; margin-top:12px; color:#92400e; font-size:.88rem; line-height:1.5;">
+                </div>
             </div>
 
             @* ══════════════════════════════════════════════════════════
@@ -796,6 +800,11 @@
             if (lot.centroidLat && lot.centroidLng) {
                 checkExclusionZonesForPoint(lot.centroidLat, lot.centroidLng);
             }
+
+            // Check sensitive point proximity (using lot vertices for edge distance)
+            if (lot.vertices && lot.vertices.length >= 3) {
+                checkSensitivePointProximity(lot.vertices);
+            }
         }
 
         function deselectExistingLot() {
@@ -812,6 +821,7 @@
                 });
             }
             showExclusionAlert([]);
+            showSensitiveAlert([]);
         }
 
         async function loadExistingLots() {
@@ -922,6 +932,135 @@
             alertEl.style.display = 'flex';
         }
 
+        // ── Sensitive Points (permanent municipal points) ──
+        var sensitivePointsData = [];
+        var sensitiveTypeIcons = {
+            'Escuela': '🏫', 'Hospital': '🏥', 'Pozo de agua': '💧',
+            'Curso de agua': '🌊', 'Apiario': '🐝', 'Vivienda': '🏠',
+            'Reserva': '🌿', 'Club': '⚽', 'Otro': '📍'
+        };
+
+        async function loadSensitivePoints() {
+            try {
+                var resp = await fetch('/Home/SensitivePoints');
+                if (!resp.ok) return;
+                var allPoints = await resp.json();
+                // Solo permanentes para alertas de distancia
+                sensitivePointsData = allPoints.filter(function(p) { return p.isPermanent; });
+
+                if (!sensitivePointsData || sensitivePointsData.length === 0) return;
+
+                sensitivePointsData.forEach(function(p) {
+                    var icon = sensitiveTypeIcons[p.type] || '📌';
+                    var divIcon = L.divIcon({
+                        html: '<div style="font-size:1.2rem; text-align:center;">' + icon + '</div>',
+                        className: '', iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -14]
+                    });
+                    var marker = L.marker([p.latitude, p.longitude], { icon: divIcon, interactive: true }).addTo(map);
+                    marker.bindTooltip('<strong>' + icon + ' ' + p.name + '</strong>' +
+                        (p.type ? '<br>' + p.type : '') +
+                        (p.municipalityName ? '<br>' + p.municipalityName : ''), { sticky: true });
+                });
+            } catch (e) {
+                console.error('[AgroConnect] Error loading sensitive points:', e);
+            }
+        }
+
+        // Check distance from polygon edges to each permanent sensitive point
+        function checkSensitivePointProximity(polygonVertices) {
+            var ALERT_RADIUS_M = 200;
+            var warnings = [];
+
+            if (!polygonVertices || polygonVertices.length < 3 || sensitivePointsData.length === 0) {
+                showSensitiveAlert([]);
+                return;
+            }
+
+            sensitivePointsData.forEach(function(sp) {
+                var dist = minDistancePointToPolygonEdge(sp.latitude, sp.longitude, polygonVertices);
+                if (dist <= ALERT_RADIUS_M) {
+                    warnings.push({ point: sp, distance: Math.round(dist) });
+                }
+            });
+
+            showSensitiveAlert(warnings);
+        }
+
+        // Calculate minimum distance from a point to any edge of a polygon (in meters)
+        function minDistancePointToPolygonEdge(pLat, pLng, vertices) {
+            var minDist = Infinity;
+            var n = vertices.length;
+
+            for (var i = 0; i < n; i++) {
+                var j = (i + 1) % n;
+                var aLat, aLng, bLat, bLng;
+
+                // Handle both {lat, lng} and {latitude, longitude} formats
+                if (vertices[i].lat !== undefined) {
+                    aLat = vertices[i].lat; aLng = vertices[i].lng;
+                    bLat = vertices[j].lat; bLng = vertices[j].lng;
+                } else {
+                    aLat = vertices[i].latitude; aLng = vertices[i].longitude;
+                    bLat = vertices[j].latitude; bLng = vertices[j].longitude;
+                }
+
+                var dist = distancePointToSegment(pLat, pLng, aLat, aLng, bLat, bLng);
+                if (dist < minDist) minDist = dist;
+            }
+
+            return minDist;
+        }
+
+        // Distance from point P to segment AB (in meters), using flat-earth approximation
+        function distancePointToSegment(pLat, pLng, aLat, aLng, bLat, bLng) {
+            // Convert to meters relative to point A
+            var mPerDegLat = 111320;
+            var mPerDegLng = 111320 * Math.cos(aLat * Math.PI / 180);
+
+            var px = (pLng - aLng) * mPerDegLng;
+            var py = (pLat - aLat) * mPerDegLat;
+            var bx = (bLng - aLng) * mPerDegLng;
+            var by = (bLat - aLat) * mPerDegLat;
+
+            // Project P onto line AB
+            var segLenSq = bx * bx + by * by;
+            if (segLenSq === 0) {
+                // A and B are the same point
+                return Math.sqrt(px * px + py * py);
+            }
+
+            var t = (px * bx + py * by) / segLenSq;
+            t = Math.max(0, Math.min(1, t)); // Clamp to segment
+
+            var closestX = t * bx;
+            var closestY = t * by;
+
+            var dx = px - closestX;
+            var dy = py - closestY;
+
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function showSensitiveAlert(warnings) {
+            var alertEl = document.getElementById('sensitivePointAlert');
+            if (!alertEl) return;
+            if (warnings.length === 0) { alertEl.style.display = 'none'; return; }
+
+            var html = '<strong>⚠️ Punto sensible cercano:</strong> El borde del lote está a menos de 200m de:';
+            html += '<ul style="margin:6px 0 0;padding-left:18px;">';
+            warnings.forEach(function(w) {
+                var icon = sensitiveTypeIcons[w.point.type] || '📌';
+                html += '<li>' + icon + ' <strong>' + w.point.name + '</strong>';
+                html += ' (' + (w.point.type || 'punto sensible') + ')';
+                html += ' — a <strong>' + w.distance + 'm</strong> del borde';
+                if (w.point.municipalityName) html += ' · ' + w.point.municipalityName;
+                html += '</li>';
+            });
+            html += '</ul>';
+            alertEl.innerHTML = '<span>📍</span><div>' + html + '</div>';
+            alertEl.style.display = 'flex';
+        }
+
         function addDrawControl() {
             if (drawControl) return;
             drawControl = new L.Control.Draw({
@@ -1000,6 +1139,7 @@
             // Load existing lots and start in "existing" mode
             loadExistingLots();
             loadExclusionZones();
+            loadSensitivePoints();
         });
 
         // ── Calculate area using Shoelace formula (on WGS84 approximation) ──
@@ -1063,6 +1203,9 @@
             // Auto-fill surface (user can override)
             surfaceInput.value = area.toFixed(2);
             surfaceLabel.style.display = 'block';
+
+            // Check sensitive point proximity for drawn polygon
+            checkSensitivePointProximity(latlngs);
 
             // If user manually edits surface, hide the auto-label
             surfaceInput.addEventListener('input', function() {

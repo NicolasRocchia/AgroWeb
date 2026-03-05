@@ -192,4 +192,66 @@ public class MunicipioController : Controller
 
         return RedirectToAction("ExclusionZones");
     }
+
+    // =============================================
+    // PUNTOS SENSIBLES
+    // =============================================
+
+    [HttpGet]
+    public async Task<IActionResult> SensitivePoints()
+    {
+        var result = await _api.GetMySensitivePointsAsync();
+        ViewBag.PointsJson = result.Success ? result.Data : "[]";
+        if (!result.Success) ViewBag.Error = result.Error;
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateSensitivePoint(
+        string name, string? type, string? locality, string? department,
+        string latitude, string longitude)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            TempData["Error"] = "El nombre es obligatorio.";
+            return RedirectToAction("SensitivePoints");
+        }
+
+        if (!decimal.TryParse(latitude?.Replace(",", "."), System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var lat) ||
+            !decimal.TryParse(longitude?.Replace(",", "."), System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var lng))
+        {
+            TempData["Error"] = "Coordenadas inválidas. Hacé click en el mapa para seleccionar la ubicación.";
+            return RedirectToAction("SensitivePoints");
+        }
+
+        var result = await _api.CreateSensitivePointAsync(new
+        {
+            name = name.Trim(),
+            type = type?.Trim(),
+            locality = locality?.Trim(),
+            department = department?.Trim(),
+            latitude = lat,
+            longitude = lng
+        });
+
+        TempData[result.Success ? "Success" : "Error"] =
+            result.Success ? "Punto sensible creado correctamente." : result.Error;
+
+        return RedirectToAction("SensitivePoints");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteSensitivePoint(long id)
+    {
+        var result = await _api.DeleteSensitivePointAsync(id);
+
+        TempData[result.Success ? "Success" : "Error"] =
+            result.Success ? "Punto sensible eliminado." : result.Error;
+
+        return RedirectToAction("SensitivePoints");
+    }
 }

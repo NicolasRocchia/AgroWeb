@@ -1,0 +1,279 @@
+@{
+    ViewData["Title"] = "Puntos Sensibles";
+    var pointsJson = ViewBag.PointsJson as string ?? "[]";
+}
+
+<div class="page-container" style="max-width: 1100px; margin: 0 auto; padding: 0 20px 40px;">
+    <a asp-controller="Municipio" asp-action="GeoInsights" class="back-link">← Mapa Territorial</a>
+    <h1 class="page-title">📍 Puntos Sensibles</h1>
+    <p style="color: #64748b; margin-bottom: 20px;">Cargá escuelas, hospitales, pozos de agua, apiarios y otros puntos sensibles permanentes de tu jurisdicción. Los puntos importados de recetas (cultivos linderos, etc.) se gestionan desde cada receta.</p>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-box alert-success-box"><span>✅</span> @TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-box alert-error-box"><span>⚠️</span> @TempData["Error"]</div>
+    }
+
+    <div class="sp-layout">
+        <!-- Left: Map -->
+        <div class="sp-map-panel">
+            <div class="sp-map-toolbar">
+                <button type="button" id="btnAddPoint" class="sp-toolbar-btn" onclick="startAdding()">➕ Agregar punto</button>
+                <button type="button" id="btnCancelAdd" class="sp-toolbar-btn sp-btn-cancel" onclick="cancelAdding()" style="display:none;">✕ Cancelar</button>
+                <span id="mapHint" class="sp-hint">Puntos sensibles de tu municipio</span>
+            </div>
+            <div id="spMap" class="sp-map"></div>
+        </div>
+
+        <!-- Right: Form + List -->
+        <div class="sp-sidebar">
+            <!-- Create form -->
+            <div id="createPanel" class="sp-create-panel" style="display:none;">
+                <h3 class="sp-panel-title">Nuevo Punto Sensible</h3>
+                <form method="post" asp-action="CreateSensitivePoint" id="createForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="latitude" id="newLat" />
+                    <input type="hidden" name="longitude" id="newLng" />
+
+                    <div class="sp-form-group">
+                        <label class="sp-label">Nombre *</label>
+                        <input name="name" type="text" class="sp-input" placeholder="Ej: Escuela Rural N° 25" required maxlength="200" />
+                    </div>
+                    <div class="sp-form-group">
+                        <label class="sp-label">Tipo</label>
+                        <select name="type" class="sp-input">
+                            <option value="Escuela">🏫 Escuela</option>
+                            <option value="Hospital">🏥 Hospital / Centro de salud</option>
+                            <option value="Pozo de agua">💧 Pozo de agua</option>
+                            <option value="Curso de agua">🌊 Curso de agua / Arroyo</option>
+                            <option value="Apiario">🐝 Apiario</option>
+                            <option value="Vivienda">🏠 Vivienda / Zona residencial</option>
+                            <option value="Reserva">🌿 Reserva natural</option>
+                            <option value="Club">⚽ Club / Espacio recreativo</option>
+                            <option value="Otro" selected>📍 Otro</option>
+                        </select>
+                    </div>
+                    <div class="sp-form-row">
+                        <div class="sp-form-group">
+                            <label class="sp-label">Localidad</label>
+                            <input name="locality" type="text" class="sp-input" maxlength="150" />
+                        </div>
+                        <div class="sp-form-group">
+                            <label class="sp-label">Departamento</label>
+                            <input name="department" type="text" class="sp-input" maxlength="150" />
+                        </div>
+                    </div>
+                    <div id="coordInfo" class="sp-coord-info"></div>
+                    <div class="sp-form-actions">
+                        <button type="button" class="sp-btn-secondary" onclick="cancelAdding()">Cancelar</button>
+                        <button type="submit" class="sp-btn-primary">Guardar Punto</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Points list -->
+            <div id="pointsListPanel">
+                <h3 class="sp-panel-title">Puntos Cargados</h3>
+                <div id="pointsList"></div>
+                <div id="noPoints" style="display:none; text-align:center; padding:30px; color:#94a3b8;">
+                    <div style="font-size:2rem; margin-bottom:8px;">📍</div>
+                    <p>No tenés puntos sensibles cargados.</p>
+                    <p style="font-size:.82rem;">Hacé click en "Agregar punto" para crear uno.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <style>
+        .back-link { display:inline-block; margin-bottom:1rem; color:var(--primary-color,#667eea); text-decoration:none; font-weight:600; }
+        .back-link:hover { text-decoration:underline; }
+        .page-title { font-size:1.5rem; color:#1e293b; margin:4px 0 0; }
+        .alert-box { border-radius:10px; padding:12px 18px; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+        .alert-success-box { background:#ecfdf5; border:1px solid #6ee7b7; color:#065f46; }
+        .alert-error-box { background:#fef2f2; border:1px solid #fca5a5; color:#991b1b; }
+
+        .sp-layout { display:grid; grid-template-columns:1fr 360px; gap:20px; }
+        .sp-map-panel { background:white; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; }
+        .sp-map-toolbar { display:flex; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid #e2e8f0; }
+        .sp-toolbar-btn { padding:8px 14px; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc; cursor:pointer; font-weight:600; font-size:.82rem; transition:all .2s; }
+        .sp-toolbar-btn:hover { background:#f1f5f9; }
+        .sp-btn-cancel { background:#fee2e2; color:#991b1b; border-color:#fca5a5; }
+        .sp-hint { color:#94a3b8; font-size:.82rem; font-style:italic; }
+        .sp-map { height:550px; }
+
+        .sp-sidebar { display:flex; flex-direction:column; gap:16px; }
+        .sp-create-panel, #pointsListPanel { background:white; border-radius:14px; padding:20px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+        .sp-panel-title { font-size:1rem; font-weight:600; color:#334155; margin:0 0 14px; padding-bottom:10px; border-bottom:1px solid #f1f5f9; }
+        .sp-form-group { margin-bottom:12px; }
+        .sp-form-row { display:flex; gap:10px; }
+        .sp-form-row .sp-form-group { flex:1; }
+        .sp-label { display:block; font-size:.78rem; color:#64748b; font-weight:600; margin-bottom:4px; }
+        .sp-input { width:100%; padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:.85rem; }
+        .sp-coord-info { font-size:.82rem; color:#64748b; margin-bottom:10px; font-family:monospace; }
+        .sp-form-actions { display:flex; gap:8px; justify-content:flex-end; }
+        .sp-btn-primary { padding:8px 18px; background:#667eea; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:.85rem; }
+        .sp-btn-primary:hover { background:#5a67d8; }
+        .sp-btn-secondary { padding:8px 18px; background:transparent; color:#64748b; border:1px solid #e2e8f0; border-radius:8px; cursor:pointer; font-size:.85rem; }
+
+        .point-card { padding:12px; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:10px; cursor:pointer; transition:all .2s; border-left:4px solid #3b82f6; }
+        .point-card:hover { box-shadow:0 2px 8px rgba(0,0,0,.08); }
+        .point-name { font-weight:600; font-size:.9rem; color:#1e293b; }
+        .point-meta { font-size:.78rem; color:#64748b; margin-top:4px; display:flex; flex-wrap:wrap; gap:8px; }
+        .point-type-tag { padding:2px 8px; border-radius:10px; font-size:.7rem; font-weight:600; background:#dbeafe; color:#1e40af; }
+        .point-perm-tag { padding:2px 8px; border-radius:10px; font-size:.7rem; font-weight:600; background:#dcfce7; color:#166534; }
+        .point-temp-tag { padding:2px 8px; border-radius:10px; font-size:.7rem; font-weight:600; background:#fef9c3; color:#854d0e; }
+        .point-actions { margin-top:8px; }
+        .point-btn-delete { padding:4px 10px; background:transparent; border:1px solid #fca5a5; border-radius:6px; color:#ef4444; cursor:pointer; font-size:.75rem; font-weight:600; }
+        .point-btn-delete:hover { background:#fee2e2; }
+
+        @@media (max-width: 900px) { .sp-layout { grid-template-columns:1fr; } .sp-map { height:400px; } }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        (function () {
+            var points = @Html.Raw(pointsJson);
+
+            var map = L.map('spMap').setView([-32.69, -62.10], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+
+            var hint = document.getElementById('mapHint');
+            var isAdding = false;
+            var newMarker = null;
+            var pointMarkers = [];
+
+            var typeIcons = {
+                'Escuela': '🏫', 'Hospital': '🏥', 'Pozo de agua': '💧',
+                'Curso de agua': '🌊', 'Apiario': '🐝', 'Vivienda': '🏠',
+                'Reserva': '🌿', 'Club': '⚽', 'Otro': '📍'
+            };
+
+            // ── Draw existing points ──
+            var listContainer = document.getElementById('pointsList');
+            var noPoints = document.getElementById('noPoints');
+
+            if (!points || points.length === 0) {
+                noPoints.style.display = 'block';
+            } else {
+                points.forEach(function (p) {
+                    var icon = typeIcons[p.type] || '📍';
+
+                    var divIcon = L.divIcon({
+                        html: '<div style="font-size:1.4rem; text-align:center;">' + icon + '</div>',
+                        className: '', iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -16]
+                    });
+
+                    var marker = L.marker([p.latitude, p.longitude], { icon: divIcon }).addTo(map);
+                    marker.bindPopup('<strong>' + icon + ' ' + p.name + '</strong>' +
+                        (p.type ? '<br>' + p.type : '') +
+                        (p.locality ? '<br>' + p.locality : '') +
+                        (p.recipeCount > 0 ? '<br><small>' + p.recipeCount + ' receta(s) asociada(s)</small>' : ''));
+                    pointMarkers.push(marker);
+
+                    // Card in sidebar
+                    var card = document.createElement('div');
+                    card.className = 'point-card';
+                    var permBadge = p.isPermanent
+                        ? '<span class="point-perm-tag">Permanente</span>'
+                        : '<span class="point-temp-tag">De receta</span>';
+                    card.innerHTML =
+                        '<div class="point-name">' + icon + ' ' + p.name + '</div>' +
+                        '<div class="point-meta">' +
+                            (p.type ? '<span class="point-type-tag">' + p.type + '</span>' : '') +
+                            permBadge +
+                            (p.locality ? '<span>' + p.locality + '</span>' : '') +
+                            (p.recipeCount > 0 ? '<span>' + p.recipeCount + ' receta(s)</span>' : '') +
+                            '<span>' + new Date(p.createdAt).toLocaleDateString('es-AR') + '</span>' +
+                        '</div>' +
+                        '<div class="point-actions">' +
+                            '<form method="post" action="/Municipio/DeleteSensitivePoint" style="display:inline;">' +
+                            '<input type="hidden" name="__RequestVerificationToken" value="' + (document.querySelector('[name=__RequestVerificationToken]')?.value || '') + '">' +
+                            '<input type="hidden" name="id" value="' + p.id + '">' +
+                            '<button type="submit" class="point-btn-delete" onclick="return confirm(\'¿Eliminar este punto?\')">🗑️ Eliminar</button></form>' +
+                        '</div>';
+
+                    card.addEventListener('click', function (e) {
+                        if (e.target.closest('form')) return;
+                        map.setView([p.latitude, p.longitude], 15);
+                        marker.openPopup();
+                    });
+
+                    listContainer.appendChild(card);
+                });
+
+                // Fit map to points
+                if (pointMarkers.length > 0) {
+                    var group = L.featureGroup(pointMarkers);
+                    map.fitBounds(group.getBounds(), { padding: [30, 30], maxZoom: 14 });
+                }
+            }
+
+            // ── Adding mode ──
+            window.startAdding = function () {
+                isAdding = true;
+                document.getElementById('btnAddPoint').style.display = 'none';
+                document.getElementById('btnCancelAdd').style.display = 'inline-block';
+                document.getElementById('createPanel').style.display = 'none';
+                hint.textContent = 'Hacé click en el mapa para marcar la ubicación del punto sensible';
+
+                // Dim existing markers
+                pointMarkers.forEach(function (m) { m.setOpacity(0.4); });
+            };
+
+            window.cancelAdding = function () {
+                isAdding = false;
+                if (newMarker) { map.removeLayer(newMarker); newMarker = null; }
+                document.getElementById('btnAddPoint').style.display = 'inline-block';
+                document.getElementById('btnCancelAdd').style.display = 'none';
+                document.getElementById('createPanel').style.display = 'none';
+                hint.textContent = 'Puntos sensibles de tu municipio';
+
+                pointMarkers.forEach(function (m) { m.setOpacity(1); });
+            };
+
+            map.on('click', function (e) {
+                if (!isAdding) return;
+
+                var lat = parseFloat(e.latlng.lat.toFixed(7));
+                var lng = parseFloat(e.latlng.lng.toFixed(7));
+
+                if (newMarker) map.removeLayer(newMarker);
+
+                newMarker = L.marker([lat, lng], {
+                    draggable: true,
+                    icon: L.divIcon({
+                        html: '<div style="font-size:1.6rem; text-align:center;">📌</div>',
+                        className: '', iconSize: [32, 32], iconAnchor: [16, 16]
+                    })
+                }).addTo(map);
+
+                newMarker.on('dragend', function (ev) {
+                    var p = ev.target.getLatLng();
+                    updateNewCoords(p.lat, p.lng);
+                });
+
+                updateNewCoords(lat, lng);
+
+                document.getElementById('createPanel').style.display = 'block';
+                hint.textContent = 'Completá los datos del punto. Podés arrastrar el marcador para ajustar.';
+            });
+
+            function updateNewCoords(lat, lng) {
+                lat = parseFloat(lat.toFixed(7));
+                lng = parseFloat(lng.toFixed(7));
+                document.getElementById('newLat').value = lat;
+                document.getElementById('newLng').value = lng;
+                document.getElementById('coordInfo').textContent = '📍 ' + lat + ', ' + lng;
+            }
+        })();
+    </script>
+}

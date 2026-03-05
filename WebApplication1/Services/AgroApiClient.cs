@@ -329,6 +329,25 @@ public class AgroApiClient
         => PostAsync("/api/auth/admin-reset-password", new { userId });
 
     // ══════════════════════════════════════════════
+    // PUNTOS SENSIBLES
+    // ══════════════════════════════════════════════
+
+    public Task<ApiResult<string>> GetMySensitivePointsAsync()
+        => GetRawJsonAsync("/api/sensitive-points/mine");
+
+    public Task<ApiResult<string>> GetActiveSensitivePointsAsync()
+        => GetRawJsonAsync("/api/sensitive-points/active");
+
+    public Task<ApiResult<string>> CreateSensitivePointAsync(object body)
+        => PostAsync("/api/sensitive-points", body);
+
+    public Task<ApiResult<string>> UpdateSensitivePointAsync(long id, object body)
+        => PutAsync($"/api/sensitive-points/{id}", body);
+
+    public Task<ApiResult<string>> DeleteSensitivePointAsync(long id)
+        => DeleteAsync($"/api/sensitive-points/{id}");
+
+    // ══════════════════════════════════════════════
     // ZONAS DE EXCLUSIÓN
     // ══════════════════════════════════════════════
 

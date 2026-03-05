@@ -87,6 +87,10 @@ public class JobsController : Controller
         var zonesResult = await _api.GetActiveExclusionZonesAsync();
         ViewBag.ExclusionZonesJson = zonesResult.Success ? zonesResult.Data : "[]";
 
+        // Cargar puntos sensibles permanentes
+        var spResult = await _api.GetActiveSensitivePointsAsync();
+        ViewBag.SensitivePointsJson = spResult.Success ? spResult.Data : "[]";
+
         return View();
     }
 

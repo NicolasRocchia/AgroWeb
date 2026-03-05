@@ -3,6 +3,7 @@
     var recipesJson = ViewBag.RecipesJson as string ?? "[]";
     var lotsJson = ViewBag.LotsJson as string ?? "[]";
     var exclusionZonesJson = ViewBag.ExclusionZonesJson as string ?? "[]";
+    var sensitivePointsJson = ViewBag.SensitivePointsJson as string ?? "[]";
 }
 
 <div class="page-container" style="max-width: 700px; margin: 0 auto; padding: 0 20px 40px; position:relative;">
@@ -173,6 +174,10 @@
                 <div id="exclusionAlertText"></div>
             </div>
 
+            <!-- Sensitive point proximity alert -->
+            <div id="sensitivePointAlert" style="display:none; align-items:flex-start; gap:12px; padding:14px 18px; background:#fffbeb; border:2px solid #fbbf24; border-radius:12px; margin-bottom:16px; color:#92400e; font-size:.88rem; line-height:1.5;">
+            </div>
+
             <div class="form-actions">
                 <a asp-action="MyJobs" class="btn-cancel">Cancelar</a>
                 <button type="submit" class="btn-submit">Publicar Trabajo</button>
@@ -194,6 +199,7 @@
             var recipes = @Html.Raw(recipesJson);
             var lots = @Html.Raw(lotsJson);
             var exclusionZones = @Html.Raw(exclusionZonesJson);
+            var sensitivePoints = @Html.Raw(sensitivePointsJson);
 
             var lockableFields = ['fieldCrop', 'fieldAppType', 'fieldSurface', 'fieldLocality', 'fieldDepartment'];
             var loadingOverlay = document.getElementById('loadingOverlay');
@@ -497,6 +503,75 @@
                 originalSetLocation(lat, lng, zoom);
                 checkExclusionZones(lat, lng);
             };
+
+            // ══════════════════════════════════════
+            // SENSITIVE POINTS (permanent, municipal)
+            // ══════════════════════════════════════
+
+            var sensitiveTypeIcons = {
+                'Escuela': '🏫', 'Hospital': '🏥', 'Pozo de agua': '💧',
+                'Curso de agua': '🌊', 'Apiario': '🐝', 'Vivienda': '🏠',
+                'Reserva': '🌿', 'Club': '⚽', 'Otro': '📌'
+            };
+
+            var permanentPoints = (sensitivePoints || []).filter(function(p) { return p.isPermanent; });
+
+            if (permanentPoints.length > 0) {
+                permanentPoints.forEach(function(p) {
+                    var icon = sensitiveTypeIcons[p.type] || '📌';
+                    var divIcon = L.divIcon({
+                        html: '<div style="font-size:1.2rem; text-align:center;">' + icon + '</div>',
+                        className: '', iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -14]
+                    });
+                    var marker = L.marker([p.latitude, p.longitude], { icon: divIcon }).addTo(map);
+                    marker.bindTooltip('<strong>' + icon + ' ' + p.name + '</strong>' +
+                        (p.type ? '<br>' + p.type : '') +
+                        (p.municipalityName ? '<br>' + p.municipalityName : ''), { sticky: true });
+                });
+            }
+
+            // Note: Jobs/Create uses a single point (lat/lng) not a polygon.
+            // We check distance from that point to each sensitive point using Haversine.
+            var ALERT_RADIUS_M = 200;
+            var origSetLocation2 = setLocation;
+            setLocation = function(lat, lng, zoom) {
+                origSetLocation2(lat, lng, zoom);
+                checkSensitiveProximityPoint(lat, lng);
+            };
+
+            function checkSensitiveProximityPoint(lat, lng) {
+                var warnings = [];
+                permanentPoints.forEach(function(p) {
+                    var dist = haversineMeters(lat, lng, p.latitude, p.longitude);
+                    if (dist <= ALERT_RADIUS_M) {
+                        warnings.push({ point: p, distance: Math.round(dist) });
+                    }
+                });
+                var alertEl = document.getElementById('sensitivePointAlert');
+                if (!alertEl) return;
+                if (warnings.length === 0) { alertEl.style.display = 'none'; return; }
+
+                var html = '<strong>⚠️ Punto sensible cercano:</strong> La ubicación está a menos de 200m de:';
+                html += '<ul style="margin:6px 0 0;padding-left:18px;">';
+                warnings.forEach(function(w) {
+                    var ic = sensitiveTypeIcons[w.point.type] || '📌';
+                    html += '<li>' + ic + ' <strong>' + w.point.name + '</strong> (' + (w.point.type || '') + ') — a <strong>' + w.distance + 'm</strong></li>';
+                });
+                html += '</ul>';
+                alertEl.innerHTML = '<span>📍</span><div>' + html + '</div>';
+                alertEl.style.display = 'flex';
+            }
+
+            function haversineMeters(lat1, lng1, lat2, lng2) {
+                var R = 6371000;
+                var toRad = Math.PI / 180;
+                var dLat = (lat2 - lat1) * toRad;
+                var dLng = (lng2 - lng1) * toRad;
+                var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+                    Math.sin(dLng/2) * Math.sin(dLng/2);
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            }
 
         })();
     </script>

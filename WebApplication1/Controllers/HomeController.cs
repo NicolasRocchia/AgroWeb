@@ -48,6 +48,26 @@ namespace WebApplication1.Controllers
             }
         }
 
+        /// <summary>
+        /// Proxy para puntos sensibles activos.
+        /// </summary>
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> SensitivePoints()
+        {
+            try
+            {
+                var result = await _api.GetActiveSensitivePointsAsync();
+                if (result.Success && !string.IsNullOrEmpty(result.Data))
+                    return Content(result.Data, "application/json");
+                return Json(Array.Empty<object>());
+            }
+            catch
+            {
+                return Json(Array.Empty<object>());
+            }
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
