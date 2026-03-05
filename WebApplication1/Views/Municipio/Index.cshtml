@@ -40,13 +40,19 @@
         </h2>
 
         <form method="get" class="filters-form">
-            <div class="filter-group">
-                <label class="filter-label">Estado</label>
-                <input name="status"
-                       value="@Model.Status"
-                       placeholder="ABIERTA, CERRADA..."
-                       class="filter-input" />
-            </div>
+             <div class="filter-group">
+            <label class="filter-label">Estado</label>
+                <select name="status" class="filter-input" id="filterStatus">
+                    <option value="">Todos</option>
+                    <option value="PENDIENTE">⏳ Pendiente</option>
+                    <option value="OBSERVADA">👁️ Observada</option>
+                    <option value="APROBADA">✅ Aprobada</option>
+                    <option value="RECHAZADA">❌ Rechazada</option>
+                    <option value="ABIERTA">📝 Abierta</option>
+                    <option value="CERRADA">🔒 Cerrada</option>
+                    <option value="ANULADA">🚫 Anulada</option>
+                </select>
+        </div>
 
             <div class="filter-group">
                 <label class="filter-label">Búsqueda General</label>
@@ -224,3 +230,11 @@
             }
     </style>
 }
+
+<script>
+    var statusSelect = document.getElementById('filterStatus');
+    if (statusSelect) {
+        var currentStatus = '@(Model.Status ?? "")';
+        if (currentStatus) statusSelect.value = currentStatus;
+    }
+</script>
