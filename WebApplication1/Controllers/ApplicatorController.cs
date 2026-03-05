@@ -585,7 +585,7 @@ public class ApplicatorController : Controller
     }
 
     [HttpGet]
-    [Authorize(Roles = "Productor")]
+    [Authorize(Roles = "Productor,Aplicador,Municipio,Admin")]
     public async Task<IActionResult> ExclusionZones()
     {
         try

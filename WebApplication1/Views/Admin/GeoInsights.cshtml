@@ -135,6 +135,7 @@
                     <label><input type="checkbox" id="toggleHeat" checked /> Mapa de calor</label>
                     <label><input type="checkbox" id="togglePolygons" checked /> Polígonos</label>
                     <label><input type="checkbox" id="toggleSensitive" checked /> Puntos sensibles</label>
+                    <label><input type="checkbox" id="toggleExclusion" checked /> Zonas de exclusión</label>
                 </div>
             </div>
 
@@ -143,6 +144,7 @@
                     <label><input type="checkbox" id="toggleHeatMobile" checked /> Mapa de calor</label>
                     <label><input type="checkbox" id="togglePolygonsMobile" checked /> Polígonos</label>
                     <label><input type="checkbox" id="toggleSensitiveMobile" checked /> Puntos sensibles</label>
+                    <label><input type="checkbox" id="toggleExclusionMobile" checked /> Zonas de exclusión</label>
                 </div>
             </div>
         </div>
@@ -185,6 +187,7 @@
                 useAjaxFilters: true,
                 heatGradient: { 0.2: '#2ecc71', 0.4: '#f1c40f', 0.6: '#e67e22', 0.8: '#e74c3c', 1.0: '#8e44ad' }
             });
+            GeoInsights.loadExclusionZones();
         });
     </script>
 }

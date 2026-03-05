@@ -110,6 +110,9 @@
                     <label class="toggle-label">
                         <input type="checkbox" id="toggleSensitive" checked /> Puntos sensibles
                     </label>
+                    <label class="toggle-label">
+                        <input type="checkbox" id="toggleExclusion" checked /> Zonas de exclusión
+                    </label>
                 </div>
             </div>
 
@@ -127,6 +130,7 @@
                         <label class="mt-chip"><input type="checkbox" id="toggleHeatmapMobile" checked /> 🌡️</label>
                         <label class="mt-chip"><input type="checkbox" id="togglePolygonsMobile" checked /> 🔷</label>
                         <label class="mt-chip"><input type="checkbox" id="toggleSensitiveMobile" checked /> 📍</label>
+                        <label class="mt-chip"><input type="checkbox" id="toggleExclusionMobile" checked /> 🚫</label>
                     </div>
                 </div>
             </div>
@@ -185,6 +189,7 @@
                 useAjaxFilters: false,
                 heatGradient: { 0.2: '#2ecc71', 0.4: '#f1c40f', 0.6: '#e67e22', 0.8: '#e74c3c', 1.0: '#8e44ad' }
             });
+            GeoInsights.loadExclusionZones();
         });
     </script>
 }

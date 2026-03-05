@@ -661,5 +661,55 @@ window.GeoInsights = (function () {
         }
     }
 
-    return { init };
+    // ===== EXCLUSION ZONES =====
+
+    let exclusionLayer = null;
+
+    async function loadExclusionZones() {
+        try {
+            const resp = await fetch('/Home/ExclusionZones');
+            if (!resp.ok) return;
+            const zones = await resp.json();
+            if (!zones || zones.length === 0) return;
+
+            exclusionLayer = L.layerGroup().addTo(map);
+
+            zones.forEach(z => {
+                const verts = (z.vertices || []).sort((a, b) => a.order - b.order);
+                if (verts.length < 3) return;
+                const latlngs = verts.map(v => [v.latitude, v.longitude]);
+                const poly = L.polygon(latlngs, {
+                    color: '#ef4444',
+                    weight: 2,
+                    fillOpacity: 0.15,
+                    fillColor: '#ef4444',
+                    dashArray: '6,4'
+                });
+                poly.bindTooltip(
+                    '<strong>🚫 ' + z.name + '</strong><br>' +
+                    (z.municipalityName || '') + '<br>' +
+                    z.type + ' — ' + z.restriction,
+                    { sticky: true }
+                );
+                exclusionLayer.addLayer(poly);
+            });
+
+            // Setup toggle for exclusion zones layer
+            const dEl = document.getElementById('toggleExclusion');
+            const mEl = document.getElementById('toggleExclusionMobile');
+            function toggleEZ(checked) {
+                if (exclusionLayer) {
+                    checked ? map.addLayer(exclusionLayer) : map.removeLayer(exclusionLayer);
+                }
+                if (dEl) dEl.checked = checked;
+                if (mEl) mEl.checked = checked;
+            }
+            if (dEl) dEl.addEventListener('change', () => toggleEZ(dEl.checked));
+            if (mEl) mEl.addEventListener('change', () => toggleEZ(mEl.checked));
+        } catch (e) {
+            console.error('[GeoInsights] Error loading exclusion zones:', e);
+        }
+    }
+
+    return { init, loadExclusionZones };
 })();

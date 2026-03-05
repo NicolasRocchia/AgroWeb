@@ -792,7 +792,7 @@
                 });
             }
 
-            // Check exclusion zones using lot centroid
+            // Check exclusion zones
             if (lot.centroidLat && lot.centroidLng) {
                 checkExclusionZonesForPoint(lot.centroidLat, lot.centroidLng);
             }
@@ -811,7 +811,6 @@
                     layer.setStyle({ color: '#667eea', weight: 2, fillOpacity: 0.15 });
                 });
             }
-            // Hide exclusion alert
             showExclusionAlert([]);
         }
 
@@ -864,11 +863,10 @@
 
         async function loadExclusionZones() {
             try {
-                var resp = await fetch('/Applicator/ExclusionZones');
+                var resp = await fetch('/Home/ExclusionZones');
                 if (!resp.ok) return;
                 var zones = await resp.json();
                 exclusionZonesData = zones;
-
                 if (!zones || zones.length === 0) return;
 
                 zones.forEach(function(z) {
