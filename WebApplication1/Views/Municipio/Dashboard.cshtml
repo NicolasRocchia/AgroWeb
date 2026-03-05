@@ -1,0 +1,230 @@
+@using WebApplication1.Helpers
+@{
+    ViewData["Title"] = "Dashboard Municipal";
+    var dashboardJson = ViewBag.DashboardJson as string ?? "{}";
+}
+
+<div class="page-container" style="max-width:1200px; margin:0 auto; padding:0 20px 40px;">
+
+    <div style="margin-bottom:24px;">
+        <h1 style="font-size:1.5rem; font-weight:700; color:#1e293b; margin:0;">🏛️ Panel Municipal</h1>
+        <p style="color:#64748b; margin:4px 0 0; font-size:.9rem;">Resumen de actividad y recetas pendientes de revisión</p>
+    </div>
+
+    @if (ViewBag.Error != null)
+    {
+        <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:10px; padding:12px 18px; margin-bottom:16px; color:#991b1b;">
+            ⚠️ @ViewBag.Error
+        </div>
+    }
+
+    <!-- KPIs -->
+    <div class="dash-kpis" id="kpiSection"></div>
+
+    <!-- Alertas -->
+    <div id="alertsSection" style="margin-bottom:20px;"></div>
+
+    <!-- Bandejas -->
+    <div class="dash-grid">
+        <!-- Pendientes -->
+        <div class="dash-panel">
+            <div class="dash-panel-header dash-header-pending">
+                <span>⏳ Pendientes de revisión</span>
+                <span class="dash-count" id="pendingBadge">0</span>
+            </div>
+            <div class="dash-panel-body" id="pendingList">
+                <div class="dash-empty">No hay recetas pendientes</div>
+            </div>
+            <div class="dash-panel-footer">
+                <a href="@Url.Action("Index", "Municipio", new { status = "PENDIENTE" })">Ver todas →</a>
+            </div>
+        </div>
+
+        <!-- Observadas -->
+        <div class="dash-panel">
+            <div class="dash-panel-header dash-header-observed">
+                <span>👁️ Observadas (esperando respuesta)</span>
+                <span class="dash-count" id="observedBadge">0</span>
+            </div>
+            <div class="dash-panel-body" id="observedList">
+                <div class="dash-empty">No hay recetas observadas</div>
+            </div>
+            <div class="dash-panel-footer">
+                <a href="@Url.Action("Index", "Municipio", new { status = "OBSERVADA" })">Ver todas →</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recientes -->
+    <div class="dash-panel" style="margin-top:16px;">
+        <div class="dash-panel-header dash-header-recent">
+            <span>✅ Últimas revisadas</span>
+        </div>
+        <div class="dash-panel-body" id="recentList">
+            <div class="dash-empty">No hay revisiones recientes</div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <style>
+        .dash-kpis { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:20px; }
+        .dash-kpi { background:white; border-radius:14px; padding:18px 20px; box-shadow:0 2px 10px rgba(0,0,0,.05); text-align:center; }
+        .dash-kpi-value { font-size:2rem; font-weight:800; line-height:1; }
+        .dash-kpi-label { font-size:.78rem; color:#64748b; margin-top:6px; text-transform:uppercase; font-weight:600; letter-spacing:.5px; }
+
+        .dash-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+        .dash-panel { background:white; border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,.05); overflow:hidden; }
+        .dash-panel-header { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; font-weight:600; font-size:.9rem; }
+        .dash-header-pending { background:#eff6ff; color:#1e40af; border-bottom:2px solid #bfdbfe; }
+        .dash-header-observed { background:#fffbeb; color:#92400e; border-bottom:2px solid #fde68a; }
+        .dash-header-recent { background:#f0fdf4; color:#166534; border-bottom:2px solid #bbf7d0; }
+        .dash-count { background:white; padding:2px 10px; border-radius:12px; font-weight:700; font-size:.85rem; }
+        .dash-panel-body { padding:12px 18px; max-height:350px; overflow-y:auto; }
+        .dash-panel-footer { padding:10px 18px; border-top:1px solid #f1f5f9; text-align:center; }
+        .dash-panel-footer a { font-size:.82rem; color:#667eea; text-decoration:none; font-weight:600; }
+        .dash-panel-footer a:hover { text-decoration:underline; }
+        .dash-empty { text-align:center; padding:30px; color:#94a3b8; font-size:.85rem; }
+
+        .dash-item { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #f1f5f9; cursor:pointer; transition:background .15s; border-radius:6px; padding-left:6px; }
+        .dash-item:hover { background:#f8fafc; }
+        .dash-item:last-child { border-bottom:none; }
+        .dash-item-rfd { font-weight:700; color:#1e293b; font-size:.9rem; min-width:90px; }
+        .dash-item-info { flex:1; }
+        .dash-item-requester { font-size:.82rem; color:#475569; font-weight:500; }
+        .dash-item-meta { font-size:.75rem; color:#94a3b8; display:flex; gap:8px; flex-wrap:wrap; margin-top:2px; }
+        .dash-item-days { font-size:.75rem; font-weight:700; padding:2px 8px; border-radius:10px; white-space:nowrap; }
+        .dash-days-ok { background:#dcfce7; color:#166534; }
+        .dash-days-warn { background:#fef9c3; color:#854d0e; }
+        .dash-days-critical { background:#fee2e2; color:#991b1b; }
+
+        .dash-tox { font-size:.7rem; font-weight:700; padding:1px 6px; border-radius:8px; }
+        .tox-ia { background:#f3e8ff; color:#7c3aed; }
+        .tox-ib { background:#fee2e2; color:#dc2626; }
+        .tox-ii { background:#ffedd5; color:#ea580c; }
+        .tox-iii { background:#dbeafe; color:#2563eb; }
+        .tox-iv { background:#dcfce7; color:#16a34a; }
+
+        .dash-status { font-size:.7rem; font-weight:600; padding:2px 8px; border-radius:8px; }
+        .dash-status-aprobada { background:#dcfce7; color:#166534; }
+        .dash-status-rechazada { background:#fee2e2; color:#991b1b; }
+
+        .dash-alert { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; margin-bottom:8px; font-size:.85rem; font-weight:500; }
+        .dash-alert-critical { background:#fef2f2; border:1px solid #fca5a5; color:#991b1b; }
+        .dash-alert-warning { background:#fffbeb; border:1px solid #fbbf24; color:#92400e; }
+
+        @@media (max-width:768px) { .dash-grid { grid-template-columns:1fr; } .dash-kpis { grid-template-columns:repeat(2,1fr); } }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        (function() {
+            var data = @Html.Raw(dashboardJson);
+            if (!data || !data.pendingCount && data.pendingCount !== 0) return;
+
+            // KPIs
+            var kpiHtml =
+                kpiCard(data.pendingCount, 'Pendientes', '#3b82f6') +
+                kpiCard(data.observedCount, 'Observadas', '#d97706') +
+                kpiCard(data.approvedThisMonth, 'Aprobadas (mes)', '#16a34a') +
+                kpiCard(data.rejectedThisMonth, 'Rechazadas (mes)', '#dc2626') +
+                kpiCard(data.totalThisMonth, 'Total (mes)', '#667eea');
+            document.getElementById('kpiSection').innerHTML = kpiHtml;
+
+            // Alerts
+            var alertsHtml = '';
+            if (data.pendingOverdue7Days > 0) {
+                alertsHtml += '<div class="dash-alert dash-alert-critical">🔴 <strong>' + data.pendingOverdue7Days + ' receta(s) pendiente(s) hace más de 7 días sin revisión</strong></div>';
+            }
+            if (data.expiringIn7Days > 0) {
+                alertsHtml += '<div class="dash-alert dash-alert-warning">⏰ <strong>' + data.expiringIn7Days + ' receta(s) por vencer en los próximos 7 días</strong></div>';
+            }
+            document.getElementById('alertsSection').innerHTML = alertsHtml;
+
+            // Pending list
+            renderList('pendingList', 'pendingBadge', data.pendingRecipes, true);
+            renderList('observedList', 'observedBadge', data.observedRecipes, true);
+            renderRecentList('recentList', data.recentlyReviewed);
+
+            function kpiCard(value, label, color) {
+                return '<div class="dash-kpi"><div class="dash-kpi-value" style="color:' + color + ';">' + value + '</div><div class="dash-kpi-label">' + label + '</div></div>';
+            }
+
+            function toxClass(tox) {
+                if (!tox) return '';
+                var cls = tox.toLowerCase().replace(' ', '');
+                if (cls === 'ia') return '<span class="dash-tox tox-ia">Ia</span>';
+                if (cls === 'ib') return '<span class="dash-tox tox-ib">Ib</span>';
+                if (cls === 'ii') return '<span class="dash-tox tox-ii">II</span>';
+                if (cls === 'iii') return '<span class="dash-tox tox-iii">III</span>';
+                if (cls === 'iv') return '<span class="dash-tox tox-iv">IV</span>';
+                return '<span class="dash-tox">' + tox + '</span>';
+            }
+
+            function daysTag(days) {
+                if (days <= 2) return '<span class="dash-item-days dash-days-ok">' + days + 'd</span>';
+                if (days <= 7) return '<span class="dash-item-days dash-days-warn">' + days + 'd</span>';
+                return '<span class="dash-item-days dash-days-critical">' + days + 'd ⚠️</span>';
+            }
+
+            function renderList(containerId, badgeId, items, showDays) {
+                var container = document.getElementById(containerId);
+                var badge = document.getElementById(badgeId);
+                if (badge) badge.textContent = items.length;
+                if (!items || items.length === 0) return;
+
+                var html = '';
+                items.forEach(function(r) {
+                    var detailUrl = '@Url.Action("Details", "Municipio")' + '?code=' + encodeURIComponent(r.publicCode);
+                    html += '<div class="dash-item" onclick="window.location=\'' + detailUrl + '\'">' +
+                        '<div class="dash-item-rfd">RFD #' + r.rfdNumber + '</div>' +
+                        '<div class="dash-item-info">' +
+                            '<div class="dash-item-requester">' + (r.requesterName || '—') + '</div>' +
+                            '<div class="dash-item-meta">' +
+                                '<span>' + (r.crop || '—') + '</span>' +
+                                '<span>' + new Date(r.issueDate).toLocaleDateString('es-AR') + '</span>' +
+                        (r.expirationDate ? (function() {
+                            var exp = new Date(r.expirationDate);
+                            var now = new Date();
+                            var diff = (exp - now) / 86400000;
+                            var style = diff < 0 ? 'color:#991b1b;font-weight:700;' : diff < 7 ? 'color:#dc2626;font-weight:700;' : '';
+                            var label = diff < 0 ? '⛔ Vencida: ' : 'Vence: ';
+                            return '<span style="' + style + '">' + label + exp.toLocaleDateString('es-AR') + '</span>';
+                        })() : '') +
+                                toxClass(r.maxToxClass) +
+                            '</div>' +
+                        '</div>' +
+                        (showDays ? daysTag(r.daysSinceLastAction) : '') +
+                    '</div>';
+                });
+                container.innerHTML = html;
+            }
+
+            function renderRecentList(containerId, items) {
+                var container = document.getElementById(containerId);
+                if (!items || items.length === 0) return;
+
+                var html = '';
+                items.forEach(function(r) {
+                    var detailUrl = '@Url.Action("Details", "Municipio")' + '?code=' + encodeURIComponent(r.publicCode);
+                    var statusCls = r.status === 'APROBADA' ? 'dash-status-aprobada' : 'dash-status-rechazada';
+                    var statusIcon = r.status === 'APROBADA' ? '✅' : '❌';
+                    html += '<div class="dash-item" onclick="window.location=\'' + detailUrl + '\'">' +
+                        '<div class="dash-item-rfd">RFD #' + r.rfdNumber + '</div>' +
+                        '<div class="dash-item-info">' +
+                            '<div class="dash-item-requester">' + (r.requesterName || '—') + '</div>' +
+                            '<div class="dash-item-meta">' +
+                                '<span>' + (r.crop || '—') + '</span>' +
+                                (r.lastActionDate ? '<span>' + new Date(r.lastActionDate).toLocaleDateString('es-AR') + '</span>' : '') +
+                            '</div>' +
+                        '</div>' +
+                        '<span class="dash-status ' + statusCls + '">' + statusIcon + ' ' + r.status + '</span>' +
+                    '</div>';
+                });
+                container.innerHTML = html;
+            }
+        })();
+    </script>
+}

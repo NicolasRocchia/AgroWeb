@@ -14,6 +14,19 @@ public class MunicipioController : Controller
     public MunicipioController(AgroApiClient api) => _api = api;
 
     // =============================================
+    // DASHBOARD MUNICIPAL (BANDEJA DE ENTRADA)
+    // =============================================
+
+    [HttpGet]
+    public async Task<IActionResult> Dashboard()
+    {
+        var result = await _api.GetMunicipalDashboardAsync();
+        ViewBag.DashboardJson = result.Success ? result.Data : "{}";
+        if (!result.Success) ViewBag.Error = result.Error;
+        return View();
+    }
+
+    // =============================================
     // DASHBOARD GEOESPACIAL DE FISCALIZACIÓN
     // =============================================
 
@@ -22,14 +35,13 @@ public class MunicipioController : Controller
         string? dateFrom = null, string? dateTo = null,
         string? crop = null, string? toxClass = null,
         string? productName = null, string? advisorName = null,
-        int? nearSensitivePointMeters = null, string? requesterName = null)
+        int? nearSensitivePointMeters = null)
     {
         var result = await _api.GetGeoInsightsAsync(
             dateFrom: dateFrom, dateTo: dateTo,
             crop: crop, toxClass: toxClass,
             productName: productName, advisorName: advisorName,
-            nearSensitivePointMeters: nearSensitivePointMeters,
-            requesterName: requesterName);
+            nearSensitivePointMeters: nearSensitivePointMeters);
 
         if (!result.Success)
             ViewBag.Error = $"No se pudieron obtener datos geoespaciales. {result.Error}";

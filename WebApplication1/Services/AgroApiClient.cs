@@ -161,7 +161,7 @@ public class AgroApiClient
         string? dateFrom = null, string? dateTo = null,
         string? crop = null, string? toxClass = null,
         string? productName = null, string? advisorName = null,
-        int? nearSensitivePointMeters = null, string? requesterName = null)
+        int? nearSensitivePointMeters = null)
     {
         var qs = new QueryBuilder()
             .Add("municipalityId", municipalityId)
@@ -171,11 +171,17 @@ public class AgroApiClient
             .Add("ToxClass", toxClass)
             .Add("ProductName", productName)
             .Add("AdvisorName", advisorName)
-            .Add("NearSensitivePointMeters", nearSensitivePointMeters)
-            .Add("RequesterName", requesterName);
+            .Add("NearSensitivePointMeters", nearSensitivePointMeters);
 
         return GetRawJsonAsync($"/api/recipes/geo-insights{qs}");
     }
+
+    // ══════════════════════════════════════════════
+    // DASHBOARD MUNICIPAL
+    // ══════════════════════════════════════════════
+
+    public Task<ApiResult<string>> GetMunicipalDashboardAsync()
+        => GetRawJsonAsync("/api/recipes/municipal-dashboard");
 
     // ══════════════════════════════════════════════
     // MUNICIPALITIES

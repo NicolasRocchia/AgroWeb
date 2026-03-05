@@ -19,6 +19,9 @@ namespace WebApplication1.Controllers
 
         public IActionResult Index()
         {
+            if (User.IsInRole("Municipio"))
+                return RedirectToAction("Dashboard", "Municipio");
+
             return View();
         }
 
