@@ -57,6 +57,41 @@
         </div>
     }
 
+    <!-- Productor que cargó la receta -->
+    @if (!string.IsNullOrEmpty(Model.Recipe.CreatedByUserName))
+    {
+        <section class="detail-section" style="border-left: 4px solid #8b5cf6; padding: 16px 20px;">
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <span style="font-size:1.5rem;">👤</span>
+                <div style="flex:1; min-width:200px;">
+                    <div style="font-size:.72rem; text-transform:uppercase; color:#64748b; font-weight:600;">Cargada por</div>
+                    <div style="font-size:1.05rem; font-weight:700; color:#1e293b;">@Model.Recipe.CreatedByUserName</div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Recipe.CreatedByUserTaxId))
+                {
+                    <div style="min-width:150px;">
+                        <div style="font-size:.72rem; text-transform:uppercase; color:#64748b; font-weight:600;">CUIT/CUIL</div>
+                        <div style="font-size:.9rem; font-weight:600; color:#1e293b;">@Model.Recipe.CreatedByUserTaxId</div>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Recipe.CreatedByUserPhone))
+                {
+                    <div style="min-width:130px;">
+                        <div style="font-size:.72rem; text-transform:uppercase; color:#64748b; font-weight:600;">Teléfono</div>
+                        <a href="tel:@Model.Recipe.CreatedByUserPhone" style="font-size:.9rem; font-weight:600; color:#2563eb; text-decoration:none;">@Model.Recipe.CreatedByUserPhone</a>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Recipe.CreatedByUserEmail))
+                {
+                    <div style="min-width:180px;">
+                        <div style="font-size:.72rem; text-transform:uppercase; color:#64748b; font-weight:600;">Email</div>
+                        <a href="mailto:@Model.Recipe.CreatedByUserEmail" style="font-size:.85rem; color:#2563eb; text-decoration:none;">@Model.Recipe.CreatedByUserEmail</a>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+
     <!-- Acciones de Revisión -->
     @if (Model.Recipe.Status?.ToUpper() == "PENDIENTE" || Model.Recipe.Status?.ToUpper() == "OBSERVADA")
     {

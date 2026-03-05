@@ -50,6 +50,9 @@ public class RecipeDetailDto
     public DateTime CreatedAt { get; set; }
     public long? CreatedByUserId { get; set; }
     public string? CreatedByUserName { get; set; }
+    public string? CreatedByUserEmail { get; set; }
+    public string? CreatedByUserPhone { get; set; }
+    public string? CreatedByUserTaxId { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public long? UpdatedByUserId { get; set; }
     public string? UpdatedByUserName { get; set; }

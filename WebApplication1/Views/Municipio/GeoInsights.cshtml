@@ -88,6 +88,10 @@
                 <select name="advisorName" id="filterAdvisor"><option value="">Todos</option></select>
             </div>
             <div class="geo-filter-group">
+                <label>Solicitante</label>
+                <select name="requesterName" id="filterRequester"><option value="">Todos</option></select>
+            </div>
+            <div class="geo-filter-group">
                 <label>📍 Cercanía punto sensible</label>
                 <select name="nearSensitivePointMeters" id="filterNearSP">
                     <option value="">Sin filtro</option>
@@ -207,7 +211,8 @@
             var params = new URLSearchParams(window.location.search);
             ['filterDateFrom:dateFrom', 'filterDateTo:dateTo', 'filterCrop:crop',
                 'filterToxClass:toxClass', 'filterProduct:productName',
-                'filterAdvisor:advisorName', 'filterNearSP:nearSensitivePointMeters'].forEach(function(pair) {
+                'filterAdvisor:advisorName', 'filterRequester:requesterName',
+                'filterNearSP:nearSensitivePointMeters'].forEach(function(pair) {
                     var parts = pair.split(':');
                     var el = document.getElementById(parts[0]);
                     var val = params.get(parts[1]);

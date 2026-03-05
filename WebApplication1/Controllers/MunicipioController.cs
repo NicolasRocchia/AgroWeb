@@ -22,13 +22,14 @@ public class MunicipioController : Controller
         string? dateFrom = null, string? dateTo = null,
         string? crop = null, string? toxClass = null,
         string? productName = null, string? advisorName = null,
-        int? nearSensitivePointMeters = null)
+        int? nearSensitivePointMeters = null, string? requesterName = null)
     {
         var result = await _api.GetGeoInsightsAsync(
             dateFrom: dateFrom, dateTo: dateTo,
             crop: crop, toxClass: toxClass,
             productName: productName, advisorName: advisorName,
-            nearSensitivePointMeters: nearSensitivePointMeters);
+            nearSensitivePointMeters: nearSensitivePointMeters,
+            requesterName: requesterName);
 
         if (!result.Success)
             ViewBag.Error = $"No se pudieron obtener datos geoespaciales. {result.Error}";

@@ -76,7 +76,9 @@ window.GeoInsights = (function () {
             crop: get('filterCrop'),
             toxClass: get('filterToxClass'),
             productName: get('filterProduct'),
-            advisorName: get('filterAdvisor')
+            advisorName: get('filterAdvisor'),
+            requesterName: get('filterRequester'),
+            nearSensitivePointMeters: get('filterNearSP')
         };
     }
 
@@ -93,6 +95,8 @@ window.GeoInsights = (function () {
         set('filterToxClass', filters.toxClass);
         set('filterProduct', filters.productName);
         set('filterAdvisor', filters.advisorName);
+        set('filterRequester', filters.requesterName);
+        set('filterNearSP', filters.nearSensitivePointMeters);
     }
 
     function buildQueryString(filters) {
@@ -110,7 +114,9 @@ window.GeoInsights = (function () {
             crop: p.get('crop') || '',
             toxClass: p.get('toxClass') || '',
             productName: p.get('productName') || '',
-            advisorName: p.get('advisorName') || ''
+            advisorName: p.get('advisorName') || '',
+            requesterName: p.get('requesterName') || '',
+            nearSensitivePointMeters: p.get('nearSensitivePointMeters') || ''
         };
     }
 
@@ -526,6 +532,7 @@ window.GeoInsights = (function () {
             populateSelect('filterToxClass', f.toxClasses, filters?.toxClass || '');
             populateSelect('filterProduct', f.products, filters?.productName || '');
             populateSelect('filterAdvisor', f.advisors, filters?.advisorName || '');
+            populateSelect('filterRequester', f.requesters || [], filters?.requesterName || '');
         }
 
         redrawMap(data, preserveMapView);
