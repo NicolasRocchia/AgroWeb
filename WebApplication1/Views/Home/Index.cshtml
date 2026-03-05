@@ -119,16 +119,16 @@ else if (isProductor && isAplicador)
                     <div class="feature-icon">📋</div>
                     <h3>Bolsa de Trabajo</h3>
                     <p>Explorá trabajos de aplicación disponibles cerca de tus ubicaciones. Ofertá y conseguí nuevos clientes.</p>
-                    <a href="#" class="feature-btn feature-btn-disabled">
-                        Próximamente
+                    <a asp-controller="Jobs" asp-action="Available" class="feature-btn">
+                        Ver Trabajos <span>→</span>
                     </a>
                 </div>
                 <div class="feature-card aplicador-card">
                     <div class="feature-icon">📌</div>
                     <h3>Mis Tareas</h3>
-                    <p>Gestioná las tareas de aplicación que tenés asignadas. Iniciá, pausá o completá trabajos.</p>
-                    <a href="#" class="feature-btn feature-btn-disabled">
-                        Próximamente
+                    <p>Gestioná las tareas de aplicación que tenés asignadas.</p>
+                    <a asp-controller="Jobs" asp-action="MyTasks" class="feature-btn">
+                        Ver Mis Tareas <span>→</span>
                     </a>
                 </div>
                 <div class="feature-card aplicador-card">
@@ -201,6 +201,15 @@ else if (isProductor)
                         Registrarme como Aplicador <span>→</span>
                     </a>
                 </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>Bolsa de Trabajo</h3>
+                    <p>Publicá un trabajo para que aplicadores se postulen. Revisá postulaciones y elegí a quién contratar.</p>
+                    <a asp-controller="Jobs" asp-action="MyJobs" class="feature-btn">
+                        Mis Trabajos <span>→</span>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -232,17 +241,17 @@ else if (isAplicador)
                     <div class="feature-icon">📋</div>
                     <h3>Bolsa de Trabajo</h3>
                     <p>Explorá trabajos de aplicación disponibles cerca de tus ubicaciones. Filtrá por distancia, cultivo o tipo de aplicación y ofertá tu servicio.</p>
-                    <a href="#" class="feature-btn feature-btn-disabled">
-                        Próximamente
+                    <a asp-controller="Jobs" asp-action="Available" class="feature-btn">
+                        Ver Trabajos <span>→</span>
                     </a>
                 </div>
 
                 <div class="feature-card aplicador-card">
                     <div class="feature-icon">📌</div>
                     <h3>Mis Tareas</h3>
-                    <p>Visualizá y gestioná las tareas de aplicación que tenés asignadas. Iniciá, pausá o completá trabajos en curso.</p>
-                    <a href="#" class="feature-btn feature-btn-disabled">
-                        Próximamente
+                    <p>Visualizá y gestioná las tareas de aplicación que tenés asignadas.</p>
+                    <a asp-controller="Jobs" asp-action="MyTasks" class="feature-btn">
+                        Ver Mis Tareas <span>→</span>
                     </a>
                 </div>
 

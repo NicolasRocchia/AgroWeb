@@ -1,0 +1,190 @@
+@{
+    ViewData["Title"] = "Mis Tareas";
+    var tasksJson = ViewBag.TasksJson as string ?? "[]";
+}
+
+<div class="page-container" style="max-width: 1000px; margin: 0 auto; padding: 0 20px 40px;">
+    <a asp-controller="Home" asp-action="Index" class="back-link">← Inicio</a>
+    <h1 class="page-title">📌 Mis Tareas</h1>
+    <p style="color: #64748b; margin-bottom: 24px;">Trabajos que te fueron asignados por productores.</p>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-box alert-success-box"><span>✅</span> @TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-box alert-error-box"><span>⚠️</span> @TempData["Error"]</div>
+    }
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert-box alert-error-box"><span>⚠️</span> @ViewBag.Error</div>
+    }
+
+    <!-- Tabs -->
+    <div class="tasks-tabs">
+        <button type="button" class="tasks-tab active" onclick="filterTasks('activos')" id="tabActivos">
+            🔵 Activos <span id="countActivos" class="tab-count">0</span>
+        </button>
+        <button type="button" class="tasks-tab" onclick="filterTasks('completados')" id="tabCompletados">
+            ✅ Completados <span id="countCompletados" class="tab-count">0</span>
+        </button>
+        <button type="button" class="tasks-tab" onclick="filterTasks('todos')" id="tabTodos">
+            📋 Todos <span id="countTodos" class="tab-count">0</span>
+        </button>
+    </div>
+
+    <div id="tasksList"></div>
+    <div id="emptyState" style="display:none; text-align:center; padding:60px 20px; color:#64748b;">
+        <div style="font-size:3rem; margin-bottom:16px;">📌</div>
+        <h3>No tenés tareas asignadas</h3>
+        <p>Cuando un productor te contrate para un trabajo, aparecerá acá.</p>
+        <a asp-action="Available" class="btn-create" style="margin-top:16px; display:inline-block;">Explorar Bolsa de Trabajo</a>
+    </div>
+    <div id="noResults" style="display:none; text-align:center; padding:40px 20px; color:#94a3b8;">
+        <p>No hay tareas en esta categoría.</p>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/jobs.css" asp-append-version="true" />
+    <style>
+        .tasks-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+        }
+        .tasks-tab {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+            font-size: .88rem;
+            cursor: pointer;
+            transition: all .2s;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .tasks-tab.active {
+            background: #667eea;
+            color: white;
+        }
+        .tasks-tab:hover:not(.active) { background: #f1f5f9; }
+        .tab-count {
+            background: rgba(0,0,0,.1);
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: .75rem;
+        }
+        .tasks-tab.active .tab-count { background: rgba(255,255,255,.25); }
+
+        .task-status-tag {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: .72rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+        .task-tag-asignado { background: #ede9fe; color: #5b21b6; }
+        .task-tag-completado { background: #dcfce7; color: #166534; }
+        .task-tag-cancelado { background: #fee2e2; color: #991b1b; }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            var allTasks = @Html.Raw(tasksJson);
+            var container = document.getElementById('tasksList');
+            var empty = document.getElementById('emptyState');
+            var noResults = document.getElementById('noResults');
+            var currentFilter = 'activos';
+
+            if (!allTasks || allTasks.length === 0) {
+                empty.style.display = 'block';
+                return;
+            }
+
+            // Count by category
+            var activos = allTasks.filter(function (t) { return t.status === 'ASIGNADO'; });
+            var completados = allTasks.filter(function (t) { return t.status === 'COMPLETADO'; });
+
+            document.getElementById('countActivos').textContent = activos.length;
+            document.getElementById('countCompletados').textContent = completados.length;
+            document.getElementById('countTodos').textContent = allTasks.length;
+
+            window.filterTasks = function (filter) {
+                currentFilter = filter;
+                // Update tabs
+                document.querySelectorAll('.tasks-tab').forEach(function (t) { t.classList.remove('active'); });
+                document.getElementById('tab' + filter.charAt(0).toUpperCase() + filter.slice(1)).classList.add('active');
+
+                var filtered;
+                if (filter === 'activos') filtered = activos;
+                else if (filter === 'completados') filtered = completados;
+                else filtered = allTasks;
+
+                renderTasks(filtered);
+            };
+
+            function renderTasks(tasks) {
+                container.innerHTML = '';
+                noResults.style.display = 'none';
+
+                if (tasks.length === 0) {
+                    noResults.style.display = 'block';
+                    return;
+                }
+
+                tasks.forEach(function (t) {
+                    var statusKey = (t.status || '').toLowerCase();
+                    var statusLabels = { 'asignado': 'Asignado', 'completado': 'Completado', 'cancelado': 'Cancelado' };
+                    var tagClass = 'task-tag-' + statusKey;
+
+                    var card = document.createElement('a');
+                    card.href = '/Jobs/Detail/' + t.id;
+                    card.className = 'job-card status-' + statusKey;
+
+                    var dateInfo = '';
+                    if (t.dateFrom) {
+                        dateInfo = '📅 ' + new Date(t.dateFrom).toLocaleDateString('es-AR');
+                        if (t.dateTo) dateInfo += ' → ' + new Date(t.dateTo).toLocaleDateString('es-AR');
+                    }
+
+                    card.innerHTML =
+                        '<div class="job-card-left">' +
+                            '<span class="task-status-tag ' + tagClass + '">' + (statusLabels[statusKey] || t.status) + '</span>' +
+                            '<div class="job-title">' + t.title + '</div>' +
+                            '<div class="job-meta">' +
+                                (t.crop ? '<span>🌱 ' + t.crop + '</span>' : '') +
+                                (t.applicationType ? '<span>💧 ' + t.applicationType + '</span>' : '') +
+                                (t.surfaceHa ? '<span>📐 ' + t.surfaceHa + ' ha</span>' : '') +
+                                (t.locality ? '<span>📍 ' + t.locality + '</span>' : '') +
+                                (dateInfo ? '<span>' + dateInfo + '</span>' : '') +
+                                '<span>👤 ' + t.producerName + '</span>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="job-card-right">' +
+                            (t.distanceKm != null
+                                ? '<div class="job-distance">' + t.distanceKm + ' km</div><div class="job-distance-label">de distancia</div>'
+                                : '') +
+                        '</div>';
+                    container.appendChild(card);
+                });
+            }
+
+            // Initial render
+            renderTasks(activos);
+        })();
+    </script>
+}

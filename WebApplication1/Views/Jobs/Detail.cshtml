@@ -1,0 +1,328 @@
+@{
+    ViewData["Title"] = "Detalle del Trabajo";
+    var jobJson = ViewBag.JobJson as string ?? "{}";
+    var isProductor = (bool)(ViewBag.IsProductor ?? false);
+    var isAplicador = (bool)(ViewBag.IsAplicador ?? false);
+}
+
+<div class="page-container" style="max-width: 900px; margin: 0 auto; padding: 0 20px 40px;">
+    @if (isProductor)
+    {
+        <a asp-action="MyJobs" class="back-link">← Mis Trabajos</a>
+    }
+    else
+    {
+        <a asp-action="Available" class="back-link">← Bolsa de Trabajo</a>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-box alert-success-box"><span>✅</span> @TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-box alert-error-box"><span>⚠️</span> @TempData["Error"]</div>
+    }
+
+    <!-- Header -->
+    <div id="job-header" class="job-header">
+        <div>
+            <h1 id="job-title" class="job-detail-title">Cargando...</h1>
+            <div id="job-meta" class="job-detail-meta"></div>
+        </div>
+        <div id="job-status-badge" class="status-tag tag-abierto">ABIERTO</div>
+    </div>
+
+    <!-- Info grid -->
+    <div class="detail-grid">
+        <div class="detail-card">
+            <h3 class="card-title">📝 Descripción</h3>
+            <p id="job-description" class="detail-text">—</p>
+        </div>
+
+        <div class="detail-card">
+            <h3 class="card-title">📍 Ubicación</h3>
+            <div id="job-location-info" class="detail-text"></div>
+            <div id="job-map" class="detail-map"></div>
+        </div>
+    </div>
+
+    <!-- Assigned applicator info (visible to producer) -->
+    <div id="assigned-section" class="detail-card" style="display:none; margin-top:16px;">
+        <h3 class="card-title">🚜 Aplicador Asignado</h3>
+        <div id="assigned-info"></div>
+    </div>
+
+    <!-- Producer contact info (visible to assigned applicator) -->
+    <div id="producer-contact-section" class="detail-card" style="display:none; margin-top:16px;">
+        <h3 class="card-title">👤 Contacto del Productor</h3>
+        <div id="producer-contact-info"></div>
+    </div>
+
+    <!-- Producer actions -->
+    <div id="producer-actions" style="display:none; margin-top:20px;">
+        <div class="detail-card">
+            <h3 class="card-title">⚡ Acciones</h3>
+            <div id="action-buttons" class="action-buttons"></div>
+        </div>
+    </div>
+
+    <!-- Applications section (for producer) -->
+    <div id="applications-section" style="display:none; margin-top:20px;">
+        <div class="detail-card">
+            <h3 class="card-title">👥 Postulaciones</h3>
+            <div id="applications-list"></div>
+            <div id="no-applications" style="display:none; color:#94a3b8; text-align:center; padding:20px;">
+                Todavía no hay postulaciones.
+            </div>
+        </div>
+    </div>
+
+    <!-- Apply section (for aplicador) -->
+    <div id="apply-section" style="display:none; margin-top:20px;">
+        <div class="detail-card">
+            <h3 class="card-title">🚜 Postularse a este trabajo</h3>
+            <form method="post" asp-action="Apply">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="jobId" id="apply-job-id" />
+                <div class="form-group" style="margin-bottom:12px;">
+                    <label class="form-label">Mensaje al productor <span class="optional-tag">(opcional)</span></label>
+                    <textarea name="message" class="form-control" rows="2"
+                              placeholder="Contale sobre tu experiencia, disponibilidad, etc."
+                              maxlength="500"></textarea>
+                </div>
+                <div class="form-group" style="margin-bottom:4px;">
+                    <label class="form-label">Precio por hectárea ($/ha) <span class="optional-tag">(opcional)</span></label>
+                    <input name="proposedPrice" id="pricePerHa" type="number" step="0.01" class="form-control"
+                           placeholder="Ej: 5000" />
+                </div>
+                <div id="priceEstimate" style="display:none; color:#059669; font-size:.85rem; margin-bottom:16px; padding:8px 12px; background:#f0fdf4; border-radius:8px;">
+                </div>
+                <button type="submit" class="btn-apply">Enviar Postulación</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Already applied -->
+    <div id="already-applied" style="display:none; margin-top:20px;">
+        <div class="detail-card" style="text-align:center;">
+            <p style="margin:0 0 12px; color:#059669; font-weight:600;">✅ Ya te postulaste a este trabajo</p>
+            <form method="post" asp-action="Withdraw" style="display:inline;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="jobId" id="withdraw-job-id" />
+                <button type="submit" class="btn-withdraw">Retirar postulación</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/jobs.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        (function() {
+            var job = @Html.Raw(jobJson);
+            var isProductor = @(isProductor ? "true" : "false");
+            var isAplicador = @(isAplicador ? "true" : "false");
+            var jobSurface = job.surfaceHa || 0;
+
+            // Helper: format price
+            function fmtPrice(n) {
+                return n.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+            }
+
+            // Helper: build price display for applications
+            function priceHtml(pricePerHa) {
+                if (!pricePerHa) return '';
+                var html = '<span>💰 $' + fmtPrice(pricePerHa) + '/ha</span>';
+                if (jobSurface > 0) {
+                    var total = pricePerHa * jobSurface;
+                    html += '<span>💵 Total: $' + fmtPrice(total) + ' (' + jobSurface + ' ha)</span>';
+                }
+                return html;
+            }
+
+            // Header
+            document.getElementById('job-title').textContent = job.title || 'Sin título';
+
+            var metaHtml = '';
+            if (job.crop) metaHtml += '<span>🌱 ' + job.crop + '</span>';
+            if (job.applicationType) metaHtml += '<span>💧 ' + job.applicationType + '</span>';
+            if (job.surfaceHa) metaHtml += '<span>📐 ' + job.surfaceHa + ' ha</span>';
+            metaHtml += '<span>👤 ' + job.producerName + '</span>';
+            metaHtml += '<span>📅 ' + new Date(job.createdAt).toLocaleDateString('es-AR') + '</span>';
+            document.getElementById('job-meta').innerHTML = metaHtml;
+
+            // Status badge
+            var statusKey = (job.status || '').toLowerCase().replace(' ', '_');
+            var statusLabels = { 'abierto': 'Abierto', 'en_seleccion': 'En Selección', 'asignado': 'Asignado', 'completado': 'Completado', 'cancelado': 'Cancelado' };
+            var badge = document.getElementById('job-status-badge');
+            badge.className = 'status-tag tag-' + statusKey;
+            badge.textContent = statusLabels[statusKey] || job.status;
+
+            // Description
+            document.getElementById('job-description').textContent = job.description || 'Sin descripción.';
+
+            // Location
+            var locInfo = '';
+            if (job.locality) locInfo += job.locality;
+            if (job.department) locInfo += (locInfo ? ', ' : '') + job.department;
+            locInfo += '<br><span style="font-family:monospace;color:#94a3b8;font-size:.82rem;">' + job.latitude.toFixed(4) + ', ' + job.longitude.toFixed(4) + '</span>';
+            document.getElementById('job-location-info').innerHTML = locInfo;
+
+            // Map
+            var map = L.map('job-map').setView([job.latitude, job.longitude], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+            L.marker([job.latitude, job.longitude]).addTo(map).bindPopup('<strong>' + job.title + '</strong>');
+
+            // Assigned applicator (producer sees applicator contact)
+            if (job.assignedApplicatorName) {
+                document.getElementById('assigned-section').style.display = 'block';
+                var aInfo = '<div style="font-weight:600;font-size:1rem;">' + job.assignedApplicatorName + '</div>';
+                if (job.assignedAt) aInfo += '<div style="color:#64748b;font-size:.85rem;">Asignado el ' + new Date(job.assignedAt).toLocaleDateString('es-AR') + '</div>';
+                if (job.completedAt) aInfo += '<div style="color:#059669;font-size:.85rem;">Completado el ' + new Date(job.completedAt).toLocaleDateString('es-AR') + '</div>';
+
+                // Show applicator contact info to producer
+                if (isProductor && job.applications) {
+                    var assignedApp = job.applications.find(function(a) { return a.status === 'ACEPTADA'; });
+                    if (assignedApp) {
+                        aInfo += '<div style="margin-top:12px; padding-top:12px; border-top:1px solid #e2e8f0;">';
+                        aInfo += '<div style="font-size:.82rem; color:#64748b; margin-bottom:6px; font-weight:600;">Datos de contacto:</div>';
+                        if (assignedApp.applicatorPhone) aInfo += '<div style="font-size:.9rem; margin-bottom:4px;">📞 <a href="tel:' + assignedApp.applicatorPhone + '" style="color:#667eea;">' + assignedApp.applicatorPhone + '</a></div>';
+                        if (assignedApp.applicatorMachines && assignedApp.applicatorMachines.length) aInfo += '<div style="font-size:.9rem; color:#475569;">🔧 ' + assignedApp.applicatorMachines.join(', ') + '</div>';
+                        aInfo += '</div>';
+                    }
+                }
+
+                document.getElementById('assigned-info').innerHTML = aInfo;
+            }
+
+            // Producer contact (applicator sees producer contact when assigned)
+            if (isAplicador && job.assignedApplicatorName && (job.status === 'ASIGNADO' || job.status === 'COMPLETADO')) {
+                var pcSection = document.getElementById('producer-contact-section');
+                var pcInfo = document.getElementById('producer-contact-info');
+                pcSection.style.display = 'block';
+
+                var pcHtml = '<div style="font-weight:600;font-size:1rem;">' + job.producerName + '</div>';
+                if (job.producerPhone) pcHtml += '<div style="font-size:.9rem; margin-top:6px;">📞 <a href="tel:' + job.producerPhone + '" style="color:#667eea;">' + job.producerPhone + '</a></div>';
+                if (job.producerEmail) pcHtml += '<div style="font-size:.9rem; margin-top:4px;">📧 <a href="mailto:' + job.producerEmail + '" style="color:#667eea;">' + job.producerEmail + '</a></div>';
+                if (!job.producerPhone && !job.producerEmail) pcHtml += '<div style="color:#94a3b8; font-size:.85rem; margin-top:4px;">El productor no tiene datos de contacto cargados.</div>';
+
+                pcInfo.innerHTML = pcHtml;
+            }
+
+            // ── PRODUCER VIEW ──
+            if (isProductor) {
+                var actionsDiv = document.getElementById('action-buttons');
+                document.getElementById('producer-actions').style.display = 'block';
+
+                if (job.status === 'ABIERTO' || job.status === 'EN_SELECCION') {
+                    actionsDiv.innerHTML =
+                        '<form method="post" action="/Jobs/ChangeStatus" style="display:inline;">' +
+                        '<input type="hidden" name="__RequestVerificationToken" value="' + document.querySelector('[name=__RequestVerificationToken]').value + '">' +
+                        '<input type="hidden" name="jobId" value="' + job.id + '">' +
+                        '<input type="hidden" name="status" value="CANCELADO">' +
+                        '<button type="submit" class="btn-cancel-job" onclick="return confirm(\'¿Cancelar este trabajo?\')">Cancelar Trabajo</button></form>';
+                } else if (job.status === 'ASIGNADO') {
+                    actionsDiv.innerHTML =
+                        '<form method="post" action="/Jobs/ChangeStatus" style="display:inline;">' +
+                        '<input type="hidden" name="__RequestVerificationToken" value="' + document.querySelector('[name=__RequestVerificationToken]').value + '">' +
+                        '<input type="hidden" name="jobId" value="' + job.id + '">' +
+                        '<input type="hidden" name="status" value="COMPLETADO">' +
+                        '<button type="submit" class="btn-complete">Marcar como Completado</button></form>' +
+                        '<form method="post" action="/Jobs/ChangeStatus" style="display:inline;">' +
+                        '<input type="hidden" name="__RequestVerificationToken" value="' + document.querySelector('[name=__RequestVerificationToken]').value + '">' +
+                        '<input type="hidden" name="jobId" value="' + job.id + '">' +
+                        '<input type="hidden" name="status" value="CANCELADO">' +
+                        '<button type="submit" class="btn-cancel-job" onclick="return confirm(\'¿Cancelar?\')">Cancelar</button></form>';
+                } else {
+                    actionsDiv.innerHTML = '<span style="color:#94a3b8;">No hay acciones disponibles.</span>';
+                }
+
+                // Applications list
+                var apps = job.applications || [];
+                document.getElementById('applications-section').style.display = 'block';
+
+                if (apps.length === 0) {
+                    document.getElementById('no-applications').style.display = 'block';
+                } else {
+                    var listEl = document.getElementById('applications-list');
+                    apps.forEach(function(a) {
+                        var card = document.createElement('div');
+                        card.className = 'app-card';
+                        var html =
+                            '<div class="app-header">' +
+                            '<span class="app-name">' + a.applicatorBusinessName + '</span>' +
+                            (a.applicatorIsVerified ? '<span class="app-verified">✅ Verificado</span>' : '<span class="app-unverified">⏳ Sin verificar</span>') +
+                            '</div>' +
+                            '<div class="app-details">' +
+                            (a.applicatorPhone ? '<span>📞 ' + a.applicatorPhone + '</span>' : '') +
+                            (a.applicatorMachines.length ? '<span>🔧 ' + a.applicatorMachines.join(', ') + '</span>' : '') +
+                            (a.distanceKm != null ? '<span>📍 ' + a.distanceKm + ' km</span>' : '') +
+                            priceHtml(a.proposedPrice) +
+                            '<span>📅 ' + new Date(a.createdAt).toLocaleDateString('es-AR') + '</span>' +
+                            '</div>';
+
+                        if (a.message) html += '<div class="app-message">"' + a.message + '"</div>';
+
+                        if (a.status === 'PENDIENTE' && (job.status === 'ABIERTO' || job.status === 'EN_SELECCION')) {
+                            html +=
+                                '<form method="post" action="/Jobs/Assign" style="display:inline;">' +
+                                '<input type="hidden" name="__RequestVerificationToken" value="' + document.querySelector('[name=__RequestVerificationToken]').value + '">' +
+                                '<input type="hidden" name="jobId" value="' + job.id + '">' +
+                                '<input type="hidden" name="applicationId" value="' + a.id + '">' +
+                                '<button type="submit" class="btn-assign" onclick="return confirm(\'¿Asignar a ' + a.applicatorBusinessName + '?\')">Contratar</button></form>';
+                        } else if (a.status === 'ACEPTADA') {
+                            html += '<span style="color:#059669;font-weight:600;">✅ Contratado</span>';
+                        } else if (a.status === 'RECHAZADA') {
+                            html += '<span style="color:#94a3b8;">Rechazada</span>';
+                        } else if (a.status === 'RETIRADA') {
+                            html += '<span style="color:#94a3b8;">Retirada</span>';
+                        }
+
+                        card.innerHTML = html;
+                        listEl.appendChild(card);
+                    });
+                }
+            }
+
+            // ── APLICADOR VIEW ──
+            if (isAplicador) {
+                if (job.status === 'ABIERTO') {
+                    var apps = job.applications || [];
+                    var myApp = apps.find(function(a) { return a.status === 'PENDIENTE' || a.status === 'ACEPTADA'; });
+
+                    if (myApp) {
+                        document.getElementById('already-applied').style.display = 'block';
+                        document.getElementById('withdraw-job-id').value = job.id;
+                    } else {
+                        document.getElementById('apply-section').style.display = 'block';
+                        document.getElementById('apply-job-id').value = job.id;
+
+                        // Live price estimate while typing
+                        var priceInput = document.getElementById('pricePerHa');
+                        var estimateDiv = document.getElementById('priceEstimate');
+
+                        if (priceInput && jobSurface > 0) {
+                            priceInput.addEventListener('input', function() {
+                                var val = parseFloat(this.value);
+                                if (val > 0) {
+                                    var total = val * jobSurface;
+                                    estimateDiv.innerHTML = '📐 ' + jobSurface + ' ha × $' + fmtPrice(val) + '/ha = <strong>$' + fmtPrice(total) + ' total</strong>';
+                                    estimateDiv.style.display = 'block';
+                                } else {
+                                    estimateDiv.style.display = 'none';
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+        })();
+    </script>
+}

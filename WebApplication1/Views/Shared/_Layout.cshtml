@@ -35,13 +35,14 @@
                             <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="CreateManual">Receta Manual</a></li>
                             <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="Index">Mis Recetas</a></li>
                             <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="Lots">🗺️ Mis Lotes</a></li>
+                            <li><a class="nav-link-custom" asp-controller="Jobs" asp-action="MyJobs">📋 Mis Trabajos</a></li>
                         }
 
                         @if (User.IsInRole("Aplicador"))
                         {
                             <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="MyProfile">🚜 Mi Perfil</a></li>
-                            <li><a class="nav-link-custom disabled-link" href="#">📋 Bolsa de Trabajo</a></li>
-                            <li><a class="nav-link-custom disabled-link" href="#">📌 Mis Tareas</a></li>
+                            <li><a class="nav-link-custom" asp-controller="Jobs" asp-action="Available">📋 Bolsa de Trabajo</a></li>
+                            <li><a class="nav-link-custom" asp-controller="Jobs" asp-action="MyTasks">📌 Mis Tareas</a></li>
                         }
 
                         @if (User.IsInRole("Admin"))

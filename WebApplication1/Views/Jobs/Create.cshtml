@@ -1,0 +1,426 @@
+@{
+    ViewData["Title"] = "Publicar Trabajo";
+    var recipesJson = ViewBag.RecipesJson as string ?? "[]";
+    var lotsJson = ViewBag.LotsJson as string ?? "[]";
+}
+
+<div class="page-container" style="max-width: 700px; margin: 0 auto; padding: 0 20px 40px; position:relative;">
+    <a asp-action="MyJobs" class="back-link">← Volver a Mis Trabajos</a>
+
+    <!-- Loading overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+        <div class="loading-box">
+            <div class="loading-spinner"></div>
+            <span>Cargando datos de la receta...</span>
+        </div>
+    </div>
+
+    <div class="create-user-form">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <span style="font-size: 2.5rem;">📋</span>
+            <h2 style="margin: 0.5rem 0 0.25rem;">Publicar Trabajo de Aplicación</h2>
+            <p style="color: #64748b; font-size: 0.9rem;">Completá los datos para que los aplicadores puedan postularse</p>
+        </div>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger">@ViewBag.Error</div>
+        }
+
+        <form method="post" id="jobForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="recipeId" id="recipeIdHidden" />
+
+            <!-- Vincular a receta -->
+            <div class="form-section">
+                <h4 class="form-section-title">🔗 Vincular a Receta <span class="optional-tag">(opcional)</span></h4>
+                <p class="form-hint">Si vinculás una receta, se auto-completan los datos y la ubicación del trabajo.</p>
+                <select id="recipeSelector" class="form-control">
+                    <option value="">— Sin vincular a receta —</option>
+                </select>
+                <div id="recipeLinkBanner" class="recipe-link-banner" style="display:none;">
+                    <span>🔗</span>
+                    <span id="recipeLinkText">Receta vinculada</span>
+                    <button type="button" class="btn-unlink-recipe" onclick="unlinkRecipe()">✕ Desvincular</button>
+                </div>
+            </div>
+
+            <!-- Datos del trabajo -->
+            <div class="form-section">
+                <h4 class="form-section-title">📝 Datos del Trabajo</h4>
+
+                <div class="form-group">
+                    <label class="form-label">Título del trabajo *</label>
+                    <input name="title" id="fieldTitle" type="text" class="form-control"
+                           placeholder="Ej: Fumigación de soja 50 ha"
+                           value="@ViewBag.Title" required maxlength="200" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Descripción <span class="optional-tag">(opcional)</span></label>
+                    <textarea name="description" id="fieldDescription" class="form-control" rows="3"
+                              placeholder="Detalles sobre el trabajo, condiciones, requerimientos..."
+                              maxlength="1000">@ViewBag.Description</textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Cultivo <span class="optional-tag">(opcional)</span></label>
+                        <input name="crop" id="fieldCrop" type="text" class="form-control"
+                               placeholder="Ej: Soja, Maíz, Trigo" value="@ViewBag.Crop" maxlength="100" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tipo de aplicación <span class="optional-tag">(opcional)</span></label>
+                        <input name="applicationType" id="fieldAppType" type="text" class="form-control"
+                               placeholder="Ej: Herbicida, Fungicida" value="@ViewBag.ApplicationType" maxlength="100" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Superficie (ha) <span class="optional-tag">(opcional)</span></label>
+                        <input name="surfaceHa" id="fieldSurface" type="number" step="0.01" class="form-control"
+                               placeholder="50" value="@ViewBag.SurfaceHa" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Localidad <span class="optional-tag">(opcional)</span></label>
+                        <input name="locality" id="fieldLocality" type="text" class="form-control"
+                               placeholder="Marcos Juárez" value="@ViewBag.Locality" maxlength="150" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Departamento <span class="optional-tag">(opcional)</span></label>
+                    <input name="department" id="fieldDepartment" type="text" class="form-control"
+                           placeholder="Marcos Juárez" value="@ViewBag.Department" maxlength="150" />
+                </div>
+            </div>
+
+            <!-- Fechas tentativas -->
+            <div class="form-section">
+                <h4 class="form-section-title">📅 Fecha Tentativa de Aplicación</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Desde <span class="optional-tag">(opcional)</span></label>
+                        <input name="dateFrom" id="fieldDateFrom" type="date" class="form-control" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hasta <span class="optional-tag">(opcional)</span></label>
+                        <input name="dateTo" id="fieldDateTo" type="date" class="form-control" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ubicación del trabajo -->
+            <div class="form-section" id="locationSection">
+                <h4 class="form-section-title">📍 Ubicación del Trabajo</h4>
+
+                <div id="locationLockedBanner" class="location-locked-banner" style="display:none;">
+                    <span>🔒</span>
+                    <span>Ubicación y datos definidos por la receta vinculada. Desvinculá la receta para modificarlos.</span>
+                </div>
+
+                <div id="locationModeContainer">
+                    <div class="lot-mode-selector">
+                        <button type="button" id="btnModeExisting" class="lot-mode-btn active" onclick="setLocationMode('existing')">
+                            📂 Usar lote existente
+                        </button>
+                        <button type="button" id="btnModeManual" class="lot-mode-btn" onclick="setLocationMode('manual')">
+                            📍 Elegir punto en mapa
+                        </button>
+                    </div>
+
+                    <div id="existingLotPanel">
+                        <div id="existingLotsMessage" class="existing-lots-message">
+                            <span>⏳ Cargando tus lotes...</span>
+                        </div>
+                        <div id="existingLotSelected" class="existing-lot-selected" style="display:none;">
+                            <span class="lot-selected-icon">✅</span>
+                            <span id="existingLotSelectedText">Lote seleccionado</span>
+                            <button type="button" class="btn-deselect-lot" onclick="deselectLot()">✕ Cambiar</button>
+                        </div>
+                    </div>
+
+                    <div id="manualPointPanel" style="display:none;">
+                        <p class="form-hint">Hacé click en el mapa o usá "Mi ubicación" para marcar el punto.</p>
+                    </div>
+                </div>
+
+                <div class="map-actions">
+                    <button type="button" id="btnGeolocate" class="map-btn">📡 Centrar en mi ubicación</button>
+                    <span id="mapHint" class="map-hint">Hacé click en un lote del mapa para seleccionarlo</span>
+                </div>
+                <div id="locationMap" class="location-map"></div>
+
+                <div class="form-row" style="margin-top: 12px;">
+                    <div class="form-group">
+                        <label class="form-label">Latitud</label>
+                        <input name="locationLat" id="locationLat" type="text" class="form-control coord-input"
+                               placeholder="-32.6920" readonly required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Longitud</label>
+                        <input name="locationLng" id="locationLng" type="text" class="form-control coord-input"
+                               placeholder="-62.1026" readonly required />
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a asp-action="MyJobs" class="btn-cancel">Cancelar</a>
+                <button type="submit" class="btn-submit">Publicar Trabajo</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/jobs.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        (function() {
+            var recipes = @Html.Raw(recipesJson);
+            var lots = @Html.Raw(lotsJson);
+
+            var lockableFields = ['fieldCrop', 'fieldAppType', 'fieldSurface', 'fieldLocality', 'fieldDepartment'];
+            var loadingOverlay = document.getElementById('loadingOverlay');
+
+            var latInput = document.getElementById('locationLat');
+            var lngInput = document.getElementById('locationLng');
+            var hint = document.getElementById('mapHint');
+            var marker = null;
+            var lotPolygons = [];
+            var selectedPolygon = null;
+            var recipePolygon = null;
+            var currentMode = 'existing';
+            var isRecipeLocked = false;
+
+            var map = L.map('locationMap').setView([-32.69, -62.10], 8);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+
+            // ── Helpers ──
+            function setLocation(lat, lng, zoom) {
+                lat = parseFloat(lat.toFixed(4)); lng = parseFloat(lng.toFixed(4));
+                latInput.value = lat; lngInput.value = lng;
+                if (marker) { marker.setLatLng([lat, lng]); }
+                else {
+                    marker = L.marker([lat, lng], { draggable: !isRecipeLocked && currentMode === 'manual' }).addTo(map);
+                    marker.on('dragend', function(e) { var p = e.target.getLatLng(); setLocation(p.lat, p.lng); });
+                }
+                if (zoom) map.setView([lat, lng], zoom); else map.panTo([lat, lng]);
+            }
+            function clearMarker() { if (marker) { map.removeLayer(marker); marker = null; } latInput.value = ''; lngInput.value = ''; }
+            function clearLotHighlight() { if (selectedPolygon) { selectedPolygon.setStyle({ color: '#3388ff', weight: 2, fillOpacity: 0.1 }); selectedPolygon = null; } }
+            function clearRecipePolygon() { if (recipePolygon) { map.removeLayer(recipePolygon); recipePolygon = null; } }
+            function lockFields() { lockableFields.forEach(function(id) { var el = document.getElementById(id); if (el) { el.readOnly = true; el.classList.add('field-locked'); } }); }
+            function unlockFields() { lockableFields.forEach(function(id) { var el = document.getElementById(id); if (el) { el.readOnly = false; el.classList.remove('field-locked'); } }); }
+            function showLoading() { loadingOverlay.style.display = 'flex'; }
+            function hideLoading() { loadingOverlay.style.display = 'none'; }
+
+            // ── Draw existing lots ──
+            var lotsMsg = document.getElementById('existingLotsMessage');
+            var lotSelectedDiv = document.getElementById('existingLotSelected');
+            var lotSelectedText = document.getElementById('existingLotSelectedText');
+
+            if (lots && lots.length > 0) {
+                lotsMsg.innerHTML = '<span>📂</span> Tenés <strong>' + lots.length + '</strong> lotes guardados. Hacé click en uno para seleccionarlo.';
+                lots.forEach(function(lot) {
+                    var verts = lot.vertices || [];
+                    if (verts.length < 3) return;
+                    var latlngs = verts.sort(function(a, b) { return a.order - b.order; }).map(function(v) { return [v.latitude, v.longitude]; });
+                    var poly = L.polygon(latlngs, { color: '#3388ff', weight: 2, fillOpacity: 0.1 }).addTo(map);
+                    poly._lotData = lot; lotPolygons.push(poly);
+                    var tt = '<strong>' + (lot.name || lot.code || 'Lote') + '</strong>';
+                    if (lot.locality) tt += '<br>' + lot.locality;
+                    if (lot.areaHa) tt += '<br>' + lot.areaHa + ' ha';
+                    poly.bindTooltip(tt, { sticky: true });
+                    poly.on('click', function(e) {
+                        if (currentMode !== 'existing' || isRecipeLocked) return;
+                        L.DomEvent.stopPropagation(e); selectLot(poly, lot);
+                    });
+                });
+                if (lotPolygons.length > 0) map.fitBounds(L.featureGroup(lotPolygons).getBounds(), { padding: [30, 30] });
+            } else {
+                lotsMsg.innerHTML = '<span>📂</span> No tenés lotes guardados. Elegí un punto en el mapa.';
+            }
+
+            function selectLot(poly, lot) {
+                clearLotHighlight(); clearMarker();
+                poly.setStyle({ color: '#059669', weight: 3, fillOpacity: 0.25 }); selectedPolygon = poly;
+                var lat = lot.centroidLat || 0, lng = lot.centroidLng || 0;
+                if (lat && lng) { setLocation(lat, lng); map.fitBounds(poly.getBounds(), { padding: [40, 40] }); }
+                var label = (lot.name || lot.code || 'Lote');
+                if (lot.locality) label += ' — ' + lot.locality;
+                if (lot.areaHa) label += ' (' + lot.areaHa + ' ha)';
+                lotSelectedText.textContent = label; lotSelectedDiv.style.display = 'flex'; lotsMsg.style.display = 'none';
+                if (!document.getElementById('fieldLocality').value && lot.locality) document.getElementById('fieldLocality').value = lot.locality;
+                if (!document.getElementById('fieldDepartment').value && lot.department) document.getElementById('fieldDepartment').value = lot.department;
+                if (!document.getElementById('fieldSurface').value && lot.areaHa) document.getElementById('fieldSurface').value = lot.areaHa;
+                hint.textContent = 'Lote seleccionado: ' + (lot.name || lot.code);
+            }
+            window.deselectLot = function() {
+                clearLotHighlight(); clearMarker();
+                lotSelectedDiv.style.display = 'none'; lotsMsg.style.display = 'block';
+                hint.textContent = 'Hacé click en un lote del mapa para seleccionarlo';
+            };
+
+            // ── Mode selector ──
+            window.setLocationMode = function(mode) {
+                if (isRecipeLocked) return;
+                currentMode = mode;
+                document.getElementById('btnModeExisting').classList.toggle('active', mode === 'existing');
+                document.getElementById('btnModeManual').classList.toggle('active', mode === 'manual');
+                document.getElementById('existingLotPanel').style.display = mode === 'existing' ? 'block' : 'none';
+                document.getElementById('manualPointPanel').style.display = mode === 'manual' ? 'block' : 'none';
+                clearLotHighlight(); clearMarker(); lotSelectedDiv.style.display = 'none'; lotsMsg.style.display = 'block';
+                lotPolygons.forEach(function(p) {
+                    p.setStyle({ opacity: mode === 'existing' ? 1 : 0.3, fillOpacity: mode === 'existing' ? 0.1 : 0.05 });
+                    p.options.interactive = mode === 'existing';
+                });
+                if (marker) marker.dragging[mode === 'manual' ? 'enable' : 'disable']();
+                hint.textContent = mode === 'existing' ? 'Hacé click en un lote del mapa para seleccionarlo' : 'Hacé click en el mapa para marcar la ubicación';
+            };
+
+            // ── Map click ──
+            map.on('click', function(e) {
+                if (currentMode !== 'manual' || isRecipeLocked) return;
+                setLocation(e.latlng.lat, e.latlng.lng, map.getZoom() < 12 ? 13 : undefined);
+                hint.textContent = 'Ubicación seleccionada. Podés arrastrar el marcador.';
+            });
+
+            // ── Geolocation ──
+            document.getElementById('btnGeolocate').addEventListener('click', function() {
+                var btn = this;
+                if (!navigator.geolocation) { hint.textContent = 'Geolocalización no soportada.'; return; }
+                btn.disabled = true; btn.textContent = '⏳ Buscando...';
+                navigator.geolocation.getCurrentPosition(
+                    function(pos) { map.setView([pos.coords.latitude, pos.coords.longitude], 14); if (currentMode === 'manual' && !isRecipeLocked) setLocation(pos.coords.latitude, pos.coords.longitude, 14); btn.disabled = false; btn.textContent = '📡 Centrar en mi ubicación'; },
+                    function() { btn.disabled = false; btn.textContent = '📡 Centrar en mi ubicación'; hint.textContent = 'No se pudo obtener la ubicación.'; },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            });
+
+            // ══════════════════════════════════════
+            // RECIPE SELECTOR + LOCK
+            // ══════════════════════════════════════
+            var recipeSelect = document.getElementById('recipeSelector');
+            var recipeIdHidden = document.getElementById('recipeIdHidden');
+            var recipeBanner = document.getElementById('recipeLinkBanner');
+            var recipeBannerText = document.getElementById('recipeLinkText');
+            var locationModeContainer = document.getElementById('locationModeContainer');
+            var locationLockedBanner = document.getElementById('locationLockedBanner');
+
+            if (recipes && recipes.length > 0) {
+                recipes.forEach(function(r) {
+                    var opt = document.createElement('option');
+                    opt.value = r.id;
+                    var label = r.rfdNumber ? ('RFD #' + r.rfdNumber) : ('Manual ' + r.publicCode);
+                    if (r.crop) label += ' — ' + r.crop;
+                    if (r.unitSurfaceHa) label += ' (' + r.unitSurfaceHa + ' ha)';
+                    label += ' [' + r.status + ']';
+                    opt.textContent = label;
+                    opt.dataset.crop = r.crop || '';
+                    opt.dataset.appType = r.applicationType || '';
+                    opt.dataset.surface = r.unitSurfaceHa || '';
+                    recipeSelect.appendChild(opt);
+                });
+            }
+
+            recipeSelect.addEventListener('change', function() {
+                var val = this.value;
+                recipeIdHidden.value = val || '';
+                if (!val) { unlinkRecipeInternal(); return; }
+
+                var opt = this.options[this.selectedIndex];
+
+                // Auto-fill fields
+                document.getElementById('fieldCrop').value = opt.dataset.crop || '';
+                document.getElementById('fieldAppType').value = opt.dataset.appType || '';
+                if (opt.dataset.surface) document.getElementById('fieldSurface').value = opt.dataset.surface;
+
+                var titleField = document.getElementById('fieldTitle');
+                if (!titleField.value.trim()) {
+                    var t = (opt.dataset.appType || 'Aplicación') + ' ' + (opt.dataset.crop || '');
+                    if (opt.dataset.surface) t += ' ' + opt.dataset.surface + ' ha';
+                    titleField.value = t.trim();
+                }
+
+                // Show loading and fetch recipe detail
+                showLoading();
+                fetch('/Jobs/RecipeDetail?id=' + val)
+                    .then(function(r) { return r.ok ? r.json() : null; })
+                    .then(function(data) {
+                        hideLoading();
+                        if (!data) { hint.textContent = 'Error al cargar receta.'; return; }
+                        lockRecipeLocation(data, opt.textContent);
+                    })
+                    .catch(function() {
+                        hideLoading();
+                        hint.textContent = 'Error al cargar la receta.';
+                    });
+            });
+
+            function lockRecipeLocation(data, recipeLabel) {
+                isRecipeLocked = true;
+                lockFields();
+
+                if (data.lot) {
+                    if (data.lot.locality) document.getElementById('fieldLocality').value = data.lot.locality;
+                    if (data.lot.department) document.getElementById('fieldDepartment').value = data.lot.department;
+                }
+
+                recipeBannerText.textContent = recipeLabel || 'Receta vinculada';
+                recipeBanner.style.display = 'flex';
+                recipeSelect.style.display = 'none';
+                locationLockedBanner.style.display = 'flex';
+                locationModeContainer.style.display = 'none';
+
+                clearLotHighlight(); clearMarker(); clearRecipePolygon();
+                lotPolygons.forEach(function(p) { p.setStyle({ opacity: 0.2, fillOpacity: 0.03 }); p.options.interactive = false; });
+
+                if (data.lot && data.lot.vertices && data.lot.vertices.length >= 3) {
+                    var verts = data.lot.vertices;
+                    var latlngs = verts.map(function(v) { return [v.latitude, v.longitude]; });
+                    recipePolygon = L.polygon(latlngs, { color: '#dc2626', weight: 3, fillOpacity: 0.2, fillColor: '#ef4444' }).addTo(map);
+                    recipePolygon.bindTooltip('<strong>Lote de la receta</strong>' + (data.lot.lotName ? '<br>' + data.lot.lotName : '') + (data.lot.locality ? '<br>' + data.lot.locality : ''), { sticky: true });
+                    var avgLat = verts.reduce(function(s, v) { return s + v.latitude; }, 0) / verts.length;
+                    var avgLng = verts.reduce(function(s, v) { return s + v.longitude; }, 0) / verts.length;
+                    setLocation(avgLat, avgLng);
+                    if (marker) marker.dragging.disable();
+                    map.fitBounds(recipePolygon.getBounds(), { padding: [40, 40] });
+                    hint.textContent = 'Ubicación fijada desde la receta vinculada.';
+                } else {
+                    hint.textContent = 'La receta no tiene lote con coordenadas.';
+                }
+            }
+
+            function unlinkRecipeInternal() {
+                isRecipeLocked = false;
+                recipeIdHidden.value = '';
+                recipeSelect.value = '';
+                recipeSelect.style.display = 'block';
+                recipeBanner.style.display = 'none';
+                locationLockedBanner.style.display = 'none';
+                locationModeContainer.style.display = 'block';
+                clearRecipePolygon(); clearMarker();
+                unlockFields();
+                // Clear recipe-filled values
+                document.getElementById('fieldCrop').value = '';
+                document.getElementById('fieldAppType').value = '';
+                document.getElementById('fieldSurface').value = '';
+                document.getElementById('fieldLocality').value = '';
+                document.getElementById('fieldDepartment').value = '';
+                lotPolygons.forEach(function(p) { p.setStyle({ opacity: 1, fillOpacity: 0.1, color: '#3388ff', weight: 2 }); p.options.interactive = true; });
+                setLocationMode(currentMode);
+                hint.textContent = 'Receta desvinculada. Podés modificar los datos y elegir la ubicación.';
+            }
+            window.unlinkRecipe = function() { unlinkRecipeInternal(); };
+
+        })();
+    </script>
+}

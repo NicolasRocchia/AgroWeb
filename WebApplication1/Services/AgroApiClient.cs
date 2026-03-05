@@ -99,6 +99,20 @@ public class AgroApiClient
         return new ApiResult<string>(raw, resp.StatusCode);
     }
 
+    /// <summary>
+    /// DELETE. Returns success/failure with error extraction.
+    /// </summary>
+    public async Task<ApiResult<string>> DeleteAsync(string url)
+    {
+        var resp = await _http.DeleteAsync(url);
+
+        if (!resp.IsSuccessStatusCode)
+            return new ApiResult<string>(null, resp.StatusCode, await ExtractErrorDetailed(resp));
+
+        var raw = await resp.Content.ReadAsStringAsync();
+        return new ApiResult<string>(raw, resp.StatusCode);
+    }
+
     // ══════════════════════════════════════════════
     // RECIPES
     // ══════════════════════════════════════════════
@@ -266,6 +280,37 @@ public class AgroApiClient
 
     public Task<ApiResult<string>> UpdateLotAsync(long id, object body)
         => PutAsync($"/api/lots/{id}", body);
+
+    // ══════════════════════════════════════════════
+    // BOLSA DE TRABAJO
+    // ══════════════════════════════════════════════
+
+    public Task<ApiResult<string>> CreateJobPostingAsync(object body)
+        => PostAsync("/api/jobs", body);
+
+    public Task<ApiResult<string>> GetMyJobsAsync()
+        => GetRawJsonAsync("/api/jobs/mine");
+
+    public Task<ApiResult<string>> GetJobDetailAsync(long id)
+        => GetRawJsonAsync($"/api/jobs/{id}");
+
+    public Task<ApiResult<string>> AssignApplicatorAsync(long jobId, long applicationId)
+        => PostAsync($"/api/jobs/{jobId}/assign", new { applicationId });
+
+    public Task<ApiResult<string>> ChangeJobStatusAsync(long jobId, string status)
+        => PutAsync($"/api/jobs/{jobId}/status", new { status });
+
+    public Task<ApiResult<string>> GetAvailableJobsAsync()
+        => GetRawJsonAsync("/api/jobs/available");
+
+    public Task<ApiResult<string>> GetMyTasksAsync()
+        => GetRawJsonAsync("/api/jobs/my-tasks");
+
+    public Task<ApiResult<string>> ApplyToJobAsync(long jobId, string? message, decimal? proposedPrice)
+        => PostAsync($"/api/jobs/{jobId}/apply", new { message, proposedPrice });
+
+    public Task<ApiResult<string>> WithdrawJobApplicationAsync(long jobId)
+        => DeleteAsync($"/api/jobs/{jobId}/apply");
 
     // ══════════════════════════════════════════════
     // ERROR EXTRACTION (private)

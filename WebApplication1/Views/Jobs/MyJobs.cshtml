@@ -1,0 +1,79 @@
+@{
+    ViewData["Title"] = "Mis Trabajos Publicados";
+    var jobsJson = ViewBag.JobsJson as string ?? "[]";
+}
+
+<div class="page-container" style="max-width: 1000px; margin: 0 auto; padding: 0 20px 40px;">
+    <div class="page-header">
+        <div>
+            <a asp-controller="Home" asp-action="Index" class="back-link">← Inicio</a>
+            <h1 class="page-title">📋 Mis Trabajos Publicados</h1>
+        </div>
+        <a asp-action="Create" class="btn-create">+ Publicar Trabajo</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-box alert-success-box"><span>✅</span> @TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-box alert-error-box"><span>⚠️</span> @TempData["Error"]</div>
+    }
+
+    <div id="jobsList"></div>
+    <div id="emptyState" style="display:none; text-align:center; padding:60px 20px; color:#64748b;">
+        <div style="font-size:3rem; margin-bottom:16px;">📋</div>
+        <h3>No tenés trabajos publicados</h3>
+        <p>Publicá un trabajo para que los aplicadores se postulen.</p>
+        <a asp-action="Create" class="btn-create" style="margin-top:16px; display:inline-block;">+ Publicar Trabajo</a>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/jobs.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            var jobs = @Html.Raw(jobsJson);
+            var container = document.getElementById('jobsList');
+            var empty = document.getElementById('emptyState');
+
+            if (!jobs || jobs.length === 0) {
+                empty.style.display = 'block';
+                return;
+            }
+
+            jobs.forEach(function (j) {
+                var statusKey = (j.status || '').toLowerCase().replace(' ', '_');
+                var statusLabels = {
+                    'abierto': 'Abierto', 'en_seleccion': 'En Selección',
+                    'asignado': 'Asignado', 'completado': 'Completado', 'cancelado': 'Cancelado'
+                };
+
+                var card = document.createElement('a');
+                card.href = '/Jobs/Detail/' + j.id;
+                card.className = 'job-card status-' + statusKey;
+                card.innerHTML =
+                    '<div class="job-card-left">' +
+                        '<div class="job-title">' + j.title + '</div>' +
+                        '<div class="job-meta">' +
+                            (j.crop ? '<span>🌱 ' + j.crop + '</span>' : '') +
+                            (j.applicationType ? '<span>💧 ' + j.applicationType + '</span>' : '') +
+                            (j.surfaceHa ? '<span>📐 ' + j.surfaceHa + ' ha</span>' : '') +
+                            (j.locality ? '<span>📍 ' + j.locality + '</span>' : '') +
+                            '<span>📅 ' + new Date(j.createdAt).toLocaleDateString('es-AR') + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="job-card-right">' +
+                        '<span class="status-tag tag-' + statusKey + '">' + (statusLabels[statusKey] || j.status) + '</span>' +
+                        '<div class="job-apps" style="margin-top:6px;">' + j.applicationCount + ' postulación' + (j.applicationCount !== 1 ? 'es' : '') + '</div>' +
+                    '</div>';
+                container.appendChild(card);
+            });
+        })();
+    </script>
+}
