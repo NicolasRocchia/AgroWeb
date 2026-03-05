@@ -2,6 +2,7 @@
     ViewData["Title"] = "Publicar Trabajo";
     var recipesJson = ViewBag.RecipesJson as string ?? "[]";
     var lotsJson = ViewBag.LotsJson as string ?? "[]";
+    var exclusionZonesJson = ViewBag.ExclusionZonesJson as string ?? "[]";
 }
 
 <div class="page-container" style="max-width: 700px; margin: 0 auto; padding: 0 20px 40px; position:relative;">
@@ -166,6 +167,12 @@
                 </div>
             </div>
 
+            <!-- Exclusion zone alert -->
+            <div id="exclusionAlert" class="exclusion-alert" style="display:none;">
+                <span>🚫</span>
+                <div id="exclusionAlertText"></div>
+            </div>
+
             <div class="form-actions">
                 <a asp-action="MyJobs" class="btn-cancel">Cancelar</a>
                 <button type="submit" class="btn-submit">Publicar Trabajo</button>
@@ -186,6 +193,7 @@
         (function() {
             var recipes = @Html.Raw(recipesJson);
             var lots = @Html.Raw(lotsJson);
+            var exclusionZones = @Html.Raw(exclusionZonesJson);
 
             var lockableFields = ['fieldCrop', 'fieldAppType', 'fieldSurface', 'fieldLocality', 'fieldDepartment'];
             var loadingOverlay = document.getElementById('loadingOverlay');
@@ -420,6 +428,75 @@
                 hint.textContent = 'Receta desvinculada. Podés modificar los datos y elegir la ubicación.';
             }
             window.unlinkRecipe = function() { unlinkRecipeInternal(); };
+
+            // ══════════════════════════════════════
+            // EXCLUSION ZONES (display on map + check)
+            // ══════════════════════════════════════
+
+            var exclusionPolygons = [];
+            var exclusionAlert = document.getElementById('exclusionAlert');
+            var exclusionAlertText = document.getElementById('exclusionAlertText');
+
+            if (exclusionZones && exclusionZones.length > 0) {
+                exclusionZones.forEach(function(z) {
+                    var verts = z.vertices || [];
+                    if (verts.length < 3) return;
+                    var latlngs = verts.sort(function(a,b){return a.order - b.order;}).map(function(v){return [v.latitude, v.longitude];});
+                    var poly = L.polygon(latlngs, {
+                        color: '#ef4444', weight: 2, fillOpacity: 0.15, fillColor: '#ef4444',
+                        dashArray: '6,4', interactive: true
+                    }).addTo(map);
+                    poly.bindTooltip('<strong>🚫 ' + z.name + '</strong><br>' + (z.municipalityName || '') + '<br>' + z.type + ' — ' + z.restriction, { sticky: true });
+                    poly._zoneData = z;
+                    exclusionPolygons.push(poly);
+                });
+            }
+
+            // Check if current location is inside an exclusion zone
+            function checkExclusionZones(lat, lng) {
+                var warnings = [];
+                exclusionPolygons.forEach(function(poly) {
+                    var verts = poly._zoneData.vertices.sort(function(a,b){return a.order - b.order;});
+                    if (isPointInPolygon(lat, lng, verts)) {
+                        warnings.push(poly._zoneData);
+                    }
+                });
+
+                if (warnings.length > 0) {
+                    var html = '<strong>⚠️ Atención:</strong> La ubicación seleccionada está dentro de ' +
+                        (warnings.length === 1 ? 'una zona de exclusión:' : warnings.length + ' zonas de exclusión:');
+                    html += '<ul style="margin:6px 0 0;padding-left:18px;">';
+                    warnings.forEach(function(z) {
+                        html += '<li><strong>' + z.name + '</strong> (' + z.type + ') — ' + z.restriction + (z.municipalityName ? ' · ' + z.municipalityName : '') + '</li>';
+                    });
+                    html += '</ul>';
+                    exclusionAlertText.innerHTML = html;
+                    exclusionAlert.style.display = 'flex';
+                } else {
+                    exclusionAlert.style.display = 'none';
+                }
+            }
+
+            // Ray-casting point-in-polygon (client-side)
+            function isPointInPolygon(lat, lng, vertices) {
+                var inside = false;
+                var n = vertices.length;
+                for (var i = 0, j = n - 1; i < n; j = i++) {
+                    var yi = vertices[i].latitude, xi = vertices[i].longitude;
+                    var yj = vertices[j].latitude, xj = vertices[j].longitude;
+                    if (((xi > lng) !== (xj > lng)) && (lat < (yj - yi) * (lng - xi) / (xj - xi) + yi)) {
+                        inside = !inside;
+                    }
+                }
+                return inside;
+            }
+
+            // Hook into setLocation to check zones on every location change
+            var originalSetLocation = setLocation;
+            setLocation = function(lat, lng, zoom) {
+                originalSetLocation(lat, lng, zoom);
+                checkExclusionZones(lat, lng);
+            };
 
         })();
     </script>

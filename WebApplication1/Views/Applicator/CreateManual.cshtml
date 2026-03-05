@@ -160,6 +160,10 @@
                 </div>
 
                 <div id="lotMap" class="lot-map"></div>
+
+                <!-- Exclusion zone alert -->
+                <div id="exclusionZoneAlert" style="display:none; align-items:flex-start; gap:12px; padding:14px 18px; background:#fef2f2; border:2px solid #fca5a5; border-radius:12px; margin-top:12px; color:#991b1b; font-size:.88rem; line-height:1.5;">
+                </div>
             </div>
 
             @* ══════════════════════════════════════════════════════════
@@ -787,6 +791,11 @@
                     }
                 });
             }
+
+            // Check exclusion zones using lot centroid
+            if (lot.centroidLat && lot.centroidLng) {
+                checkExclusionZonesForPoint(lot.centroidLat, lot.centroidLng);
+            }
         }
 
         function deselectExistingLot() {
@@ -802,6 +811,8 @@
                     layer.setStyle({ color: '#667eea', weight: 2, fillOpacity: 0.15 });
                 });
             }
+            // Hide exclusion alert
+            showExclusionAlert([]);
         }
 
         async function loadExistingLots() {
@@ -846,6 +857,71 @@
                 console.error('[AgroConnect] Error loading lots:', e);
                 msgEl.innerHTML = '<span style="color:#e53e3e;">Error al cargar lotes. Podés dibujar uno nuevo.</span>';
             }
+        }
+
+        // ── Exclusion Zones ──
+        var exclusionZonesData = [];
+
+        async function loadExclusionZones() {
+            try {
+                var resp = await fetch('/Applicator/ExclusionZones');
+                if (!resp.ok) return;
+                var zones = await resp.json();
+                exclusionZonesData = zones;
+
+                if (!zones || zones.length === 0) return;
+
+                zones.forEach(function(z) {
+                    var verts = z.vertices || [];
+                    if (verts.length < 3) return;
+                    var latlngs = verts.sort(function(a,b){return a.order - b.order;}).map(function(v){return [v.latitude, v.longitude];});
+                    var poly = L.polygon(latlngs, {
+                        color: '#ef4444', weight: 2, fillOpacity: 0.15, fillColor: '#ef4444',
+                        dashArray: '6,4', interactive: true
+                    }).addTo(map);
+                    poly.bindTooltip('<strong>🚫 ' + z.name + '</strong><br>' + (z.municipalityName || '') + '<br>' + z.type + ' — ' + z.restriction, { sticky: true });
+                });
+            } catch (e) {
+                console.error('[AgroConnect] Error loading exclusion zones:', e);
+            }
+        }
+
+        function checkExclusionZonesForPoint(lat, lng) {
+            var warnings = [];
+            exclusionZonesData.forEach(function(z) {
+                var verts = (z.vertices || []).sort(function(a,b){return a.order - b.order;});
+                if (verts.length < 3) return;
+                if (isPointInPolygonEZ(lat, lng, verts)) warnings.push(z);
+            });
+            showExclusionAlert(warnings);
+        }
+
+        function isPointInPolygonEZ(lat, lng, vertices) {
+            var inside = false;
+            var n = vertices.length;
+            for (var i = 0, j = n - 1; i < n; j = i++) {
+                var yi = vertices[i].latitude, xi = vertices[i].longitude;
+                var yj = vertices[j].latitude, xj = vertices[j].longitude;
+                if (((xi > lng) !== (xj > lng)) && (lat < (yj - yi) * (lng - xi) / (xj - xi) + yi)) {
+                    inside = !inside;
+                }
+            }
+            return inside;
+        }
+
+        function showExclusionAlert(warnings) {
+            var alertEl = document.getElementById('exclusionZoneAlert');
+            if (!alertEl) return;
+            if (warnings.length === 0) { alertEl.style.display = 'none'; return; }
+            var html = '<strong>⚠️ Atención:</strong> El lote seleccionado está dentro de ';
+            html += warnings.length === 1 ? 'una zona de exclusión:' : warnings.length + ' zonas de exclusión:';
+            html += '<ul style="margin:6px 0 0;padding-left:18px;">';
+            warnings.forEach(function(z) {
+                html += '<li><strong>' + z.name + '</strong> (' + z.type + ') — ' + z.restriction + (z.municipalityName ? ' · ' + z.municipalityName : '') + '</li>';
+            });
+            html += '</ul>';
+            alertEl.innerHTML = '<span>🚫</span><div>' + html + '</div>';
+            alertEl.style.display = 'flex';
         }
 
         function addDrawControl() {
@@ -925,6 +1001,7 @@
 
             // Load existing lots and start in "existing" mode
             loadExistingLots();
+            loadExclusionZones();
         });
 
         // ── Calculate area using Shoelace formula (on WGS84 approximation) ──

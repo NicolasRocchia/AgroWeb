@@ -583,4 +583,21 @@ public class ApplicatorController : Controller
             return Json(Array.Empty<object>());
         }
     }
+
+    [HttpGet]
+    [Authorize(Roles = "Productor")]
+    public async Task<IActionResult> ExclusionZones()
+    {
+        try
+        {
+            var result = await _api.GetActiveExclusionZonesAsync();
+            if (result.Success && !string.IsNullOrEmpty(result.Data))
+                return Content(result.Data, "application/json");
+            return Json(Array.Empty<object>());
+        }
+        catch
+        {
+            return Json(Array.Empty<object>());
+        }
+    }
 }

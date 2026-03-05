@@ -313,6 +313,31 @@ public class AgroApiClient
         => DeleteAsync($"/api/jobs/{jobId}/apply");
 
     // ══════════════════════════════════════════════
+    // ZONAS DE EXCLUSIÓN
+    // ══════════════════════════════════════════════
+
+    public Task<ApiResult<string>> GetMyExclusionZonesAsync()
+        => GetRawJsonAsync("/api/exclusion-zones/mine");
+
+    public Task<ApiResult<string>> GetActiveExclusionZonesAsync()
+        => GetRawJsonAsync("/api/exclusion-zones/active");
+
+    public Task<ApiResult<string>> GetExclusionZoneAsync(long id)
+        => GetRawJsonAsync($"/api/exclusion-zones/{id}");
+
+    public Task<ApiResult<string>> CreateExclusionZoneAsync(object body)
+        => PostAsync("/api/exclusion-zones", body);
+
+    public Task<ApiResult<string>> UpdateExclusionZoneAsync(long id, object body)
+        => PutAsync($"/api/exclusion-zones/{id}", body);
+
+    public Task<ApiResult<string>> DeleteExclusionZoneAsync(long id)
+        => DeleteAsync($"/api/exclusion-zones/{id}");
+
+    public Task<ApiResult<string>> CheckExclusionZoneAsync(decimal lat, decimal lng)
+        => GetRawJsonAsync($"/api/exclusion-zones/check?lat={lat.ToString(System.Globalization.CultureInfo.InvariantCulture)}&lng={lng.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+
+    // ══════════════════════════════════════════════
     // ERROR EXTRACTION (private)
     // ══════════════════════════════════════════════
 

@@ -83,6 +83,10 @@ public class JobsController : Controller
         var lotsResult = await _api.GetMyLotsAsync();
         ViewBag.LotsJson = lotsResult.Success ? lotsResult.Data : "[]";
 
+        // Cargar zonas de exclusión activas
+        var zonesResult = await _api.GetActiveExclusionZonesAsync();
+        ViewBag.ExclusionZonesJson = zonesResult.Success ? zonesResult.Data : "[]";
+
         return View();
     }
 

@@ -1,0 +1,307 @@
+@{
+    ViewData["Title"] = "Zonas de Exclusión";
+    var zonesJson = ViewBag.ZonesJson as string ?? "[]";
+}
+
+<div class="page-container" style="max-width: 1100px; margin: 0 auto; padding: 0 20px 40px;">
+    <a asp-controller="Municipio" asp-action="GeoInsights" class="back-link">← Mapa Territorial</a>
+    <h1 class="page-title">🚫 Zonas de Exclusión</h1>
+    <p style="color: #64748b; margin-bottom: 20px;">Dibujá polígonos sobre el mapa para definir zonas donde se prohíbe la aplicación de agroquímicos.</p>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-box alert-success-box"><span>✅</span> @TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-box alert-error-box"><span>⚠️</span> @TempData["Error"]</div>
+    }
+
+    <div class="ez-layout">
+        <!-- Left: Map + Draw -->
+        <div class="ez-map-panel">
+            <div class="ez-map-toolbar">
+                <button type="button" id="btnDraw" class="ez-toolbar-btn" onclick="startDrawing()">✏️ Dibujar zona</button>
+                <button type="button" id="btnFinish" class="ez-toolbar-btn ez-btn-finish" onclick="finishDrawing()" style="display:none;">✅ Finalizar</button>
+                <button type="button" id="btnCancel" class="ez-toolbar-btn ez-btn-cancel" onclick="cancelDrawing()" style="display:none;">✕ Cancelar</button>
+                <span id="drawHint" class="ez-hint"></span>
+            </div>
+            <div id="ezMap" class="ez-map"></div>
+        </div>
+
+        <!-- Right: Form + List -->
+        <div class="ez-sidebar">
+            <!-- Create form (hidden until drawing finishes) -->
+            <div id="createPanel" class="ez-create-panel" style="display:none;">
+                <h3 class="ez-panel-title">Nueva Zona de Exclusión</h3>
+                <form method="post" asp-action="CreateExclusionZone" id="createForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="verticesJson" id="verticesJsonHidden" />
+
+                    <div class="ez-form-group">
+                        <label class="ez-label">Nombre *</label>
+                        <input name="name" type="text" class="ez-input" placeholder="Ej: Zona periurbana norte" required maxlength="200" />
+                    </div>
+                    <div class="ez-form-group">
+                        <label class="ez-label">Descripción</label>
+                        <input name="description" type="text" class="ez-input" placeholder="Referencia a ordenanza, motivo..." maxlength="500" />
+                    </div>
+                    <div class="ez-form-row">
+                        <div class="ez-form-group">
+                            <label class="ez-label">Tipo</label>
+                            <select name="type" class="ez-input">
+                                <option value="PERIURBANA">Periurbana</option>
+                                <option value="BUFFER_ESCUELA">Buffer Escuela</option>
+                                <option value="BUFFER_AGUA">Buffer Curso de Agua</option>
+                                <option value="RESERVA">Reserva Natural</option>
+                                <option value="CUSTOM" selected>Personalizada</option>
+                            </select>
+                        </div>
+                        <div class="ez-form-group">
+                            <label class="ez-label">Restricción</label>
+                            <select name="restriction" class="ez-input">
+                                <option value="PROHIBIDA" selected>Prohibida</option>
+                                <option value="RESTRINGIDA">Restringida</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="vertexCount" class="ez-vertex-count"></div>
+                    <div class="ez-form-actions">
+                        <button type="button" class="ez-btn-secondary" onclick="cancelDrawing()">Cancelar</button>
+                        <button type="submit" class="ez-btn-primary">Guardar Zona</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Existing zones list -->
+            <div id="zonesListPanel">
+                <h3 class="ez-panel-title">Zonas Definidas</h3>
+                <div id="zonesList"></div>
+                <div id="noZones" style="display:none; text-align:center; padding:30px; color:#94a3b8;">
+                    <div style="font-size:2rem; margin-bottom:8px;">🗺️</div>
+                    <p>No tenés zonas de exclusión definidas.</p>
+                    <p style="font-size:.82rem;">Hacé click en "Dibujar zona" para crear una.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+    <style>
+        .back-link { display:inline-block; margin-bottom:1rem; color:var(--primary-color,#667eea); text-decoration:none; font-weight:600; }
+        .back-link:hover { text-decoration:underline; }
+        .page-title { font-size:1.5rem; color:#1e293b; margin:4px 0 0; }
+        .alert-box { border-radius:10px; padding:12px 18px; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+        .alert-success-box { background:#ecfdf5; border:1px solid #6ee7b7; color:#065f46; }
+        .alert-error-box { background:#fef2f2; border:1px solid #fca5a5; color:#991b1b; }
+
+        .ez-layout { display:grid; grid-template-columns:1fr 360px; gap:20px; }
+        .ez-map-panel { background:white; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; }
+        .ez-map-toolbar { display:flex; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid #e2e8f0; flex-wrap:wrap; }
+        .ez-toolbar-btn { padding:8px 14px; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc; cursor:pointer; font-weight:600; font-size:.82rem; transition:all .2s; }
+        .ez-toolbar-btn:hover { background:#f1f5f9; }
+        .ez-btn-finish { background:#059669; color:white; border-color:#059669; }
+        .ez-btn-finish:hover { background:#047857; }
+        .ez-btn-cancel { background:#fee2e2; color:#991b1b; border-color:#fca5a5; }
+        .ez-hint { color:#94a3b8; font-size:.82rem; font-style:italic; }
+        .ez-map { height:550px; }
+
+        .ez-sidebar { display:flex; flex-direction:column; gap:16px; }
+        .ez-create-panel, #zonesListPanel { background:white; border-radius:14px; padding:20px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
+        .ez-panel-title { font-size:1rem; font-weight:600; color:#334155; margin:0 0 14px; padding-bottom:10px; border-bottom:1px solid #f1f5f9; }
+        .ez-form-group { margin-bottom:12px; }
+        .ez-form-row { display:flex; gap:10px; }
+        .ez-form-row .ez-form-group { flex:1; }
+        .ez-label { display:block; font-size:.78rem; color:#64748b; font-weight:600; margin-bottom:4px; }
+        .ez-input { width:100%; padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:.85rem; }
+        .ez-vertex-count { font-size:.82rem; color:#64748b; margin-bottom:10px; }
+        .ez-form-actions { display:flex; gap:8px; justify-content:flex-end; }
+        .ez-btn-primary { padding:8px 18px; background:#667eea; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:.85rem; }
+        .ez-btn-primary:hover { background:#5a67d8; }
+        .ez-btn-secondary { padding:8px 18px; background:transparent; color:#64748b; border:1px solid #e2e8f0; border-radius:8px; cursor:pointer; font-size:.85rem; }
+
+        .zone-card { padding:12px; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:10px; cursor:pointer; transition:all .2s; border-left:4px solid #ef4444; }
+        .zone-card:hover { box-shadow:0 2px 8px rgba(0,0,0,.08); }
+        .zone-card.zone-inactive { opacity:.5; border-left-color:#94a3b8; }
+        .zone-name { font-weight:600; font-size:.9rem; color:#1e293b; }
+        .zone-meta { font-size:.78rem; color:#64748b; margin-top:4px; display:flex; flex-wrap:wrap; gap:8px; }
+        .zone-type-tag { padding:2px 8px; border-radius:10px; font-size:.7rem; font-weight:600; background:#fee2e2; color:#991b1b; }
+        .zone-actions { margin-top:8px; display:flex; gap:6px; }
+        .zone-btn-delete { padding:4px 10px; background:transparent; border:1px solid #fca5a5; border-radius:6px; color:#ef4444; cursor:pointer; font-size:.75rem; font-weight:600; }
+        .zone-btn-delete:hover { background:#fee2e2; }
+
+        @@media (max-width: 900px) {
+            .ez-layout { grid-template-columns:1fr; }
+            .ez-map { height:400px; }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        (function () {
+            var existingZones = @Html.Raw(zonesJson);
+
+            var map = L.map('ezMap').setView([-32.69, -62.10], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+
+            var hint = document.getElementById('drawHint');
+            var isDrawing = false;
+            var drawingPoints = [];
+            var drawingMarkers = [];
+            var drawingPolyline = null;
+            var drawnPolygon = null;
+            var zonePolygons = [];
+
+            // ── Draw existing zones on map ──
+            var listContainer = document.getElementById('zonesList');
+            var noZones = document.getElementById('noZones');
+
+            if (!existingZones || existingZones.length === 0) {
+                noZones.style.display = 'block';
+            } else {
+                existingZones.forEach(function (z) {
+                    // Draw polygon
+                    var verts = z.vertices || [];
+                    if (verts.length < 3) return;
+                    var latlngs = verts.sort(function (a, b) { return a.order - b.order; }).map(function (v) { return [v.latitude, v.longitude]; });
+                    var poly = L.polygon(latlngs, {
+                        color: z.isActive ? '#ef4444' : '#94a3b8',
+                        weight: 2,
+                        fillOpacity: z.isActive ? 0.2 : 0.05,
+                        fillColor: '#ef4444'
+                    }).addTo(map);
+                    poly.bindTooltip('<strong>🚫 ' + z.name + '</strong><br>' + (z.type || '') + ' — ' + z.restriction, { sticky: true });
+                    zonePolygons.push(poly);
+
+                    // Card in sidebar
+                    var typeLabels = { 'PERIURBANA': 'Periurbana', 'BUFFER_ESCUELA': 'Buffer Escuela', 'BUFFER_AGUA': 'Buffer Agua', 'RESERVA': 'Reserva', 'CUSTOM': 'Personalizada' };
+                    var card = document.createElement('div');
+                    card.className = 'zone-card' + (z.isActive ? '' : ' zone-inactive');
+                    card.innerHTML =
+                        '<div class="zone-name">🚫 ' + z.name + '</div>' +
+                        '<div class="zone-meta">' +
+                            '<span class="zone-type-tag">' + (typeLabels[z.type] || z.type) + '</span>' +
+                            '<span>' + z.restriction + '</span>' +
+                            '<span>' + verts.length + ' vértices</span>' +
+                            '<span>' + new Date(z.createdAt).toLocaleDateString('es-AR') + '</span>' +
+                        '</div>' +
+                        '<div class="zone-actions">' +
+                            '<form method="post" action="/Municipio/DeleteExclusionZone" style="display:inline;">' +
+                            '<input type="hidden" name="__RequestVerificationToken" value="' + document.querySelector('[name=__RequestVerificationToken]')?.value + '">' +
+                            '<input type="hidden" name="id" value="' + z.id + '">' +
+                            '<button type="submit" class="zone-btn-delete" onclick="return confirm(\'¿Eliminar esta zona?\')">🗑️ Eliminar</button></form>' +
+                        '</div>';
+
+                    // Click card to zoom to polygon
+                    card.addEventListener('click', function (e) {
+                        if (e.target.closest('form')) return;
+                        map.fitBounds(poly.getBounds(), { padding: [30, 30] });
+                    });
+
+                    listContainer.appendChild(card);
+                });
+
+                // Fit map to all zones
+                if (zonePolygons.length > 0) {
+                    map.fitBounds(L.featureGroup(zonePolygons).getBounds(), { padding: [30, 30] });
+                }
+            }
+
+            // ── Drawing mode ──
+
+            window.startDrawing = function () {
+                isDrawing = true;
+                drawingPoints = [];
+                clearDrawingLayers();
+                document.getElementById('btnDraw').style.display = 'none';
+                document.getElementById('btnFinish').style.display = 'inline-block';
+                document.getElementById('btnCancel').style.display = 'inline-block';
+                hint.textContent = 'Hacé click en el mapa para agregar vértices del polígono';
+                document.getElementById('createPanel').style.display = 'none';
+
+                // Dim existing zones
+                zonePolygons.forEach(function (p) { p.setStyle({ opacity: 0.3, fillOpacity: 0.05 }); });
+            };
+
+            window.finishDrawing = function () {
+                if (drawingPoints.length < 3) {
+                    hint.textContent = 'Necesitás al menos 3 puntos. Seguí haciendo click.';
+                    return;
+                }
+
+                isDrawing = false;
+
+                // Remove polyline and markers, draw final polygon
+                clearDrawingLayers();
+                drawnPolygon = L.polygon(drawingPoints, {
+                    color: '#dc2626', weight: 3, fillOpacity: 0.25, fillColor: '#ef4444'
+                }).addTo(map);
+
+                // Show create form
+                document.getElementById('btnFinish').style.display = 'none';
+                document.getElementById('btnCancel').style.display = 'none';
+                document.getElementById('createPanel').style.display = 'block';
+                hint.textContent = 'Completá los datos y guardá la zona.';
+
+                // Fill vertices JSON
+                var vertices = drawingPoints.map(function (p, i) {
+                    return { order: i, latitude: parseFloat(p[0].toFixed(7)), longitude: parseFloat(p[1].toFixed(7)) };
+                });
+                document.getElementById('verticesJsonHidden').value = JSON.stringify(vertices);
+                document.getElementById('vertexCount').textContent = '📐 ' + vertices.length + ' vértices dibujados';
+            };
+
+            window.cancelDrawing = function () {
+                isDrawing = false;
+                drawingPoints = [];
+                clearDrawingLayers();
+                if (drawnPolygon) { map.removeLayer(drawnPolygon); drawnPolygon = null; }
+                document.getElementById('btnDraw').style.display = 'inline-block';
+                document.getElementById('btnFinish').style.display = 'none';
+                document.getElementById('btnCancel').style.display = 'none';
+                document.getElementById('createPanel').style.display = 'none';
+                hint.textContent = '';
+
+                // Restore existing zones
+                zonePolygons.forEach(function (p) { p.setStyle({ opacity: 1, fillOpacity: 0.2 }); });
+            };
+
+            function clearDrawingLayers() {
+                drawingMarkers.forEach(function (m) { map.removeLayer(m); });
+                drawingMarkers = [];
+                if (drawingPolyline) { map.removeLayer(drawingPolyline); drawingPolyline = null; }
+            }
+
+            map.on('click', function (e) {
+                if (!isDrawing) return;
+
+                drawingPoints.push([e.latlng.lat, e.latlng.lng]);
+
+                // Small circle marker at each vertex
+                var m = L.circleMarker(e.latlng, {
+                    radius: 5, color: '#dc2626', fillColor: '#ef4444', fillOpacity: 1, weight: 2
+                }).addTo(map);
+                drawingMarkers.push(m);
+
+                // Update polyline
+                if (drawingPolyline) map.removeLayer(drawingPolyline);
+                if (drawingPoints.length >= 2) {
+                    var previewPts = drawingPoints.concat([drawingPoints[0]]); // close the polygon visually
+                    drawingPolyline = L.polyline(previewPts, { color: '#dc2626', weight: 2, dashArray: '6,4' }).addTo(map);
+                }
+
+                hint.textContent = drawingPoints.length + ' vértices. ' + (drawingPoints.length < 3 ? 'Agregá al menos ' + (3 - drawingPoints.length) + ' más.' : 'Podés seguir o hacer click en "Finalizar".');
+            });
+
+            // Add anti-forgery token for forms created via JS
+            if (!document.querySelector('[name=__RequestVerificationToken]')) {
+                // Fallback: the form in createPanel already has it
+            }
+        })();
+    </script>
+}

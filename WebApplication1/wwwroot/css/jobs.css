@@ -477,3 +477,21 @@
     .job-card { flex-direction: column; align-items: flex-start; }
     .job-card-right { text-align: left; min-width: auto; }
 }
+
+/* ── Exclusion Zone Alert (in Create form) ── */
+
+.exclusion-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #fef2f2;
+    border: 2px solid #fca5a5;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    color: #991b1b;
+    font-size: .88rem;
+    line-height: 1.5;
+}
+.exclusion-alert ul { margin: 4px 0 0; }
+.exclusion-alert li { margin-bottom: 2px; }

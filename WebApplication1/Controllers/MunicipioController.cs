@@ -125,4 +125,71 @@ public class MunicipioController : Controller
 
         return RedirectToAction("Details", new { code });
     }
+
+    // =============================================
+    // ZONAS DE EXCLUSIÓN
+    // =============================================
+
+    [HttpGet]
+    public async Task<IActionResult> ExclusionZones()
+    {
+        var result = await _api.GetMyExclusionZonesAsync();
+        ViewBag.ZonesJson = result.Success ? result.Data : "[]";
+        if (!result.Success) ViewBag.Error = result.Error;
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateExclusionZone(
+        string name, string? description, string type, string restriction, string verticesJson)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            TempData["Error"] = "El nombre es obligatorio.";
+            return RedirectToAction("ExclusionZones");
+        }
+
+        try
+        {
+            var vertices = JsonSerializer.Deserialize<List<object>>(verticesJson ?? "[]",
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (vertices == null || vertices.Count < 3)
+            {
+                TempData["Error"] = "Dibujá al menos 3 puntos en el mapa.";
+                return RedirectToAction("ExclusionZones");
+            }
+
+            var result = await _api.CreateExclusionZoneAsync(new
+            {
+                name = name.Trim(),
+                description = description?.Trim(),
+                type = (type ?? "CUSTOM").Trim().ToUpper(),
+                restriction = (restriction ?? "PROHIBIDA").Trim().ToUpper(),
+                vertices
+            });
+
+            TempData[result.Success ? "Success" : "Error"] =
+                result.Success ? "Zona de exclusión creada correctamente." : result.Error;
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Error al crear la zona: {ex.Message}";
+        }
+
+        return RedirectToAction("ExclusionZones");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteExclusionZone(long id)
+    {
+        var result = await _api.DeleteExclusionZoneAsync(id);
+
+        TempData[result.Success ? "Success" : "Error"] =
+            result.Success ? "Zona eliminada." : result.Error;
+
+        return RedirectToAction("ExclusionZones");
+    }
 }
