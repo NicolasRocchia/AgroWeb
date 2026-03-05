@@ -137,49 +137,16 @@
                     <span class="info-value">@Model.Recipe.AssignedAt?.ToString("dd/MM/yyyy HH:mm")</span>
                 </div>
             </div>
-
-            @if (Model.Recipe.ReviewLogs?.Any() == true)
-            {
-                <h3 style="margin: 16px 0 8px; font-size: 14px; color: #475569;">Historial de revisiones</h3>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    @foreach (var log in Model.Recipe.ReviewLogs)
-                    {
-                        var actionColor = log.Action switch
-                        {
-                                            "APROBADA" => "#16a34a",
-                                            "RECHAZADA" => "#dc2626",
-                                            "OBSERVADA" => "#d97706",
-                                            "REDIRIGIDA" => "#2563eb",
-                            _ => "#64748b"
-                        };
-                        var actionIcon = log.Action switch
-                        {
-                                            "APROBADA" => "✅",
-                                            "RECHAZADA" => "❌",
-                                            "OBSERVADA" => "💬",
-                                            "REDIRIGIDA" => "↪️",
-                            _ => "•"
-                        };
-                        <div style="padding: 10px 14px; background: white; border-radius: 8px; border-left: 3px solid @actionColor;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-weight: 600; color: @actionColor;">@actionIcon @log.Action</span>
-                                <span style="font-size: 12px; color: #94a3b8;">@log.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
-                            </div>
-                            <div style="font-size: 13px; color: #64748b;">@log.MunicipalityName</div>
-                            @if (log.Action == "REDIRIGIDA" && !string.IsNullOrEmpty(log.TargetMunicipalityName))
-                            {
-                                <div style="font-size: 13px; color: #2563eb;">→ @log.TargetMunicipalityName</div>
-                            }
-                            @if (!string.IsNullOrEmpty(log.Observation))
-                            {
-                                <div style="margin-top: 6px; font-size: 13px; color: #334155; background: #f8fafc; padding: 8px; border-radius: 6px;">@log.Observation</div>
-                            }
-                        </div>
-                    }
-                </div>
-            }
         </section>
+
+       
     }
+
+    <!-- Timeline de Auditoría -->
+    @{
+        ViewData["TimelineRecipe"] = Model.Recipe;
+    }
+    @await Html.PartialAsync("_RecipeTimeline")
 
     <!-- Mensajes -->
     @if (Model.Recipe.Messages?.Any() == true || st == "OBSERVADA")

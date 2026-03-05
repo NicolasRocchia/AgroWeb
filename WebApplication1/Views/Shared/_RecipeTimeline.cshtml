@@ -1,0 +1,201 @@
+@* Partial: Timeline de auditoría de una receta (compartido entre Municipio, Aplicador, Admin) *@
+@using WebApplication1.Models.Recipes
+
+@{
+    var recipe = ViewData["TimelineRecipe"] as RecipeDetailDto;
+    if (recipe == null) return;
+
+    // Build timeline events sorted chronologically
+    var events = new List<(DateTime Date, string Icon, string Color, string Title, string? Detail, string? User)>();
+
+    // 1. Creation
+    events.Add((
+        recipe.CreatedAt,
+        "📄",
+        "#667eea",
+        recipe.RfdNumber.HasValue ? $"Receta RFD #{recipe.RfdNumber} creada" : "Receta creada manualmente",
+        null,
+        recipe.CreatedByUserName
+    ));
+
+    // 2. Assignment to municipality
+    if (recipe.AssignedAt.HasValue && !string.IsNullOrEmpty(recipe.AssignedMunicipalityName))
+    {
+        events.Add((
+            recipe.AssignedAt.Value,
+            "🏛️",
+            "#8b5cf6",
+            $"Asignada a {recipe.AssignedMunicipalityName}",
+            "Estado → PENDIENTE",
+            null
+        ));
+    }
+
+    // 3. Review logs
+    if (recipe.ReviewLogs != null)
+    {
+        foreach (var log in recipe.ReviewLogs)
+        {
+            var (icon, color, title) = log.Action switch
+            {
+                "APROBADA" => ("✅", "#16a34a", "Aprobada"),
+                "RECHAZADA" => ("❌", "#dc2626", "Rechazada"),
+                "OBSERVADA" => ("👁️", "#d97706", "Observada — se solicitó información adicional"),
+                "REDIRIGIDA" => ("↪️", "#2563eb", $"Redirigida a {log.TargetMunicipalityName ?? "otro municipio"}"),
+                _ => ("•", "#64748b", log.Action)
+            };
+
+            var detail = log.Observation;
+            events.Add((log.CreatedAt, icon, color, title, detail, log.CreatedByUserName ?? log.MunicipalityName));
+        }
+    }
+
+    // 4. Messages
+    if (recipe.Messages != null)
+    {
+        foreach (var msg in recipe.Messages)
+        {
+            events.Add((
+                msg.CreatedAt,
+                "💬",
+                "#0ea5e9",
+                $"Mensaje de {msg.SenderName}",
+                msg.Message,
+                msg.SenderName
+            ));
+        }
+    }
+
+    // Sort chronologically
+    var sortedEvents = events.OrderBy(e => e.Date).ToList();
+
+    // Current status
+    var statusConfig = (recipe.Status?.ToUpper()) switch
+    {
+        "ABIERTA" => (Icon: "📝", Color: "#eab308", Label: "Abierta"),
+        "PENDIENTE" => (Icon: "⏳", Color: "#3b82f6", Label: "Pendiente de revisión"),
+        "APROBADA" => (Icon: "✅", Color: "#16a34a", Label: "Aprobada"),
+        "RECHAZADA" => (Icon: "❌", Color: "#dc2626", Label: "Rechazada"),
+        "OBSERVADA" => (Icon: "👁️", Color: "#d97706", Label: "Observada"),
+        "CERRADA" => (Icon: "🔒", Color: "#64748b", Label: "Cerrada"),
+        "ANULADA" => (Icon: "🚫", Color: "#991b1b", Label: "Anulada"),
+        _ => (Icon: "•", Color: "#64748b", Label: recipe.Status ?? "Desconocido")
+    };
+}
+
+<section class="detail-section" style="border-left: 4px solid #667eea;">
+    <h2 class="section-title" style="display:flex; align-items:center; gap:8px;">
+        <span class="section-icon">📋</span> Timeline de la Receta
+        <span style="font-size:.75rem; font-weight:600; padding:3px 10px; border-radius:12px; background:@(statusConfig.Color)22; color:@statusConfig.Color; margin-left:auto;">
+            @statusConfig.Icon @statusConfig.Label
+        </span>
+    </h2>
+
+    <div class="recipe-timeline">
+        @foreach (var evt in sortedEvents)
+        {
+            <div class="tl-item">
+                <div class="tl-dot" style="background: @evt.Color;"></div>
+                <div class="tl-content">
+                    <div class="tl-header">
+                        <span class="tl-icon">@evt.Icon</span>
+                        <span class="tl-title">@evt.Title</span>
+                        <span class="tl-date">@evt.Date.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(evt.Detail))
+                    {
+                        <div class="tl-detail">@evt.Detail</div>
+                    }
+                    @if (!string.IsNullOrEmpty(evt.User))
+                    {
+                        <div class="tl-user">👤 @evt.User</div>
+                    }
+                </div>
+            </div>
+        }
+
+        @* Current status as final node *@
+        <div class="tl-item tl-current">
+            <div class="tl-dot tl-dot-current" style="background: @statusConfig.Color;"></div>
+            <div class="tl-content">
+                <div class="tl-header">
+                    <span class="tl-icon">@statusConfig.Icon</span>
+                    <span class="tl-title" style="font-weight:700; color:@statusConfig.Color;">Estado actual: @statusConfig.Label</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .recipe-timeline {
+        position: relative;
+        padding-left: 28px;
+    }
+    .recipe-timeline::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        top: 8px;
+        bottom: 8px;
+        width: 2px;
+        background: #e2e8f0;
+    }
+    .tl-item {
+        position: relative;
+        margin-bottom: 16px;
+    }
+    .tl-item:last-child { margin-bottom: 0; }
+    .tl-dot {
+        position: absolute;
+        left: -24px;
+        top: 6px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px #e2e8f0;
+        z-index: 1;
+    }
+    .tl-dot-current {
+        width: 16px;
+        height: 16px;
+        left: -26px;
+        top: 4px;
+        box-shadow: 0 0 0 3px currentColor;
+        animation: tl-pulse 2s infinite;
+    }
+    .tl-content {
+        background: #f8fafc;
+        border-radius: 10px;
+        padding: 10px 14px;
+    }
+    .tl-current .tl-content {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+    }
+    .tl-header {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .tl-icon { font-size: 1rem; }
+    .tl-title { font-size: .88rem; font-weight: 600; color: #1e293b; }
+    .tl-date { font-size: .75rem; color: #94a3b8; margin-left: auto; white-space: nowrap; }
+    .tl-detail {
+        margin-top: 6px;
+        font-size: .82rem;
+        color: #475569;
+        background: white;
+        padding: 8px 10px;
+        border-radius: 6px;
+        border-left: 3px solid #e2e8f0;
+    }
+    .tl-user { font-size: .75rem; color: #94a3b8; margin-top: 4px; }
+
+    @@keyframes tl-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+</style>
