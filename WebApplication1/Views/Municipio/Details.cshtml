@@ -10,7 +10,7 @@
 <div class="detail-header">
     <div class="detail-header-content">
         <h1 class="detail-title">
-            <a href="@Url.Action("Index", "Municipio")" class="back-link">← Volver</a>
+            <a href="@Url.Action("ExportPdf", "Municipio", new { id = Model.Recipe.Id, code = Model.Recipe.PublicCode })"
             @(Model.Recipe.RfdNumber.HasValue ? $"RFD #{Model.Recipe.RfdNumber}" : "Receta Manual")
             <a href="@Url.Action("ExportPdf", "Municipio", new { id = Model.Recipe.Id })"
                class="btn-export-pdf" title="Descargar expediente PDF"
