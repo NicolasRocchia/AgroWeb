@@ -72,7 +72,26 @@
 
                         @if (User?.Identity?.IsAuthenticated ?? false)
                         {
-                            var userName = Context.Request.Cookies["agro_user_name"] ?? "Usuario";
+                            var userName = User?.Identity?.Name ?? "Usuario";
+                            var userEmail = User?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value ?? "";
+
+                            <!-- Notification Bell -->
+                            <li class="notification-container" id="notifContainer">
+                                <button class="btn-notification" id="notifButton" title="Notificaciones">
+                                    <span style="font-size:1.2rem;">🔔</span>
+                                    <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+                                </button>
+                                <div class="notif-dropdown" id="notifDropdown">
+                                    <div class="notif-header">
+                                        <strong>Notificaciones</strong>
+                                        <a href="#" id="notifMarkAllRead" style="font-size:.78rem; color:#667eea;">Marcar todo leído</a>
+                                    </div>
+                                    <div class="notif-list" id="notifList">
+                                        <div class="notif-empty">No hay notificaciones</div>
+                                    </div>
+                                </div>
+                            </li>
+
                             <li class="user-menu-container">
                                 <button class="btn-user-menu" id="userMenuButton">
                                     <span class="user-icon">👤</span>
@@ -84,7 +103,7 @@
                                         <span class="user-icon-large">👤</span>
                                         <div class="user-info">
                                             <strong>@userName</strong>
-                                            <small>@Context.Request.Cookies["agro_user_email"]</small>
+                                            <small>@userEmail</small>
                                         </div>
                                     </div>
                                     <div class="user-dropdown-divider"></div>
@@ -146,6 +165,143 @@
                 }
             });
         }
+    </script>
+
+    <!-- Notification Styles -->
+    <style>
+        .notification-container { position:relative; display:flex; align-items:center; }
+        .btn-notification { background:none; border:none; cursor:pointer; position:relative; padding:6px 10px; border-radius:10px; transition:background .15s; }
+        .btn-notification:hover { background:rgba(255,255,255,.15); }
+        .notif-badge { position:absolute; top:2px; right:4px; background:#dc2626; color:white; font-size:.65rem; font-weight:700; min-width:18px; height:18px; border-radius:10px; display:flex; align-items:center; justify-content:center; padding:0 4px; }
+        .notif-dropdown { display:none; position:absolute; top:100%; right:0; width:360px; max-height:450px; background:white; border-radius:14px; box-shadow:0 8px 30px rgba(0,0,0,.15); z-index:2000; overflow:hidden; }
+        .notif-dropdown.open { display:block; }
+        .notif-header { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1px solid #f1f5f9; }
+        .notif-header strong { font-size:.9rem; color:#1e293b; }
+        .notif-list { max-height:380px; overflow-y:auto; }
+        .notif-item { display:flex; gap:10px; padding:12px 16px; border-bottom:1px solid #f8fafc; cursor:pointer; transition:background .1s; text-decoration:none; color:inherit; }
+        .notif-item:hover { background:#f8fafc; }
+        .notif-item.unread { background:#eff6ff; }
+        .notif-item-icon { font-size:1.1rem; flex-shrink:0; margin-top:2px; }
+        .notif-item-body { flex:1; min-width:0; }
+        .notif-item-title { font-size:.82rem; font-weight:600; color:#1e293b; line-height:1.3; }
+        .notif-item.unread .notif-item-title { color:#1e40af; }
+        .notif-item-msg { font-size:.75rem; color:#64748b; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .notif-item-time { font-size:.7rem; color:#94a3b8; margin-top:3px; }
+        .notif-empty { text-align:center; padding:30px; color:#94a3b8; font-size:.85rem; }
+        .notif-dot { width:8px; height:8px; border-radius:50%; background:#3b82f6; flex-shrink:0; margin-top:6px; }
+        .notif-dot.read { background:transparent; }
+        @@media (max-width:500px) { .notif-dropdown { width:calc(100vw - 20px); right:-60px; } }
+    </style>
+
+    <!-- Notification JS -->
+    <script>
+    (function() {
+        var isAuth = @((User?.Identity?.IsAuthenticated ?? false).ToString().ToLower());
+        if (!isAuth) return;
+
+        var notifBtn = document.getElementById('notifButton');
+        var notifDrop = document.getElementById('notifDropdown');
+        var notifBadge = document.getElementById('notifBadge');
+        var notifList = document.getElementById('notifList');
+        var markAllBtn = document.getElementById('notifMarkAllRead');
+        if (!notifBtn) return;
+
+        // Toggle dropdown
+        notifBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var isOpen = notifDrop.classList.toggle('open');
+            if (isOpen) loadNotifications();
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!notifDrop.contains(e.target) && e.target !== notifBtn) {
+                notifDrop.classList.remove('open');
+            }
+        });
+
+        // Mark all read
+        if (markAllBtn) {
+            markAllBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                fetch('/Home/NotificationsMarkAllRead', { method: 'PUT' })
+                    .then(function() { loadNotifications(); updateBadge(); });
+            });
+        }
+
+        function timeAgo(dateStr) {
+            var diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+            if (diff < 60) return 'ahora';
+            if (diff < 3600) return Math.floor(diff/60) + 'min';
+            if (diff < 86400) return Math.floor(diff/3600) + 'h';
+            return Math.floor(diff/86400) + 'd';
+        }
+
+        function notifIcon(type) {
+            var icons = { RECIPE_ASSIGNED:'📋', RECIPE_APPROVED:'✅', RECIPE_REJECTED:'❌',
+                RECIPE_OBSERVED:'👁️', RECIPE_REDIRECTED:'↪️', RECIPE_MESSAGE:'💬',
+                JOB_APPLICATION:'🚜', JOB_ASSIGNED:'🎉' };
+            return icons[type] || '🔔';
+        }
+
+        function loadNotifications() {
+            fetch('/Home/Notifications')
+                .then(function(r) { return r.json(); })
+                .then(function(items) {
+                    if (!items || items.length === 0) {
+                        notifList.innerHTML = '<div class="notif-empty">No hay notificaciones</div>';
+                        return;
+                    }
+                    var html = '';
+                    items.forEach(function(n) {
+                        var cls = n.isRead ? '' : ' unread';
+                        html += '<a class="notif-item' + cls + '" href="#" data-id="' + n.id + '" data-link="' + (n.linkUrl || '') + '">' +
+                            '<span class="notif-dot' + (n.isRead ? ' read' : '') + '"></span>' +
+                            '<span class="notif-item-icon">' + notifIcon(n.type) + '</span>' +
+                            '<div class="notif-item-body">' +
+                                '<div class="notif-item-title">' + n.title + '</div>' +
+                                (n.message ? '<div class="notif-item-msg">' + n.message + '</div>' : '') +
+                                '<div class="notif-item-time">' + timeAgo(n.createdAt) + '</div>' +
+                            '</div>' +
+                        '</a>';
+                    });
+                    notifList.innerHTML = html;
+
+                    // Click on notification → mark read + navigate
+                    notifList.querySelectorAll('.notif-item').forEach(function(el) {
+                        el.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            var id = el.dataset.id;
+                            var link = el.dataset.link;
+                            fetch('/Home/NotificationsMarkRead/' + id, { method: 'PUT' })
+                                .then(function() {
+                                    updateBadge();
+                                    if (link) window.location.href = link;
+                                });
+                        });
+                    });
+                })
+                .catch(function() {});
+        }
+
+        function updateBadge() {
+            fetch('/Home/NotificationsUnreadCount')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    var count = data.count || 0;
+                    if (count > 0) {
+                        notifBadge.textContent = count > 99 ? '99+' : count;
+                        notifBadge.style.display = 'flex';
+                    } else {
+                        notifBadge.style.display = 'none';
+                    }
+                })
+                .catch(function() {});
+        }
+
+        // Initial load + poll every 60s
+        updateBadge();
+        setInterval(updateBadge, 60000);
+    })();
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

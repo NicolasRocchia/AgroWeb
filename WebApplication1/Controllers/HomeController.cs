@@ -76,5 +76,61 @@ namespace WebApplication1.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+        // ═══════════════════════════════════════
+        // NOTIFICATION PROXIES (for navbar JS)
+        // ═══════════════════════════════════════
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> Notifications()
+        {
+            try
+            {
+                var result = await _api.GetNotificationsAsync(30);
+                if (result.Success && !string.IsNullOrEmpty(result.Data))
+                    return Content(result.Data, "application/json");
+                return Json(Array.Empty<object>());
+            }
+            catch { return Json(Array.Empty<object>()); }
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> NotificationsUnreadCount()
+        {
+            try
+            {
+                var result = await _api.GetUnreadNotificationCountAsync();
+                if (result.Success && !string.IsNullOrEmpty(result.Data))
+                    return Content(result.Data, "application/json");
+                return Json(new { count = 0 });
+            }
+            catch { return Json(new { count = 0 }); }
+        }
+
+        [Authorize]
+        [HttpPut]
+        public async Task<IActionResult> NotificationsMarkRead(long id)
+        {
+            try
+            {
+                await _api.MarkNotificationReadAsync(id);
+                return Ok();
+            }
+            catch { return Ok(); }
+        }
+
+        [Authorize]
+        [HttpPut]
+        public async Task<IActionResult> NotificationsMarkAllRead()
+        {
+            try
+            {
+                await _api.MarkAllNotificationsReadAsync();
+                return Ok();
+            }
+            catch { return Ok(); }
+        }
     }
 }

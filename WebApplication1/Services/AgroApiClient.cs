@@ -357,6 +357,22 @@ public class AgroApiClient
         => DeleteAsync($"/api/sensitive-points/{id}");
 
     // ══════════════════════════════════════════════
+    // NOTIFICACIONES
+    // ══════════════════════════════════════════════
+
+    public Task<ApiResult<string>> GetNotificationsAsync(int limit = 50)
+        => GetRawJsonAsync($"/api/notifications?limit={limit}");
+
+    public Task<ApiResult<string>> GetUnreadNotificationCountAsync()
+        => GetRawJsonAsync("/api/notifications/unread-count");
+
+    public Task<ApiResult<string>> MarkNotificationReadAsync(long id)
+        => PutAsync($"/api/notifications/{id}/read", new { });
+
+    public Task<ApiResult<string>> MarkAllNotificationsReadAsync()
+        => PutAsync("/api/notifications/read-all", new { });
+
+    // ══════════════════════════════════════════════
     // ZONAS DE EXCLUSIÓN
     // ══════════════════════════════════════════════
 
