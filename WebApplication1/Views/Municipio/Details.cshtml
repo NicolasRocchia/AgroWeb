@@ -12,6 +12,11 @@
         <h1 class="detail-title">
             <a href="@Url.Action("Index", "Municipio")" class="back-link">← Volver</a>
             @(Model.Recipe.RfdNumber.HasValue ? $"RFD #{Model.Recipe.RfdNumber}" : "Receta Manual")
+            <a href="@Url.Action("ExportPdf", "Municipio", new { id = Model.Recipe.Id })"
+               class="btn-export-pdf" title="Descargar expediente PDF"
+               style="margin-left:12px; display:inline-flex; align-items:center; gap:4px; font-size:.75rem; padding:6px 14px; background:#667eea; color:#fff; border-radius:8px; text-decoration:none; font-weight:600;">
+                📄 Descargar Expediente
+            </a>
         </h1>
         <div class="detail-meta">
             @{

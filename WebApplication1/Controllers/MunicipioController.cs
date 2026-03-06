@@ -276,4 +276,16 @@ public class MunicipioController : Controller
 
         return RedirectToAction("SensitivePoints");
     }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportPdf(long id)
+    {
+        var (data, statusCode, error) = await _api.GetBytesAsync($"/api/recipes/{id}/export-pdf");
+        if (data == null)
+        {
+            TempData["Error"] = error ?? "No se pudo generar el PDF.";
+            return RedirectToAction("Details", new { id });
+        }
+        return File(data, "application/pdf", $"Expediente_Receta_{id}.pdf");
+    }
 }

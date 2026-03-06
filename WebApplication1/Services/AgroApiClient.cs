@@ -113,6 +113,19 @@ public class AgroApiClient
         return new ApiResult<string>(raw, resp.StatusCode);
     }
 
+    /// <summary>Download binary content (PDF, Excel, etc.)</summary>
+    public async Task<(byte[]? Data, HttpStatusCode StatusCode, string? Error)> GetBytesAsync(string url)
+    {
+        var resp = await _http.GetAsync(url);
+        if (!resp.IsSuccessStatusCode)
+        {
+            var error = await ExtractErrorDetailed(resp);
+            return (null, resp.StatusCode, error);
+        }
+        var bytes = await resp.Content.ReadAsByteArrayAsync();
+        return (bytes, resp.StatusCode, null);
+    }
+
     // ══════════════════════════════════════════════
     // RECIPES
     // ══════════════════════════════════════════════
