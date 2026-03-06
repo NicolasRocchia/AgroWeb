@@ -134,6 +134,46 @@ window.GeoInsights = (function () {
         if (el('kpiLots')) el('kpiLots').textContent = k.uniqueLots || 0;
     }
 
+    function updateDateRangeInfo(data) {
+        var banner = document.getElementById('dateRangeBanner');
+        if (!banner) return;
+
+        var fromEl = document.getElementById('filterDateFrom');
+        var userSetDate = fromEl && fromEl.value;
+
+        if (data.effectiveDateFrom && !userSetDate) {
+            // API applied default 30-day window
+            var from = new Date(data.effectiveDateFrom).toLocaleDateString('es-AR');
+            var to = data.effectiveDateTo ? new Date(data.effectiveDateTo).toLocaleDateString('es-AR') : 'hoy';
+            banner.innerHTML = '📅 Mostrando últimos 30 días (desde ' + from + '). <a href="#" id="btnShowAll" style="color:#2563eb; font-weight:600; text-decoration:underline;">Ver todo el histórico</a>';
+            banner.style.display = 'block';
+
+            // Set dateFrom input to reflect effective date
+            if (fromEl && !fromEl.value) {
+                fromEl.value = data.effectiveDateFrom.split('T')[0];
+            }
+
+            var btnAll = document.getElementById('btnShowAll');
+            if (btnAll) {
+                btnAll.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    // Set a very old date to bypass the 30-day default
+                    if (fromEl) fromEl.value = '2020-01-01';
+                    var toEl = document.getElementById('filterDateTo');
+                    if (toEl) toEl.value = '';
+                    // Submit the form or trigger AJAX
+                    var form = document.getElementById('filtersForm');
+                    if (form) form.submit();
+                    else if (config.geoDataUrlBase) {
+                        loadGeoInsights(getFiltersFromForm(), false);
+                    }
+                });
+            }
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+
     // ===== MAP =====
 
     function initMap() {
@@ -534,6 +574,9 @@ window.GeoInsights = (function () {
             populateSelect('filterAdvisor', f.advisors, filters?.advisorName || '');
             populateSelect('filterRequester', f.requesters || [], filters?.requesterName || '');
         }
+
+        // Show effective date range info
+        updateDateRangeInfo(data);
 
         redrawMap(data, preserveMapView);
         renderCharts(data);
