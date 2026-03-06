@@ -225,7 +225,9 @@ public class MunicipioController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateSensitivePoint(
         string name, string? type, string? locality, string? department,
-        string latitude, string longitude)
+        string latitude, string longitude,
+        int? distanceClassIa, int? distanceClassIb, int? distanceClassII,
+        int? distanceClassIII, int? distanceClassIV)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -249,7 +251,12 @@ public class MunicipioController : Controller
             locality = locality?.Trim(),
             department = department?.Trim(),
             latitude = lat,
-            longitude = lng
+            longitude = lng,
+            distanceClassIa,
+            distanceClassIb,
+            distanceClassII,
+            distanceClassIII,
+            distanceClassIV
         });
 
         TempData[result.Success ? "Success" : "Error"] =

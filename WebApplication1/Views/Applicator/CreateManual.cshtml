@@ -967,8 +967,8 @@
         }
 
         // Check distance from polygon edges to each permanent sensitive point
+        // Uses per-point configured distances based on tox class
         function checkSensitivePointProximity(polygonVertices) {
-            var ALERT_RADIUS_M = 200;
             var warnings = [];
 
             if (!polygonVertices || polygonVertices.length < 3 || sensitivePointsData.length === 0) {
@@ -976,14 +976,39 @@
                 return;
             }
 
+            // Get max tox class from selected products
+            var maxToxScore = getMaxToxScore();
+
             sensitivePointsData.forEach(function(sp) {
                 var dist = minDistancePointToPolygonEdge(sp.latitude, sp.longitude, polygonVertices);
-                if (dist <= ALERT_RADIUS_M) {
-                    warnings.push({ point: sp, distance: Math.round(dist) });
+                // Get required distance for this SP based on tox class
+                var requiredDist = getRequiredDistance(sp, maxToxScore);
+                if (dist <= requiredDist) {
+                    warnings.push({ point: sp, distance: Math.round(dist), required: requiredDist });
                 }
             });
 
             showSensitiveAlert(warnings);
+        }
+
+        // Get the worst tox score from selected products (1=Ia worst, 5=IV least)
+        function getMaxToxScore() {
+            var score = 5; // default: least restrictive
+            document.querySelectorAll('select[name$=".ToxicologicalClass"]').forEach(function(sel) {
+                var val = (sel.value || '').toUpperCase().trim();
+                var s = val === 'IA' ? 1 : val === 'IB' ? 2 : val === 'II' ? 3 : val === 'III' ? 4 : val === 'IV' ? 5 : 5;
+                if (s < score) score = s;
+            });
+            return score;
+        }
+
+        // Get required distance from a sensitive point based on tox score
+        function getRequiredDistance(sp, toxScore) {
+            if (toxScore === 1) return sp.distanceClassIa || 1000;
+            if (toxScore === 2) return sp.distanceClassIb || 800;
+            if (toxScore === 3) return sp.distanceClassII || 500;
+            if (toxScore === 4) return sp.distanceClassIII || 300;
+            return sp.distanceClassIV || 200;
         }
 
         // Calculate minimum distance from a point to any edge of a polygon (in meters)
@@ -1046,13 +1071,13 @@
             if (!alertEl) return;
             if (warnings.length === 0) { alertEl.style.display = 'none'; return; }
 
-            var html = '<strong>⚠️ Punto sensible cercano:</strong> El borde del lote está a menos de 200m de:';
+            var html = '<strong>⚠️ Punto sensible cercano:</strong> El borde del lote no cumple la distancia mínima configurada:';
             html += '<ul style="margin:6px 0 0;padding-left:18px;">';
             warnings.forEach(function(w) {
                 var icon = sensitiveTypeIcons[w.point.type] || '📌';
                 html += '<li>' + icon + ' <strong>' + w.point.name + '</strong>';
                 html += ' (' + (w.point.type || 'punto sensible') + ')';
-                html += ' — a <strong>' + w.distance + 'm</strong> del borde';
+                html += ' — a <strong>' + w.distance + 'm</strong> (mín. ' + w.required + 'm)';
                 if (w.point.municipalityName) html += ' · ' + w.point.municipalityName;
                 html += '</li>';
             });

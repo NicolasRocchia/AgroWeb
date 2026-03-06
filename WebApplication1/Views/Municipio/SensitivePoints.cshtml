@@ -44,7 +44,7 @@
                     </div>
                     <div class="sp-form-group">
                         <label class="sp-label">Tipo</label>
-                        <select name="type" class="sp-input">
+                        <select name="type" class="sp-input" id="spTypeSelect" onchange="applyTypeDefaults()">
                             <option value="Escuela">🏫 Escuela</option>
                             <option value="Hospital">🏥 Hospital / Centro de salud</option>
                             <option value="Pozo de agua">💧 Pozo de agua</option>
@@ -55,6 +55,37 @@
                             <option value="Club">⚽ Club / Espacio recreativo</option>
                             <option value="Otro" selected>📍 Otro</option>
                         </select>
+                    </div>
+
+                    <div class="sp-form-group">
+                        <label class="sp-label">Distancias mínimas por clase toxicológica</label>
+                        <div class="sp-sliders">
+                            <div class="sp-slider-row">
+                                <span class="sp-slider-label" style="color:#8e44ad;">Ia (extrema)</span>
+                                <input type="range" name="distanceClassIa" id="sliderIa" min="0" max="2000" step="50" value="1000" oninput="updateSliderVal(this)">
+                                <span class="sp-slider-val" id="valIa">1000m</span>
+                            </div>
+                            <div class="sp-slider-row">
+                                <span class="sp-slider-label" style="color:#e74c3c;">Ib (alta)</span>
+                                <input type="range" name="distanceClassIb" id="sliderIb" min="0" max="2000" step="50" value="800" oninput="updateSliderVal(this)">
+                                <span class="sp-slider-val" id="valIb">800m</span>
+                            </div>
+                            <div class="sp-slider-row">
+                                <span class="sp-slider-label" style="color:#f39c12;">II (moderada)</span>
+                                <input type="range" name="distanceClassII" id="sliderII" min="0" max="2000" step="50" value="500" oninput="updateSliderVal(this)">
+                                <span class="sp-slider-val" id="valII">500m</span>
+                            </div>
+                            <div class="sp-slider-row">
+                                <span class="sp-slider-label" style="color:#3498db;">III (leve)</span>
+                                <input type="range" name="distanceClassIII" id="sliderIII" min="0" max="2000" step="50" value="300" oninput="updateSliderVal(this)">
+                                <span class="sp-slider-val" id="valIII">300m</span>
+                            </div>
+                            <div class="sp-slider-row">
+                                <span class="sp-slider-label" style="color:#00b400;">IV (baja)</span>
+                                <input type="range" name="distanceClassIV" id="sliderIV" min="0" max="2000" step="50" value="200" oninput="updateSliderVal(this)">
+                                <span class="sp-slider-val" id="valIV">200m</span>
+                            </div>
+                        </div>
                     </div>
                     <div id="coordInfo" class="sp-coord-info"></div>
                     <div class="sp-form-actions">
@@ -82,48 +113,323 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
     <style>
-        .back-link { display:inline-block; margin-bottom:1rem; color:var(--primary-color,#667eea); text-decoration:none; font-weight:600; }
-        .back-link:hover { text-decoration:underline; }
-        .page-title { font-size:1.5rem; color:#1e293b; margin:4px 0 0; }
-        .alert-box { border-radius:10px; padding:12px 18px; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
-        .alert-success-box { background:#ecfdf5; border:1px solid #6ee7b7; color:#065f46; }
-        .alert-error-box { background:#fef2f2; border:1px solid #fca5a5; color:#991b1b; }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--primary-color,#667eea);
+            text-decoration: none;
+            font-weight: 600;
+        }
 
-        .sp-layout { display:grid; grid-template-columns:1fr 360px; gap:20px; }
-        .sp-map-panel { background:white; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; }
-        .sp-map-toolbar { display:flex; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid #e2e8f0; }
-        .sp-toolbar-btn { padding:8px 14px; border:1px solid #e2e8f0; border-radius:8px; background:#f8fafc; cursor:pointer; font-weight:600; font-size:.82rem; transition:all .2s; }
-        .sp-toolbar-btn:hover { background:#f1f5f9; }
-        .sp-btn-cancel { background:#fee2e2; color:#991b1b; border-color:#fca5a5; }
-        .sp-hint { color:#94a3b8; font-size:.82rem; font-style:italic; }
-        .sp-map { height:550px; }
+            .back-link:hover {
+                text-decoration: underline;
+            }
 
-        .sp-sidebar { display:flex; flex-direction:column; gap:16px; }
-        .sp-create-panel, #pointsListPanel { background:white; border-radius:14px; padding:20px; box-shadow:0 2px 12px rgba(0,0,0,.06); }
-        .sp-panel-title { font-size:1rem; font-weight:600; color:#334155; margin:0 0 14px; padding-bottom:10px; border-bottom:1px solid #f1f5f9; }
-        .sp-form-group { margin-bottom:12px; }
-        .sp-form-row { display:flex; gap:10px; }
-        .sp-form-row .sp-form-group { flex:1; }
-        .sp-label { display:block; font-size:.78rem; color:#64748b; font-weight:600; margin-bottom:4px; }
-        .sp-input { width:100%; padding:8px 10px; border:1px solid #e2e8f0; border-radius:8px; font-size:.85rem; }
-        .sp-coord-info { font-size:.82rem; color:#64748b; margin-bottom:10px; font-family:monospace; }
-        .sp-form-actions { display:flex; gap:8px; justify-content:flex-end; }
-        .sp-btn-primary { padding:8px 18px; background:#667eea; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; font-size:.85rem; }
-        .sp-btn-primary:hover { background:#5a67d8; }
-        .sp-btn-secondary { padding:8px 18px; background:transparent; color:#64748b; border:1px solid #e2e8f0; border-radius:8px; cursor:pointer; font-size:.85rem; }
+        .page-title {
+            font-size: 1.5rem;
+            color: #1e293b;
+            margin: 4px 0 0;
+        }
 
-        .point-card { padding:12px; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:10px; cursor:pointer; transition:all .2s; border-left:4px solid #3b82f6; }
-        .point-card:hover { box-shadow:0 2px 8px rgba(0,0,0,.08); }
-        .point-name { font-weight:600; font-size:.9rem; color:#1e293b; }
-        .point-meta { font-size:.78rem; color:#64748b; margin-top:4px; display:flex; flex-wrap:wrap; gap:8px; }
-        .point-type-tag { padding:2px 8px; border-radius:10px; font-size:.7rem; font-weight:600; background:#dbeafe; color:#1e40af; }
-        .point-perm-tag { padding:2px 8px; border-radius:10px; font-size:.7rem; font-weight:600; background:#dcfce7; color:#166534; }
-        .point-temp-tag { padding:2px 8px; border-radius:10px; font-size:.7rem; font-weight:600; background:#fef9c3; color:#854d0e; }
-        .point-actions { margin-top:8px; }
-        .point-btn-delete { padding:4px 10px; background:transparent; border:1px solid #fca5a5; border-radius:6px; color:#ef4444; cursor:pointer; font-size:.75rem; font-weight:600; }
-        .point-btn-delete:hover { background:#fee2e2; }
+        .alert-box {
+            border-radius: 10px;
+            padding: 12px 18px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-        @@media (max-width: 900px) { .sp-layout { grid-template-columns:1fr; } .sp-map { height:400px; } }
+        .alert-success-box {
+            background: #ecfdf5;
+            border: 1px solid #6ee7b7;
+            color: #065f46;
+        }
+
+        .alert-error-box {
+            background: #fef2f2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+
+        .sp-layout {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 20px;
+        }
+
+        .sp-map-panel {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 2px 12px rgba(0,0,0,.06);
+            overflow: hidden;
+        }
+
+        .sp-map-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .sp-toolbar-btn {
+            padding: 8px 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: .82rem;
+            transition: all .2s;
+        }
+
+            .sp-toolbar-btn:hover {
+                background: #f1f5f9;
+            }
+
+        .sp-btn-cancel {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #fca5a5;
+        }
+
+        .sp-hint {
+            color: #94a3b8;
+            font-size: .82rem;
+            font-style: italic;
+        }
+
+        .sp-map {
+            height: 550px;
+        }
+
+        .sp-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sp-create-panel, #pointsListPanel {
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,.06);
+        }
+
+        .sp-panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #334155;
+            margin: 0 0 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .sp-form-group {
+            margin-bottom: 12px;
+        }
+
+        .sp-form-row {
+            display: flex;
+            gap: 10px;
+        }
+
+            .sp-form-row .sp-form-group {
+                flex: 1;
+            }
+
+        .sp-label {
+            display: block;
+            font-size: .78rem;
+            color: #64748b;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .sp-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: .85rem;
+        }
+
+        .sp-coord-info {
+            font-size: .82rem;
+            color: #64748b;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+
+        .sp-form-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .sp-btn-primary {
+            padding: 8px 18px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: .85rem;
+        }
+
+            .sp-btn-primary:hover {
+                background: #5a67d8;
+            }
+
+        .sp-btn-secondary {
+            padding: 8px 18px;
+            background: transparent;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: .85rem;
+        }
+
+        .point-card {
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all .2s;
+            border-left: 4px solid #3b82f6;
+        }
+
+            .point-card:hover {
+                box-shadow: 0 2px 8px rgba(0,0,0,.08);
+            }
+
+        .point-name {
+            font-weight: 600;
+            font-size: .9rem;
+            color: #1e293b;
+        }
+
+        .point-meta {
+            font-size: .78rem;
+            color: #64748b;
+            margin-top: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .point-type-tag {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: .7rem;
+            font-weight: 600;
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .point-perm-tag {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: .7rem;
+            font-weight: 600;
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .point-temp-tag {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: .7rem;
+            font-weight: 600;
+            background: #fef9c3;
+            color: #854d0e;
+        }
+
+        .point-actions {
+            margin-top: 8px;
+        }
+
+        .point-btn-delete {
+            padding: 4px 10px;
+            background: transparent;
+            border: 1px solid #fca5a5;
+            border-radius: 6px;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: .75rem;
+            font-weight: 600;
+        }
+
+            .point-btn-delete:hover {
+                background: #fee2e2;
+            }
+
+        @@media (max-width: 900px) {
+            .sp-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sp-map {
+                height: 400px;
+            }
+        }
+
+        .sp-sliders {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .sp-slider-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sp-slider-label {
+            font-size: .78rem;
+            font-weight: 600;
+            min-width: 90px;
+        }
+
+        .sp-slider-row input[type="range"] {
+            flex: 1;
+            height: 6px;
+            accent-color: #667eea;
+            cursor: pointer;
+        }
+
+        .sp-slider-val {
+            font-size: .8rem;
+            font-weight: 700;
+            min-width: 55px;
+            text-align: right;
+            color: #1e293b;
+        }
+
+        .point-distances {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 6px;
+            padding: 6px 8px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+            .point-distances span {
+                font-size: .7rem;
+                font-weight: 700;
+                white-space: nowrap;
+            }
     </style>
 }
 
@@ -163,11 +469,35 @@
                     });
 
                     var marker = L.marker([p.latitude, p.longitude], { icon: divIcon }).addTo(map);
-                    marker.bindPopup('<strong>' + icon + ' ' + p.name + '</strong>' +
+                    var popupHtml = '<strong>' + icon + ' ' + p.name + '</strong>' +
                         (p.type ? '<br>' + p.type : '') +
                         (p.locality ? '<br>' + p.locality : '') +
-                        (p.recipeCount > 0 ? '<br><small>' + p.recipeCount + ' receta(s) asociada(s)</small>' : ''));
+                        (p.recipeCount > 0 ? '<br><small>' + p.recipeCount + ' receta(s) asociada(s)</small>' : '');
+
+                    if (p.isPermanent && p.distanceClassIa) {
+                        popupHtml += '<br><hr style="margin:6px 0;border:none;border-top:1px solid #e2e8f0;">' +
+                            '<small style="color:#64748b;"><strong>Distancias mínimas:</strong><br>' +
+                            '<span style="color:#8e44ad;">Ia:</span> ' + p.distanceClassIa + 'm · ' +
+                            '<span style="color:#e74c3c;">Ib:</span> ' + p.distanceClassIb + 'm · ' +
+                            '<span style="color:#f39c12;">II:</span> ' + p.distanceClassII + 'm<br>' +
+                            '<span style="color:#3498db;">III:</span> ' + p.distanceClassIII + 'm · ' +
+                            '<span style="color:#00b400;">IV:</span> ' + p.distanceClassIV + 'm</small>';
+                    }
+
+                    marker.bindPopup(popupHtml, { maxWidth: 280 });
                     pointMarkers.push(marker);
+
+                    // Build distances HTML for card
+                    var distHtml = '';
+                    if (p.isPermanent && p.distanceClassIa) {
+                        distHtml = '<div class="point-distances">' +
+                            '<span style="color:#8e44ad;">Ia:' + p.distanceClassIa + 'm</span>' +
+                            '<span style="color:#e74c3c;">Ib:' + p.distanceClassIb + 'm</span>' +
+                            '<span style="color:#f39c12;">II:' + p.distanceClassII + 'm</span>' +
+                            '<span style="color:#3498db;">III:' + p.distanceClassIII + 'm</span>' +
+                            '<span style="color:#00b400;">IV:' + p.distanceClassIV + 'm</span>' +
+                        '</div>';
+                    }
 
                     // Card in sidebar
                     var card = document.createElement('div');
@@ -180,10 +510,9 @@
                         '<div class="point-meta">' +
                             (p.type ? '<span class="point-type-tag">' + p.type + '</span>' : '') +
                             permBadge +
-                            (p.locality ? '<span>' + p.locality + '</span>' : '') +
-                            (p.recipeCount > 0 ? '<span>' + p.recipeCount + ' receta(s)</span>' : '') +
                             '<span>' + new Date(p.createdAt).toLocaleDateString('es-AR') + '</span>' +
                         '</div>' +
+                        distHtml +
                         '<div class="point-actions">' +
                             '<form method="post" action="/Municipio/DeleteSensitivePoint" style="display:inline;">' +
                             '<input type="hidden" name="__RequestVerificationToken" value="' + (document.querySelector('[name=__RequestVerificationToken]')?.value || '') + '">' +
@@ -265,5 +594,39 @@
                 document.getElementById('coordInfo').textContent = '📍 ' + lat + ', ' + lng;
             }
         })();
+
+        function updateSliderVal(slider) {
+            var valEl = document.getElementById('val' + slider.id.replace('slider', ''));
+            if (valEl) valEl.textContent = slider.value + 'm';
+        }
+
+        var typeDefaults = {
+            'Escuela':       { Ia: 1500, Ib: 1000, II: 500,  III: 300, IV: 200 },
+            'Hospital':      { Ia: 1500, Ib: 1000, II: 500,  III: 300, IV: 200 },
+            'Pozo de agua':  { Ia: 1000, Ib: 800,  II: 500,  III: 300, IV: 200 },
+            'Curso de agua': { Ia: 1000, Ib: 800,  II: 500,  III: 300, IV: 100 },
+            'Apiario':       { Ia: 1000, Ib: 800,  II: 500,  III: 300, IV: 200 },
+            'Vivienda':      { Ia: 800,  Ib: 500,  II: 300,  III: 200, IV: 100 },
+            'Reserva':       { Ia: 1500, Ib: 1000, II: 800,  III: 500, IV: 300 },
+            'Club':          { Ia: 1000, Ib: 800,  II: 500,  III: 300, IV: 200 },
+            'Otro':          { Ia: 1000, Ib: 800,  II: 500,  III: 300, IV: 200 }
+        };
+
+        function applyTypeDefaults() {
+            var type = document.getElementById('spTypeSelect').value;
+            var d = typeDefaults[type] || typeDefaults['Otro'];
+            setSlider('sliderIa', 'valIa', d.Ia);
+            setSlider('sliderIb', 'valIb', d.Ib);
+            setSlider('sliderII', 'valII', d.II);
+            setSlider('sliderIII', 'valIII', d.III);
+            setSlider('sliderIV', 'valIV', d.IV);
+        }
+
+        function setSlider(sliderId, valId, value) {
+            var s = document.getElementById(sliderId);
+            var v = document.getElementById(valId);
+            if (s) s.value = value;
+            if (v) v.textContent = value + 'm';
+        }
     </script>
 }
