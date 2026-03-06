@@ -9,15 +9,15 @@
 <!-- Header -->
 <div class="detail-header">
     <div class="detail-header-content">
-        <h1 class="detail-title">
-            <a href="@Url.Action("ExportPdf", "Municipio", new { id = Model.Recipe.Id, code = Model.Recipe.PublicCode })"
+        <a href="@Url.Action("Index", "Municipio")" class="back-button">← Volver</a>
+        <h1 class="detail-title" style="flex:1; margin:0; font-size:1.2rem;">
             @(Model.Recipe.RfdNumber.HasValue ? $"RFD #{Model.Recipe.RfdNumber}" : "Receta Manual")
-            <a href="@Url.Action("ExportPdf", "Municipio", new { id = Model.Recipe.Id })"
-               class="btn-export-pdf" title="Descargar expediente PDF"
-               style="margin-left:12px; display:inline-flex; align-items:center; gap:4px; font-size:.75rem; padding:6px 14px; background:#667eea; color:#fff; border-radius:8px; text-decoration:none; font-weight:600;">
-                📄 Descargar Expediente
-            </a>
         </h1>
+        <a href="@Url.Action("ExportPdf", "Municipio", new { id = Model.Recipe.Id, code = Model.Recipe.PublicCode })"
+           title="Descargar expediente PDF"
+           style="display:inline-flex; align-items:center; gap:5px; padding:8px 16px; background:rgba(255,255,255,0.2); color:#fff; border-radius:8px; text-decoration:none; font-size:.8rem; font-weight:600; border:1px solid rgba(255,255,255,0.3); transition:all .2s;">
+            📄 Descargar Expediente
+        </a>
         <div class="detail-meta">
             @{
                 var statusClass = Model.Recipe.Status?.ToUpper() switch
