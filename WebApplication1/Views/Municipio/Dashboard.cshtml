@@ -6,9 +6,27 @@
 
 <div class="page-container" style="max-width:1200px; margin:0 auto; padding:0 20px 40px;">
 
-    <div style="margin-bottom:24px;">
-        <h1 style="font-size:1.5rem; font-weight:700; color:#1e293b; margin:0;">🏛️ Panel Municipal</h1>
-        <p style="color:#64748b; margin:4px 0 0; font-size:.9rem;">Resumen de actividad y recetas pendientes de revisión</p>
+    <div style="margin-bottom:24px; display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+        <div>
+            <h1 style="font-size:1.5rem; font-weight:700; color:#1e293b; margin:0;">🏛️ Panel Municipal</h1>
+            <p style="color:#64748b; margin:4px 0 0; font-size:.9rem;">Resumen de actividad y recetas pendientes de revisión</p>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:6px;">
+                <label style="font-size:.75rem; color:#64748b;">Desde:</label>
+                <input type="date" id="reportDateFrom" style="padding:4px 8px; border:1px solid #e2e8f0; border-radius:6px; font-size:.8rem;" />
+                <label style="font-size:.75rem; color:#64748b;">Hasta:</label>
+                <input type="date" id="reportDateTo" style="padding:4px 8px; border:1px solid #e2e8f0; border-radius:6px; font-size:.8rem;" />
+            </div>
+            <a id="btnReportPdf" href="#" onclick="downloadReport('pdf'); return false;"
+               style="display:inline-flex; align-items:center; gap:4px; padding:6px 14px; background:#667eea; color:#fff; border-radius:8px; text-decoration:none; font-size:.8rem; font-weight:600;">
+                📄 Reporte PDF
+            </a>
+            <a id="btnReportExcel" href="#" onclick="downloadReport('excel'); return false;"
+               style="display:inline-flex; align-items:center; gap:4px; padding:6px 14px; background:#059669; color:#fff; border-radius:8px; text-decoration:none; font-size:.8rem; font-weight:600;">
+                📊 Reporte Excel
+            </a>
+        </div>
     </div>
 
     @if (ViewBag.Error != null)
@@ -225,6 +243,24 @@
                 });
                 container.innerHTML = html;
             }
+        })();
+
+        function downloadReport(format) {
+            var dateFrom = document.getElementById('reportDateFrom').value;
+            var dateTo = document.getElementById('reportDateTo').value;
+            var action = format === 'excel' ? 'ReportExcel' : 'ReportPdf';
+            var url = '/Municipio/' + action + '?';
+            if (dateFrom) url += 'dateFrom=' + dateFrom + '&';
+            if (dateTo) url += 'dateTo=' + dateTo + '&';
+            window.location.href = url;
+        }
+
+        // Default: current month
+        (function setDefaultDates() {
+            var now = new Date();
+            var firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+            document.getElementById('reportDateFrom').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('reportDateTo').value = now.toISOString().split('T')[0];
         })();
     </script>
 }

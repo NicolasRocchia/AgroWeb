@@ -289,4 +289,39 @@ public class MunicipioController : Controller
         var fileName = $"Expediente_{code ?? id.ToString()}_{DateTime.UtcNow:yyyyMMdd}.pdf";
         return File(data, "application/pdf", fileName);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> ReportPdf(string? dateFrom, string? dateTo)
+    {
+        var qs = BuildReportQuery(dateFrom, dateTo, "pdf");
+        var (data, statusCode, error) = await _api.GetBytesAsync($"/api/recipes/municipal-report{qs}");
+        if (data == null)
+        {
+            TempData["Error"] = error ?? "No se pudo generar el reporte PDF.";
+            return RedirectToAction("Dashboard");
+        }
+        return File(data, "application/pdf", $"Reporte_Municipal_{DateTime.UtcNow:yyyyMMdd}.pdf");
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ReportExcel(string? dateFrom, string? dateTo)
+    {
+        var qs = BuildReportQuery(dateFrom, dateTo, "excel");
+        var (data, statusCode, error) = await _api.GetBytesAsync($"/api/recipes/municipal-report{qs}");
+        if (data == null)
+        {
+            TempData["Error"] = error ?? "No se pudo generar el reporte Excel.";
+            return RedirectToAction("Dashboard");
+        }
+        return File(data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            $"Reporte_Municipal_{DateTime.UtcNow:yyyyMMdd}.xlsx");
+    }
+
+    private static string BuildReportQuery(string? dateFrom, string? dateTo, string format)
+    {
+        var parts = new List<string> { $"format={format}" };
+        if (!string.IsNullOrEmpty(dateFrom)) parts.Add($"dateFrom={dateFrom}");
+        if (!string.IsNullOrEmpty(dateTo)) parts.Add($"dateTo={dateTo}");
+        return "?" + string.Join("&", parts);
+    }
 }
