@@ -598,6 +598,85 @@
     }
 }
 
+/* ---- MOBILE CONTROLS ---- */
+.geo-mobile-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.geo-mobile-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+}
+
+.ml-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: #f8fafc;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+}
+
+.ml-chip .legend-color {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.ml-chip .legend-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.geo-mobile-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+}
+
+.mt-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 8px;
+    background: white;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.mt-chip:has(input:checked) {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1e40af;
+}
+
+.mt-chip input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    cursor: pointer;
+}
+
 /* Leaflet popup overrides */
 .leaflet-popup-content-wrapper {
     border-radius: 10px !important;
