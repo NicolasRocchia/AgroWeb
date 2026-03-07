@@ -155,7 +155,7 @@ window.GeoInsights = (function () {
 
             var btnAll = document.getElementById('btnShowAll');
             if (btnAll) {
-                btnAll.addEventListener('click', function(e) {
+                btnAll.addEventListener('click', function (e) {
                     e.preventDefault();
                     // Set a very old date to bypass the 30-day default
                     if (fromEl) fromEl.value = '2020-01-01';
@@ -236,21 +236,21 @@ window.GeoInsights = (function () {
 
         return '<div class="geo-popup">' +
             '<div class="geo-popup-header">' +
-                '<strong>RFD #' + escapeHtml(String(app.rfdNumber)) + '</strong>' +
-                '<span class="geo-popup-status geo-popup-status-' + statusClass + '">' + escapeHtml(app.status) + '</span>' +
+            '<strong>RFD #' + escapeHtml(String(app.rfdNumber)) + '</strong>' +
+            '<span class="geo-popup-status geo-popup-status-' + statusClass + '">' + escapeHtml(app.status) + '</span>' +
             '</div>' +
             '<div class="geo-popup-body">' +
-                '<div><strong>Lote:</strong> ' + escapeHtml(app.lotName) + '</div>' +
-                '<div><strong>Cultivo:</strong> ' + escapeHtml(app.crop || '-') + '</div>' +
-                '<div><strong>Superficie:</strong> ' + (app.surfaceHa ? app.surfaceHa.toFixed(1) + ' ha' : '-') + '</div>' +
-                '<div><strong>Fecha:</strong> ' + new Date(app.issueDate).toLocaleDateString('es-AR') + '</div>' +
-                '<div><strong>Asesor:</strong> ' + escapeHtml(app.advisorName || '-') + '</div>' +
-                '<div><strong>Solicitante:</strong> ' + escapeHtml(app.requesterName || '-') + '</div>' +
-                '<div class="geo-popup-products"><strong>Productos:</strong><br/>' + productsHtml + '</div>' +
-                '<div><strong>Toxicidad máx:</strong> <span style="color:' + tc.color + '; font-weight:700;">' + escapeHtml(app.maxToxClass || 'N/D') + '</span></div>' +
+            '<div><strong>Lote:</strong> ' + escapeHtml(app.lotName) + '</div>' +
+            '<div><strong>Cultivo:</strong> ' + escapeHtml(app.crop || '-') + '</div>' +
+            '<div><strong>Superficie:</strong> ' + (app.surfaceHa ? app.surfaceHa.toFixed(1) + ' ha' : '-') + '</div>' +
+            '<div><strong>Fecha:</strong> ' + new Date(app.issueDate).toLocaleDateString('es-AR') + '</div>' +
+            '<div><strong>Asesor:</strong> ' + escapeHtml(app.advisorName || '-') + '</div>' +
+            '<div><strong>Solicitante:</strong> ' + escapeHtml(app.requesterName || '-') + '</div>' +
+            '<div class="geo-popup-products"><strong>Productos:</strong><br/>' + productsHtml + '</div>' +
+            '<div><strong>Toxicidad máx:</strong> <span style="color:' + tc.color + '; font-weight:700;">' + escapeHtml(app.maxToxClass || 'N/D') + '</span></div>' +
             '</div>' +
             '<a href="' + detailUrl + '" class="geo-popup-link">Ver receta →</a>' +
-        '</div>';
+            '</div>';
     }
 
     function buildSensitivePopupHtml(sp) {
@@ -260,12 +260,12 @@ window.GeoInsights = (function () {
             : '<span style="background:#fef9c3;color:#854d0e;padding:1px 6px;border-radius:8px;font-size:.7rem;font-weight:600;margin-left:6px;">De receta</span>';
         return '<div class="geo-popup">' +
             '<div class="geo-popup-header">' +
-                '<strong>' + emoji + ' ' + escapeHtml(sp.name) + '</strong>' + badge +
+            '<strong>' + emoji + ' ' + escapeHtml(sp.name) + '</strong>' + badge +
             '</div>' +
             '<div class="geo-popup-body">' +
-                '<div><strong>Tipo:</strong> ' + escapeHtml(sp.type || '-') + '</div>' +               
+            '<div><strong>Tipo:</strong> ' + escapeHtml(sp.type || '-') + '</div>' +
             '</div>' +
-        '</div>';
+            '</div>';
     }
 
     // ===== LOT POPUP (nuevo: muestra historial de aplicaciones del lote) =====
@@ -278,7 +278,7 @@ window.GeoInsights = (function () {
         let header = '<div class="geo-popup-header">' +
             '<strong>' + escapeHtml(lot.lotName || 'Lote') + '</strong>' +
             '<span style="font-size:0.8rem; color:#666;"> (' + count + ' aplicacion' + (count !== 1 ? 'es' : '') + ')</span>' +
-        '</div>';
+            '</div>';
 
         let body = '<div class="geo-popup-body">';
         if (lot.locality) body += '<div><strong>Localidad:</strong> ' + escapeHtml(lot.locality) + '</div>';
@@ -305,7 +305,7 @@ window.GeoInsights = (function () {
                     ' <small>(' + date + ')</small>' +
                     '<span style="color:' + appTc.color + '; font-weight:600; margin-left:6px;">' + escapeHtml(app.maxToxClass || '') + '</span>' +
                     (prods ? '<div style="font-size:0.8rem; color:#666;">' + escapeHtml(prods) + '</div>' : '') +
-                '</div>';
+                    '</div>';
             });
             if (apps.length > 5) {
                 body += '<div style="font-size:0.8rem; color:#999;">... y ' + (apps.length - 5) + ' más</div>';
@@ -402,8 +402,8 @@ window.GeoInsights = (function () {
                     (isPerm ? 'filter:drop-shadow(0 1px 2px rgba(0,0,0,.3));' : 'opacity:0.7;') + '">' + emoji + '</div>',
                 className: '',
                 iconSize: [markerSize, markerSize],
-                iconAnchor: [markerSize/2, markerSize/2],
-                popupAnchor: [0, -markerSize/2]
+                iconAnchor: [markerSize / 2, markerSize / 2],
+                popupAnchor: [0, -markerSize / 2]
             });
 
             const marker = L.marker([sp.latitude, sp.longitude], { icon });
@@ -746,6 +746,12 @@ window.GeoInsights = (function () {
             const zones = await resp.json();
             if (!zones || zones.length === 0) return;
 
+            // Create a pane with low z-index so exclusion zones render behind lots
+            if (!map.getPane('exclusionPane')) {
+                map.createPane('exclusionPane');
+                map.getPane('exclusionPane').style.zIndex = 350; // below overlayPane (400)
+            }
+
             exclusionLayer = L.layerGroup().addTo(map);
 
             zones.forEach(z => {
@@ -755,21 +761,38 @@ window.GeoInsights = (function () {
                 const poly = L.polygon(latlngs, {
                     color: '#ef4444',
                     weight: 2,
-                    fillOpacity: 0.15,
+                    fillOpacity: 0.12,
                     fillColor: '#ef4444',
-                    dashArray: '6,4'
+                    dashArray: '6,4',
+                    interactive: false,
+                    pane: 'exclusionPane'
                 });
                 poly.bindTooltip(
-                    '<strong>🚫 ' + z.name + '</strong><br>' +
-                    (z.municipalityName || '') + '<br>' +
-                    z.type + ' — ' + z.restriction,
-                    { sticky: true }
+                    '<strong>🚫 ' + z.name + '</strong>',
+                    {
+                        permanent: true, direction: 'center', className: 'exclusion-label',
+                        interactive: true
+                    }
                 );
                 exclusionLayer.addLayer(poly);
             });
+
+            // Setup toggle after layer is loaded
+            setupExclusionToggle();
         } catch (e) {
             console.error('[GeoInsights] Error loading exclusion zones:', e);
         }
+    }
+
+    function setupExclusionToggle() {
+        if (!exclusionLayer) return;
+        function toggle(checked) {
+            checked ? map.addLayer(exclusionLayer) : map.removeLayer(exclusionLayer);
+        }
+        var dEl = document.getElementById('toggleExclusion');
+        var mEl = document.getElementById('toggleExclusionMobile');
+        if (dEl) dEl.addEventListener('change', () => toggle(dEl.checked));
+        if (mEl) mEl.addEventListener('change', () => toggle(mEl.checked));
     }
 
     return { init, loadExclusionZones };
