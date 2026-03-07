@@ -99,6 +99,7 @@
                     <tr>
                         <th>RFD</th>
                         <th>Estado</th>
+                        <th>Riesgo</th>
                         <th>Emisión</th>
                         <th>Vencimiento</th>
                         <th>Solicitante</th>
@@ -130,6 +131,18 @@
                                 <span class="status-badge @statusClass">
                                     @r.Status
                                 </span>
+                            </td>
+                            <td>
+                                @{
+                                    var riskBadge = r.RiskLevel switch
+                                    {
+                                        "ALTO" => "<span style='display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;font-size:.7rem;font-weight:700;background:#fef2f2;color:#991b1b;border:1px solid #fca5a5;' title='Riesgo alto'>🔴 Alto</span>",
+                                        "MEDIO" => "<span style='display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;font-size:.7rem;font-weight:700;background:#fffbeb;color:#92400e;border:1px solid #fcd34d;' title='Riesgo medio'>🟡 Medio</span>",
+                                        "BAJO" => "<span style='display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;font-size:.7rem;font-weight:700;background:#f0fdf4;color:#166534;border:1px solid #86efac;' title='Sin riesgo'>🟢 Bajo</span>",
+                                        _ => "<span style='font-size:.7rem;color:#94a3b8;'>—</span>"
+                                    };
+                                }
+                                @Html.Raw(riskBadge)
                             </td>
                             <td>@r.IssueDate.ToString("dd/MM/yyyy")</td>
                             <td>
