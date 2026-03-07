@@ -324,6 +324,63 @@ public class MunicipioController : Controller
             $"Reporte_Municipal_{DateTime.UtcNow:yyyyMMdd}.xlsx");
     }
 
+    // =============================================
+    // JURISDICCIÓN MUNICIPAL
+    // =============================================
+
+    [HttpGet]
+    public async Task<IActionResult> Jurisdiction()
+    {
+        var result = await _api.GetRawJsonAsync("/api/jurisdiction");
+        ViewBag.JurisdictionJson = result.Success ? result.Data : "{}";
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveJurisdictionRadius(string radiusKm)
+    {
+        if (!decimal.TryParse(radiusKm?.Replace(",", "."),
+            System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var radius))
+        {
+            TempData["Error"] = "Radio inválido.";
+            return RedirectToAction("Jurisdiction");
+        }
+
+        var result = await _api.PutAsync("/api/jurisdiction/radius", new { radiusKm = radius });
+        TempData[result.Success ? "Success" : "Error"] =
+            result.Success ? "Jurisdicción por radio guardada." : result.Error;
+        return RedirectToAction("Jurisdiction");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveJurisdictionPolygon(string verticesJson)
+    {
+        if (string.IsNullOrWhiteSpace(verticesJson))
+        {
+            TempData["Error"] = "No se recibieron vértices.";
+            return RedirectToAction("Jurisdiction");
+        }
+
+        var vertices = System.Text.Json.JsonSerializer.Deserialize<List<object>>(verticesJson);
+        var result = await _api.PutAsync("/api/jurisdiction/polygon", new { vertices = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(verticesJson) });
+        TempData[result.Success ? "Success" : "Error"] =
+            result.Success ? "Jurisdicción por polígono guardada." : result.Error;
+        return RedirectToAction("Jurisdiction");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ClearJurisdiction()
+    {
+        var result = await _api.DeleteAsync("/api/jurisdiction");
+        TempData[result.Success ? "Success" : "Error"] =
+            result.Success ? "Jurisdicción eliminada." : result.Error;
+        return RedirectToAction("Jurisdiction");
+    }
+
     private static string BuildReportQuery(string? dateFrom, string? dateTo, string format)
     {
         var parts = new List<string> { $"format={format}" };

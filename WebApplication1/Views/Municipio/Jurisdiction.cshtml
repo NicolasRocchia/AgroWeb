@@ -1,0 +1,273 @@
+@{
+    ViewData["Title"] = "Mi Jurisdicción";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var jurisdictionJson = ViewBag.JurisdictionJson as string ?? "{}";
+}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+<div style="max-width:1200px; margin:0 auto; padding:0 20px 40px;">
+
+    <div style="margin-bottom:20px;">
+        <h1 style="font-size:1.5rem; font-weight:700; color:#1e293b; margin:0;">🗺️ Mi Jurisdicción</h1>
+        <p style="color:#64748b; margin:4px 0 0; font-size:.9rem;">
+            Definí el área territorial de tu municipio. Las recetas cuyos lotes caigan dentro serán asignadas automáticamente.
+        </p>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:12px 18px; margin-bottom:16px; color:#166534;">
+            ✅ @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div style="background:#fef2f2; border:1px solid #fca5a5; border-radius:10px; padding:12px 18px; margin-bottom:16px; color:#991b1b;">
+            ⚠️ @TempData["Error"]
+        </div>
+    }
+
+    <!-- Toggle mode -->
+    <div style="display:flex; gap:8px; margin-bottom:16px; align-items:center;">
+        <span style="font-size:.85rem; font-weight:600; color:#475569;">Modo:</span>
+        <button id="btnModeRadius" onclick="setMode('RADIO')"
+                style="padding:8px 18px; border-radius:8px; border:2px solid #667eea; background:#fff; color:#667eea; font-weight:600; font-size:.85rem; cursor:pointer; transition:all .2s;">
+            ⭕ Radio
+        </button>
+        <button id="btnModePolygon" onclick="setMode('POLYGON')"
+                style="padding:8px 18px; border-radius:8px; border:2px solid #667eea; background:#fff; color:#667eea; font-weight:600; font-size:.85rem; cursor:pointer; transition:all .2s;">
+            🔷 Polígono
+        </button>
+        @if (jurisdictionJson != "{}" && jurisdictionJson != "null")
+        {
+            <form method="post" asp-action="ClearJurisdiction" style="margin-left:auto;">
+                @Html.AntiForgeryToken()
+                <button type="submit" onclick="return confirm('¿Eliminar la jurisdicción configurada?')"
+                        style="padding:6px 14px; border-radius:8px; border:1px solid #fca5a5; background:#fff; color:#991b1b; font-size:.8rem; cursor:pointer;">
+                    🗑️ Limpiar
+                </button>
+            </form>
+        }
+    </div>
+
+    <!-- RADIO panel -->
+    <div id="panelRadius" style="display:none; margin-bottom:16px;">
+        <div style="padding:16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px;">
+            <form method="post" asp-action="SaveJurisdictionRadius">
+                @Html.AntiForgeryToken()
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <label style="font-size:.85rem; font-weight:600; color:#475569;">Radio de cobertura:</label>
+                    <input type="range" id="radiusSlider" name="radiusKm" min="1" max="50" step="1" value="15"
+                           oninput="updateRadius(this.value)" style="flex:1; min-width:200px; accent-color:#667eea;">
+                    <span id="radiusValue" style="font-size:1.1rem; font-weight:700; color:#1e293b; min-width:60px;">15 km</span>
+                    <button type="submit" style="padding:8px 20px; background:#667eea; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                        💾 Guardar Radio
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- POLYGON panel -->
+    <div id="panelPolygon" style="display:none; margin-bottom:16px;">
+        <div style="padding:12px 16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button type="button" id="btnStartDraw" onclick="startDrawingPolygon()"
+                    style="padding:8px 16px; background:#667eea; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                ✏️ Dibujar jurisdicción
+            </button>
+            <button type="button" id="btnFinishDraw" onclick="finishDrawingPolygon()" style="display:none;
+                    padding:8px 16px; background:#16a34a; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                ✅ Finalizar dibujo
+            </button>
+            <button type="button" id="btnCancelDraw" onclick="cancelDrawingPolygon()" style="display:none;
+                    padding:8px 16px; background:#dc2626; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                ✕ Cancelar
+            </button>
+            <span id="drawHint" style="font-size:.8rem; color:#64748b;"></span>
+            <form method="post" asp-action="SaveJurisdictionPolygon" id="polygonForm" style="display:none; margin-left:auto;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="verticesJson" id="verticesJsonInput" />
+                <button type="submit" style="padding:8px 20px; background:#667eea; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                    💾 Guardar Polígono
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Map -->
+    <div id="jurisdictionMap" style="height:500px; border-radius:12px; border:1px solid #e2e8f0; z-index:0;"></div>
+
+    <div style="margin-top:8px; font-size:.8rem; color:#94a3b8;">
+        Hacé click en el mapa para definir los puntos del polígono, o usá el slider para configurar un radio circular.
+    </div>
+</div>
+
+<script>
+(function() {
+    var data = @Html.Raw(jurisdictionJson);
+    var currentMode = data.mode || null;
+
+    var map = L.map('jurisdictionMap').setView(
+        [data.centerLat || -32.693, data.centerLng || -62.106], 12
+    );
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    var jurisdictionLayer = null; // circle or polygon currently displayed
+    var drawingPoints = [];
+    var drawingMarkers = [];
+    var drawingPolyline = null;
+    var isDrawing = false;
+
+    // Show existing jurisdiction
+    if (currentMode === 'RADIO' && data.radiusKm && data.centerLat) {
+        showRadius(data.centerLat, data.centerLng, data.radiusKm);
+        document.getElementById('radiusSlider').value = data.radiusKm;
+        updateRadius(data.radiusKm);
+    } else if (currentMode === 'POLYGON' && data.vertices && data.vertices.length >= 3) {
+        var coords = data.vertices.map(function(v) { return [v.latitude, v.longitude]; });
+        showPolygon(coords);
+    }
+
+    // Set initial mode UI
+    if (currentMode) setMode(currentMode);
+
+    // ── MODE TOGGLE ──
+    window.setMode = function(mode) {
+        currentMode = mode;
+        var btnR = document.getElementById('btnModeRadius');
+        var btnP = document.getElementById('btnModePolygon');
+        var panelR = document.getElementById('panelRadius');
+        var panelP = document.getElementById('panelPolygon');
+
+        if (mode === 'RADIO') {
+            btnR.style.background = '#667eea'; btnR.style.color = '#fff';
+            btnP.style.background = '#fff'; btnP.style.color = '#667eea';
+            panelR.style.display = 'block'; panelP.style.display = 'none';
+            cancelDrawingPolygon();
+        } else {
+            btnP.style.background = '#667eea'; btnP.style.color = '#fff';
+            btnR.style.background = '#fff'; btnR.style.color = '#667eea';
+            panelP.style.display = 'block'; panelR.style.display = 'none';
+            clearJurisdictionLayer();
+        }
+    };
+
+    // ── RADIUS ──
+    window.updateRadius = function(val) {
+        document.getElementById('radiusValue').textContent = val + ' km';
+        var center = map.getCenter();
+        showRadius(data.centerLat || center.lat, data.centerLng || center.lng, val);
+    };
+
+    function showRadius(lat, lng, km) {
+        clearJurisdictionLayer();
+        jurisdictionLayer = L.circle([lat, lng], {
+            radius: km * 1000,
+            color: '#667eea', weight: 2, dashArray: '8,4',
+            fillOpacity: 0.08, fillColor: '#667eea'
+        }).addTo(map);
+        map.fitBounds(jurisdictionLayer.getBounds(), { padding: [30, 30] });
+    }
+
+    // ── POLYGON DRAWING ──
+    window.startDrawingPolygon = function() {
+        isDrawing = true;
+        drawingPoints = [];
+        drawingMarkers.forEach(function(m) { map.removeLayer(m); });
+        drawingMarkers = [];
+        if (drawingPolyline) { map.removeLayer(drawingPolyline); drawingPolyline = null; }
+        clearJurisdictionLayer();
+
+        document.getElementById('btnStartDraw').style.display = 'none';
+        document.getElementById('btnFinishDraw').style.display = 'inline-block';
+        document.getElementById('btnCancelDraw').style.display = 'inline-block';
+        document.getElementById('polygonForm').style.display = 'none';
+        document.getElementById('drawHint').textContent = 'Hacé click en el mapa para agregar puntos. Mínimo 3.';
+
+        map.getContainer().style.cursor = 'crosshair';
+    };
+
+    window.finishDrawingPolygon = function() {
+        if (drawingPoints.length < 3) {
+            alert('Necesitás al menos 3 puntos para definir la jurisdicción.');
+            return;
+        }
+        isDrawing = false;
+        map.getContainer().style.cursor = '';
+
+        // Remove markers and polyline, show final polygon
+        drawingMarkers.forEach(function(m) { map.removeLayer(m); });
+        drawingMarkers = [];
+        if (drawingPolyline) { map.removeLayer(drawingPolyline); drawingPolyline = null; }
+
+        showPolygon(drawingPoints);
+
+        // Prepare form data
+        var vertices = drawingPoints.map(function(p, i) {
+            return { latitude: parseFloat(p[0].toFixed(7)), longitude: parseFloat(p[1].toFixed(7)) };
+        });
+        document.getElementById('verticesJsonInput').value = JSON.stringify(vertices);
+
+        document.getElementById('btnStartDraw').style.display = 'inline-block';
+        document.getElementById('btnFinishDraw').style.display = 'none';
+        document.getElementById('btnCancelDraw').style.display = 'none';
+        document.getElementById('polygonForm').style.display = 'inline-block';
+        document.getElementById('drawHint').textContent = drawingPoints.length + ' puntos. Revisá el polígono y guardá.';
+    };
+
+    window.cancelDrawingPolygon = function() {
+        isDrawing = false;
+        map.getContainer().style.cursor = '';
+        drawingMarkers.forEach(function(m) { map.removeLayer(m); });
+        drawingMarkers = [];
+        drawingPoints = [];
+        if (drawingPolyline) { map.removeLayer(drawingPolyline); drawingPolyline = null; }
+
+        document.getElementById('btnStartDraw').style.display = 'inline-block';
+        document.getElementById('btnFinishDraw').style.display = 'none';
+        document.getElementById('btnCancelDraw').style.display = 'none';
+        document.getElementById('polygonForm').style.display = 'none';
+        document.getElementById('drawHint').textContent = '';
+    };
+
+    map.on('click', function(e) {
+        if (!isDrawing) return;
+        drawingPoints.push([e.latlng.lat, e.latlng.lng]);
+
+        var marker = L.circleMarker(e.latlng, {
+            radius: 5, color: '#667eea', fillColor: '#667eea', fillOpacity: 1
+        }).addTo(map);
+        drawingMarkers.push(marker);
+
+        if (drawingPolyline) map.removeLayer(drawingPolyline);
+        if (drawingPoints.length >= 2) {
+            drawingPolyline = L.polyline(drawingPoints, {
+                color: '#667eea', weight: 2, dashArray: '4,4'
+            }).addTo(map);
+        }
+
+        document.getElementById('drawHint').textContent = drawingPoints.length + ' puntos. ' +
+            (drawingPoints.length < 3 ? 'Mínimo 3.' : 'Podés finalizar o seguir agregando.');
+    });
+
+    function showPolygon(coords) {
+        clearJurisdictionLayer();
+        jurisdictionLayer = L.polygon(coords, {
+            color: '#667eea', weight: 3, dashArray: '6,4',
+            fillOpacity: 0.1, fillColor: '#667eea'
+        }).addTo(map);
+        map.fitBounds(jurisdictionLayer.getBounds(), { padding: [30, 30] });
+    }
+
+    function clearJurisdictionLayer() {
+        if (jurisdictionLayer) {
+            map.removeLayer(jurisdictionLayer);
+            jurisdictionLayer = null;
+        }
+    }
+})();
+</script>
