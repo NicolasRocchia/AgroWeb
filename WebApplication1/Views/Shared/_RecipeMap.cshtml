@@ -25,7 +25,15 @@
         }
         @if (hasSensitivePoints)
         {
-            <span>🔴 <strong>Puntos sensibles</strong> (marcadores)</span>
+            <span>🔴 <strong>Pts. sensibles receta</strong></span>
+        }
+        @if (ViewBag.MunicipalSensitivePointsJson != null && ViewBag.MunicipalSensitivePointsJson != "[]")
+        {
+            <span>📍 <strong>Pts. sensibles municipio</strong></span>
+        }
+        @if (ViewBag.MunicipalExclusionZonesJson != null && ViewBag.MunicipalExclusionZonesJson != "[]")
+        {
+            <span>🚫 <strong>Zonas de exclusión</strong></span>
         }
     </div>
 </section>
@@ -142,5 +150,61 @@
         } else {
             map.setView([-33.0, -61.0], 8);
         }
+
+        // ── Municipal permanent sensitive points (from ViewBag) ──
+        var municipalSPJson = '@Html.Raw(ViewBag.MunicipalSensitivePointsJson ?? "[]")';
+        try {
+            var municipalSP = JSON.parse(municipalSPJson);
+            if (Array.isArray(municipalSP) && municipalSP.length > 0) {
+                var spTypeIcons = {
+                    'Escuela': '🏫', 'Hospital': '🏥', 'Pozo de agua': '💧',
+                    'Curso de agua': '🌊', 'Apiario': '🐝', 'Vivienda': '🏠',
+                    'Reserva': '🌿', 'Club': '⚽'
+                };
+                municipalSP.forEach(function(sp) {
+                    if (!sp.isPermanent) return;
+                    var icon = spTypeIcons[sp.type] || '📍';
+                    var divIcon = L.divIcon({
+                        html: '<div style="font-size:1.2rem;text-align:center;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3));">' + icon + '</div>',
+                        className: '', iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -14]
+                    });
+                    var marker = L.marker([sp.latitude, sp.longitude], { icon: divIcon }).addTo(map);
+                    var popupHtml = '<strong style="color:#8b5cf6;">' + icon + ' ' + sp.name + '</strong>';
+                    if (sp.type) popupHtml += '<br><small>' + sp.type + '</small>';
+                    if (sp.distanceClassIa) {
+                        popupHtml += '<br><hr style="margin:4px 0;border:none;border-top:1px solid #e2e8f0;">';
+                        popupHtml += '<small style="color:#64748b;"><b>Distancias min.:</b><br>';
+                        popupHtml += '<span style="color:#8e44ad;">Ia:</span>' + sp.distanceClassIa + 'm ';
+                        popupHtml += '<span style="color:#e74c3c;">Ib:</span>' + sp.distanceClassIb + 'm ';
+                        popupHtml += '<span style="color:#f39c12;">II:</span>' + sp.distanceClassII + 'm<br>';
+                        popupHtml += '<span style="color:#3498db;">III:</span>' + sp.distanceClassIII + 'm ';
+                        popupHtml += '<span style="color:#00b400;">IV:</span>' + sp.distanceClassIV + 'm</small>';
+                    }
+                    marker.bindPopup(popupHtml, { maxWidth: 260 });
+                });
+            }
+        } catch(e) { console.warn('No municipal SP data:', e); }
+
+        // ── Municipal exclusion zones (from ViewBag) ──
+        var municipalEZJson = '@Html.Raw(ViewBag.MunicipalExclusionZonesJson ?? "[]")';
+        try {
+            var municipalEZ = JSON.parse(municipalEZJson);
+            if (Array.isArray(municipalEZ) && municipalEZ.length > 0) {
+                municipalEZ.forEach(function(zone) {
+                    if (!zone.vertices || zone.vertices.length < 3) return;
+                    var coords = zone.vertices
+                        .sort(function(a, b) { return a.order - b.order; })
+                        .map(function(v) { return [v.latitude, v.longitude]; });
+                    var polygon = L.polygon(coords, {
+                        color: '#dc2626', weight: 2, dashArray: '6,4',
+                        fillOpacity: 0.12, fillColor: '#dc2626'
+                    }).addTo(map);
+                    var popupHtml = '<strong style="color:#dc2626;">🚫 ' + zone.name + '</strong>';
+                    if (zone.type) popupHtml += '<br><small>' + zone.type + '</small>';
+                    if (zone.description) popupHtml += '<br><small style="color:#64748b;">' + zone.description + '</small>';
+                    polygon.bindPopup(popupHtml);
+                });
+            }
+        } catch(e) { console.warn('No municipal EZ data:', e); }
     })();
 </script>

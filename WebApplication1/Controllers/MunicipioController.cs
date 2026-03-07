@@ -92,6 +92,13 @@ public class MunicipioController : Controller
             return View(new RecipeDetailViewModel());
         }
 
+        // Load territorial context for the map
+        var spResult = await _api.GetMySensitivePointsAsync();
+        ViewBag.MunicipalSensitivePointsJson = spResult.Success ? spResult.Data : "[]";
+
+        var ezResult = await _api.GetMyExclusionZonesAsync();
+        ViewBag.MunicipalExclusionZonesJson = ezResult.Success ? ezResult.Data : "[]";
+
         return View(new RecipeDetailViewModel { Recipe = result.Data! });
     }
 
