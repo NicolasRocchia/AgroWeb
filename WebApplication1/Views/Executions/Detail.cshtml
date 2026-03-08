@@ -1,0 +1,401 @@
+@{
+    ViewData["Title"] = "Detalle de Ejecución";
+    var executionJson = ViewBag.ExecutionJson as string ?? "{}";
+    var isApplicator = (bool)(ViewBag.IsApplicator ?? false);
+    var isProducer = (bool)(ViewBag.IsProducer ?? false);
+}
+
+<div class="page-container" style="max-width: 800px; margin: 0 auto; padding: 0 16px 40px;">
+    <a asp-controller="Home" asp-action="Index" class="back-link">← Inicio</a>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-box alert-success-box"><span>✅</span> @TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-box alert-error-box"><span>⚠️</span> @TempData["Error"]</div>
+    }
+
+    <div id="execDetail"></div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/execution.css" asp-append-version="true" />
+}
+
+@section Scripts {
+<script>
+(function() {
+    var exec = @Html.Raw(executionJson);
+    var isApplicator = @(isApplicator ? "true" : "false");
+    var isProducer = @(isProducer ? "true" : "false");
+    var container = document.getElementById('execDetail');
+
+    if (!exec || !exec.id) {
+        container.innerHTML = '<p style="color:#e74c3c;">No se pudo cargar el detalle.</p>';
+        return;
+    }
+
+    var statusLabels = {
+        'PENDIENTE': { icon: '⏳', label: 'Pendiente de aceptación', color: '#f59e0b', bg: '#fef3c7' },
+        'ACEPTADA': { icon: '✅', label: 'Aceptada', color: '#3b82f6', bg: '#dbeafe' },
+        'EN_CAMINO': { icon: '🚛', label: 'En camino al lote', color: '#8b5cf6', bg: '#ede9fe' },
+        'EN_CURSO': { icon: '🔄', label: 'Aplicación en curso', color: '#10b981', bg: '#d1fae5' },
+        'PAUSADA': { icon: '⏸️', label: 'Pausada', color: '#f97316', bg: '#fff7ed' },
+        'COMPLETADA': { icon: '🏁', label: 'Completada', color: '#059669', bg: '#d1fae5' },
+        'CANCELADA': { icon: '❌', label: 'Cancelada', color: '#ef4444', bg: '#fee2e2' }
+    };
+
+    var s = statusLabels[exec.status] || { icon: '❓', label: exec.status, color: '#666', bg: '#f5f5f5' };
+
+    var html = '';
+
+    // ── Header con estado ──
+    html += '<div class="exec-header" style="background:' + s.bg + '; border-left: 4px solid ' + s.color + ';">';
+    html += '<div class="exec-status-badge" style="color:' + s.color + ';">' + s.icon + ' ' + s.label + '</div>';
+    html += '<h1 class="exec-title">Ejecución #' + exec.id + '</h1>';
+    html += '<div class="exec-meta">';
+    html += '<span>📋 Receta: <strong>' + exec.recipePublicCode + '</strong></span>';
+    if (exec.crop) html += '<span>🌱 ' + exec.crop + '</span>';
+    if (exec.surfaceHa) html += '<span>📐 ' + exec.surfaceHa + ' ha</span>';
+    html += '<span>🔀 Origen: ' + (exec.origin === 'BOLSA' ? 'Bolsa de trabajo' : 'Asignación directa') + '</span>';
+    html += '</div></div>';
+
+    // ── Personas ──
+    html += '<div class="exec-section">';
+    html += '<h2 class="exec-section-title">👥 Participantes</h2>';
+    html += '<div class="exec-info-grid">';
+    html += '<div class="exec-info-item"><span class="exec-info-label">Productor</span><span class="exec-info-value">' + exec.producerName + '</span></div>';
+    html += '<div class="exec-info-item"><span class="exec-info-label">Aplicador</span><span class="exec-info-value">' + exec.applicatorBusinessName + '</span></div>';
+    if (exec.applicatorPhone) html += '<div class="exec-info-item"><span class="exec-info-label">Teléfono</span><span class="exec-info-value"><a href="tel:' + exec.applicatorPhone + '">' + exec.applicatorPhone + '</a></span></div>';
+    html += '</div></div>';
+
+    // ── Panel de acciones del aplicador (mobile-first) ──
+    if (isApplicator) {
+        html += buildApplicatorPanel(exec);
+    }
+
+    // ── Checklist ──
+    if (exec.checklist) {
+        html += '<div class="exec-section">';
+        html += '<h2 class="exec-section-title">✅ Checklist pre-aplicación</h2>';
+        html += '<div class="checklist-grid">';
+        html += checkItem(exec.checklist.equipmentCalibrated, 'Equipo calibrado');
+        html += checkItem(exec.checklist.ppeEquipped, 'EPP equipado');
+        html += checkItem(exec.checklist.mixturePrepared, 'Caldo preparado');
+        html += checkItem(exec.checklist.exclusionZonesVerified, 'Zonas exclusión verificadas');
+        html += checkItem(exec.checklist.windConditionsOk, 'Condiciones de viento OK');
+        html += '</div>';
+        if (exec.checklist.customNotes) html += '<p class="checklist-notes">📝 ' + exec.checklist.customNotes + '</p>';
+        html += '</div>';
+    }
+
+    // ── Tiempos ──
+    if (exec.startedAt || exec.completedAt) {
+        html += '<div class="exec-section">';
+        html += '<h2 class="exec-section-title">⏱️ Tiempos</h2>';
+        html += '<div class="exec-info-grid">';
+        if (exec.acceptedAt) html += infoItem('Aceptada', formatDate(exec.acceptedAt));
+        if (exec.startedAt) html += infoItem('Inicio', formatDate(exec.startedAt));
+        if (exec.completedAt) html += infoItem('Fin', formatDate(exec.completedAt));
+        if (exec.totalActiveMinutes != null) html += infoItem('Tiempo activo', exec.totalActiveMinutes + ' min');
+        if (exec.totalPauseMinutes != null && exec.totalPauseMinutes > 0) html += infoItem('Tiempo en pausa', exec.totalPauseMinutes + ' min');
+        html += '</div></div>';
+    }
+
+    // ── Condiciones meteorológicas ──
+    if (exec.weatherAtStart || exec.weatherAtEnd) {
+        html += '<div class="exec-section">';
+        html += '<h2 class="exec-section-title">🌤️ Condiciones meteorológicas</h2>';
+        html += '<div class="weather-compare">';
+        if (exec.weatherAtStart) html += weatherCard('Al iniciar', exec.weatherAtStart);
+        if (exec.weatherAtEnd) html += weatherCard('Al completar', exec.weatherAtEnd);
+        html += '</div></div>';
+    }
+
+    // ── Timeline de eventos ──
+    if (exec.events && exec.events.length > 0) {
+        html += '<div class="exec-section">';
+        html += '<h2 class="exec-section-title">📜 Timeline</h2>';
+        html += '<div class="exec-timeline">';
+        exec.events.forEach(function(ev) {
+            var evInfo = eventInfo(ev.eventType);
+            html += '<div class="timeline-item">';
+            html += '<div class="timeline-icon" style="background:' + evInfo.color + ';">' + evInfo.icon + '</div>';
+            html += '<div class="timeline-content">';
+            html += '<div class="timeline-label">' + evInfo.label + '</div>';
+            html += '<div class="timeline-time">' + formatDate(ev.timestamp) + '</div>';
+            if (ev.pauseReason) html += '<div class="timeline-detail">Motivo: ' + pauseReasonLabel(ev.pauseReason) + '</div>';
+            if (ev.distanceToLotKm != null) html += '<div class="timeline-detail">📍 ' + ev.distanceToLotKm.toFixed(1) + ' km del lote</div>';
+            if (ev.notes) html += '<div class="timeline-detail">📝 ' + ev.notes + '</div>';
+            html += '</div></div>';
+        });
+        html += '</div></div>';
+    }
+
+    // ── Review ──
+    if (exec.review) {
+        html += '<div class="exec-section">';
+        html += '<h2 class="exec-section-title">⭐ Calificación</h2>';
+        html += '<div class="review-card">';
+        html += '<div class="review-stars">' + '★'.repeat(exec.review.rating) + '☆'.repeat(5 - exec.review.rating) + '</div>';
+        if (exec.review.comment) html += '<p class="review-comment">"' + exec.review.comment + '"</p>';
+        html += '<p class="review-author">— ' + exec.review.reviewerName + ', ' + formatDate(exec.review.createdAt) + '</p>';
+        html += '</div></div>';
+    } else if (isProducer && exec.status === 'COMPLETADA') {
+        // Formulario para calificar
+        html += '<div class="exec-section">';
+        html += '<h2 class="exec-section-title">⭐ Calificar aplicador</h2>';
+        html += '<form method="post" action="/Executions/Review">';
+        html += '<input type="hidden" name="id" value="' + exec.id + '" />';
+        html += '<div class="rating-input" id="ratingInput">';
+        for (var i = 1; i <= 5; i++) {
+            html += '<span class="rating-star" data-value="' + i + '" onclick="setRating(' + i + ')">☆</span>';
+        }
+        html += '</div>';
+        html += '<input type="hidden" name="rating" id="ratingValue" value="0" />';
+        html += '<textarea name="comment" placeholder="Comentario opcional..." class="exec-textarea" maxlength="500"></textarea>';
+        html += '<button type="submit" class="btn-primary" id="btnReview" disabled>Enviar calificación</button>';
+        html += '</form></div>';
+    }
+
+    // ── Cancelación ──
+    if (exec.cancellationReason) {
+        html += '<div class="exec-section" style="border-left: 3px solid #ef4444;">';
+        html += '<h2 class="exec-section-title">❌ Motivo de cancelación</h2>';
+        html += '<p>' + exec.cancellationReason + '</p>';
+        html += '</div>';
+    }
+
+    container.innerHTML = html;
+
+    // ── Helper functions ──
+
+    function buildApplicatorPanel(e) {
+        var h = '<div class="exec-action-panel">';
+
+        if (e.status === 'PENDIENTE') {
+            h += actionButton('accept', '✅ Aceptar trabajo', 'btn-success');
+            h += actionButton('cancel', '❌ Rechazar', 'btn-danger');
+
+        } else if (e.status === 'ACEPTADA' || e.status === 'EN_CAMINO') {
+            if (!e.checklist) {
+                h += '<h3 class="panel-subtitle">📋 Checklist pre-aplicación</h3>';
+                h += '<form method="post" action="/Executions/SubmitChecklist" class="checklist-form">';
+                h += '<input type="hidden" name="id" value="' + e.id + '" />';
+                h += checkInput('equipmentCalibrated', 'Equipo de aplicación calibrado');
+                h += checkInput('ppeEquipped', 'EPP (equipo de protección) puesto');
+                h += checkInput('mixturePrepared', 'Caldo preparado según receta');
+                h += checkInput('exclusionZonesVerified', 'Zonas de exclusión verificadas');
+                h += checkInput('windConditionsOk', 'Condiciones de viento aceptables');
+                h += '<textarea name="customNotes" placeholder="Observaciones..." class="exec-textarea" maxlength="500"></textarea>';
+                h += '<button type="submit" class="btn-primary">Guardar checklist</button>';
+                h += '</form>';
+            }
+
+            if (e.status === 'ACEPTADA') {
+                h += actionButton('en-route', '🚛 Estoy en camino', 'btn-info');
+            }
+
+            if (e.checklist) {
+                h += '<div class="gps-warning" id="gpsWarning" style="display:none;"></div>';
+                h += '<button type="button" class="btn-success btn-large" id="btnStart" onclick="startExecution(' + e.id + ')">▶️ Iniciar aplicación</button>';
+            }
+
+            h += actionButton('cancel', '❌ Cancelar', 'btn-danger-outline');
+
+        } else if (e.status === 'EN_CURSO') {
+            h += '<div class="exec-live-indicator">🔴 Aplicación en curso</div>';
+            h += '<button type="button" class="btn-warning btn-large" onclick="pauseExecution(' + e.id + ')">⏸️ Pausar</button>';
+            h += '<button type="button" class="btn-success btn-large" onclick="completeExecution(' + e.id + ')">🏁 Completar</button>';
+            h += actionButton('cancel', '❌ Cancelar', 'btn-danger-outline');
+
+        } else if (e.status === 'PAUSADA') {
+            h += '<div class="pause-form">';
+            h += '<p class="pause-label">Motivo de pausa:</p>';
+            h += '<select id="pauseReason" class="exec-select">';
+            h += '<option value="">Sin especificar</option>';
+            h += '<option value="VIENTO">🌬️ Viento excesivo</option>';
+            h += '<option value="LLUVIA">🌧️ Lluvia</option>';
+            h += '<option value="HORARIO_RESTRICCION">🕐 Horario de restricción</option>';
+            h += '<option value="DESCANSO">☕ Descanso</option>';
+            h += '<option value="OTRO">📝 Otro</option>';
+            h += '</select>';
+            h += '</div>';
+            h += '<button type="button" class="btn-success btn-large" onclick="resumeExecution(' + e.id + ')">▶️ Reanudar</button>';
+            h += actionButton('cancel', '❌ Cancelar', 'btn-danger-outline');
+        }
+
+        h += '</div>';
+        return h;
+    }
+
+    function actionButton(action, label, cls) {
+        return '<form method="post" action="/Executions/Transition" style="display:inline;">'
+            + '<input type="hidden" name="id" value="' + exec.id + '" />'
+            + '<input type="hidden" name="action" value="' + action + '" />'
+            + '<button type="submit" class="' + cls + '">' + label + '</button>'
+            + '</form>';
+    }
+
+    function checkInput(name, label) {
+        return '<label class="check-label"><input type="checkbox" name="' + name + '" value="true" /> ' + label + '</label>';
+    }
+
+    function checkItem(checked_, label) {
+        return '<div class="check-item ' + (checked_ ? 'check-ok' : 'check-no') + '">'
+            + (checked_ ? '✅' : '⬜') + ' ' + label + '</div>';
+    }
+
+    function infoItem(label, value) {
+        return '<div class="exec-info-item"><span class="exec-info-label">' + label + '</span><span class="exec-info-value">' + value + '</span></div>';
+    }
+
+    function weatherCard(title, jsonStr) {
+        try {
+            var w = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+            var h = '<div class="weather-card">';
+            h += '<h4>' + title + '</h4>';
+            if (w.temperature_c != null) h += '<div>🌡️ ' + w.temperature_c + '°C</div>';
+            if (w.humidity_pct != null) h += '<div>💧 ' + w.humidity_pct + '%</div>';
+            if (w.wind_speed_kmh != null) h += '<div>💨 ' + w.wind_speed_kmh + ' km/h</div>';
+            if (w.precipitation_mm != null && w.precipitation_mm > 0) h += '<div>🌧️ ' + w.precipitation_mm + ' mm</div>';
+            h += '</div>';
+            return h;
+        } catch(e) { return ''; }
+    }
+
+    function eventInfo(type) {
+        var map = {
+            'ACCEPTED': { icon: '✅', label: 'Aceptada', color: '#3b82f6' },
+            'EN_ROUTE': { icon: '🚛', label: 'En camino', color: '#8b5cf6' },
+            'STARTED': { icon: '▶️', label: 'Iniciada', color: '#10b981' },
+            'PAUSED': { icon: '⏸️', label: 'Pausada', color: '#f97316' },
+            'RESUMED': { icon: '▶️', label: 'Reanudada', color: '#10b981' },
+            'COMPLETED': { icon: '🏁', label: 'Completada', color: '#059669' },
+            'CANCELLED': { icon: '❌', label: 'Cancelada', color: '#ef4444' }
+        };
+        return map[type] || { icon: '❓', label: type, color: '#666' };
+    }
+
+    function pauseReasonLabel(reason) {
+        var map = { 'VIENTO': 'Viento excesivo', 'LLUVIA': 'Lluvia', 'HORARIO_RESTRICCION': 'Horario de restricción', 'DESCANSO': 'Descanso', 'OTRO': 'Otro' };
+        return map[reason] || reason;
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '-';
+        var d = new Date(dateStr);
+        return d.toLocaleDateString('es-AR') + ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    }
+})();
+
+// ── Funciones globales para botones GPS ──
+
+function getGpsAndSubmit(execId, action, extraData) {
+    if (!navigator.geolocation) {
+        submitTransition(execId, action, null, null, extraData);
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(
+        function(pos) {
+            submitTransition(execId, action, pos.coords.latitude, pos.coords.longitude, extraData);
+        },
+        function() {
+            submitTransition(execId, action, null, null, extraData);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
+}
+
+function submitTransition(execId, action, lat, lng, extraData) {
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/Executions/Transition';
+
+    var fields = { id: execId, action: action };
+    if (lat != null) { fields.gpsLat = lat; fields.gpsLng = lng; }
+    if (extraData) Object.assign(fields, extraData);
+
+    for (var key in fields) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = fields[key];
+        form.appendChild(input);
+    }
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function startExecution(execId) {
+    if (!navigator.geolocation) {
+        submitTransition(execId, 'start', null, null);
+        return;
+    }
+    var btn = document.getElementById('btnStart');
+    btn.disabled = true;
+    btn.textContent = '📡 Obteniendo ubicación...';
+
+    navigator.geolocation.getCurrentPosition(
+        function(pos) {
+            // Verificar distancia al lote (del JSON de la ejecución)
+            var exec = @Html.Raw(executionJson);
+            if (exec.lotCentroidLat && exec.lotCentroidLng) {
+                var dist = haversineKm(pos.coords.latitude, pos.coords.longitude, exec.lotCentroidLat, exec.lotCentroidLng);
+                if (dist > 3) {
+                    var warn = document.getElementById('gpsWarning');
+                    if (warn) {
+                        warn.style.display = '';
+                        warn.innerHTML = '⚠️ Estás a <strong>' + dist.toFixed(1) + ' km</strong> del lote. ¿Seguro que querés iniciar?';
+                    }
+                    btn.disabled = false;
+                    btn.textContent = '▶️ Iniciar de todos modos';
+                    btn.onclick = function() { submitTransition(execId, 'start', pos.coords.latitude, pos.coords.longitude); };
+                    return;
+                }
+            }
+            submitTransition(execId, 'start', pos.coords.latitude, pos.coords.longitude);
+        },
+        function() {
+            btn.disabled = false;
+            btn.textContent = '▶️ Iniciar aplicación';
+            submitTransition(execId, 'start', null, null);
+        },
+        { enableHighAccuracy: true, timeout: 15000 }
+    );
+}
+
+function pauseExecution(execId) { getGpsAndSubmit(execId, 'pause'); }
+function resumeExecution(execId) {
+    var reason = document.getElementById('pauseReason');
+    var data = reason ? { pauseReason: reason.value } : {};
+    getGpsAndSubmit(execId, 'resume', data);
+}
+function completeExecution(execId) {
+    if (!confirm('¿Confirmar que se completó la aplicación?')) return;
+    getGpsAndSubmit(execId, 'complete');
+}
+
+function setRating(val) {
+    document.getElementById('ratingValue').value = val;
+    document.getElementById('btnReview').disabled = false;
+    var stars = document.querySelectorAll('.rating-star');
+    stars.forEach(function(s) {
+        s.textContent = parseInt(s.dataset.value) <= val ? '★' : '☆';
+        s.style.color = parseInt(s.dataset.value) <= val ? '#f59e0b' : '#d1d5db';
+    });
+}
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+    var R = 6371;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLng = (lng2 - lng1) * Math.PI / 180;
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2)
+          + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180)
+          * Math.sin(dLng/2) * Math.sin(dLng/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+</script>
+}

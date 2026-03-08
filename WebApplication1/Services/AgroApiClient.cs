@@ -433,6 +433,37 @@ public class AgroApiClient
         return $"Error HTTP {(int)resp.StatusCode}";
     }
 
+    // ══════════════════════════════════════════════
+    // EJECUCIONES DE APLICACIÓN
+    // ══════════════════════════════════════════════
+
+    public Task<ApiResult<string>> CreateDirectExecutionAsync(object body)
+        => PostAsync("/api/executions/direct", body);
+
+    public Task<ApiResult<string>> CreateExecutionFromJobAsync(long jobPostingId)
+        => PostAsync($"/api/executions/from-job/{jobPostingId}", new { });
+
+    public Task<ApiResult<string>> GetExecutionDetailAsync(long id)
+        => GetRawJsonAsync($"/api/executions/{id}");
+
+    public Task<ApiResult<string>> GetExecutionByRecipeAsync(long recipeId)
+        => GetRawJsonAsync($"/api/executions/by-recipe/{recipeId}");
+
+    public Task<ApiResult<string>> GetMyExecutionsAsync(string? status = null)
+        => GetRawJsonAsync($"/api/executions/my-executions{(status != null ? $"?status={status}" : "")}");
+
+    public Task<ApiResult<string>> GetMyAssignmentsAsync(string? status = null)
+        => GetRawJsonAsync($"/api/executions/my-assignments{(status != null ? $"?status={status}" : "")}");
+
+    public Task<ApiResult<string>> ExecutionTransitionAsync(long id, string action, object body)
+        => PostAsync($"/api/executions/{id}/{action}", body);
+
+    public Task<ApiResult<string>> SubmitExecutionChecklistAsync(long id, object body)
+        => PostAsync($"/api/executions/{id}/checklist", body);
+
+    public Task<ApiResult<string>> CreateExecutionReviewAsync(long id, object body)
+        => PostAsync($"/api/executions/{id}/review", body);
+
     /// <summary>
     /// Extracts error with support for both "error" (string) and "errors" (array) formats.
     /// Returns the ApiError for richer handling in controllers.
@@ -525,4 +556,7 @@ public class QueryBuilder
 
     public override string ToString()
         => _params.Count > 0 ? "?" + string.Join("&", _params) : "";
+
+
 }
+

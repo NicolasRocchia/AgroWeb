@@ -1,0 +1,100 @@
+@{
+    ViewData["Title"] = "Mis Ejecuciones";
+    var executionsJson = ViewBag.ExecutionsJson as string ?? "[]";
+    var statusFilter = ViewBag.StatusFilter as string;
+}
+
+<div class="page-container" style="max-width: 1000px; margin: 0 auto; padding: 0 20px 40px;">
+    <a asp-controller="Home" asp-action="Index" class="back-link">← Inicio</a>
+    <h1 class="page-title">🚜 Mis Ejecuciones</h1>
+    <p style="color: #64748b; margin-bottom: 24px;">Aplicaciones en campo asignadas.</p>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert-box alert-error-box"><span>⚠️</span> @ViewBag.Error</div>
+    }
+
+    <div class="tasks-tabs">
+        <button type="button" class="tasks-tab @(statusFilter == null ? "active" : "")" onclick="location.href='@Url.Action("MyExecutions")'">
+            📋 Todas <span id="countAll" class="tab-count">0</span>
+        </button>
+        <button type="button" class="tasks-tab @(statusFilter == "activas" ? "active" : "")" onclick="filterExecs('activas')">
+            🔵 Activas <span id="countActive" class="tab-count">0</span>
+        </button>
+        <button type="button" class="tasks-tab @(statusFilter == "COMPLETADA" ? "active" : "")" onclick="location.href='@Url.Action("MyExecutions", new { status = "COMPLETADA" })'">
+            ✅ Completadas <span id="countDone" class="tab-count">0</span>
+        </button>
+    </div>
+
+    <div id="execList"></div>
+    <div id="emptyState" style="display:none; text-align:center; padding:60px 20px; color:#64748b;">
+        <div style="font-size:3rem; margin-bottom:16px;">🚜</div>
+        <h3>No tenés ejecuciones asignadas</h3>
+        <p>Cuando un productor te asigne un trabajo, aparecerá acá.</p>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/execution.css" asp-append-version="true" />
+}
+
+@section Scripts {
+<script>
+(function() {
+    var execs = @Html.Raw(executionsJson);
+    if (!Array.isArray(execs)) execs = [];
+
+    var activeStatuses = ['PENDIENTE','ACEPTADA','EN_CAMINO','EN_CURSO','PAUSADA'];
+    var countActive = execs.filter(function(e) { return activeStatuses.indexOf(e.status) >= 0; }).length;
+    var countDone = execs.filter(function(e) { return e.status === 'COMPLETADA'; }).length;
+
+    setText('countAll', execs.length);
+    setText('countActive', countActive);
+    setText('countDone', countDone);
+
+    if (execs.length === 0) {
+        document.getElementById('emptyState').style.display = '';
+        return;
+    }
+
+    var list = document.getElementById('execList');
+    var html = '';
+
+    execs.forEach(function(e) {
+        var statusMap = {
+            'PENDIENTE': { icon: '⏳', color: '#f59e0b' },
+            'ACEPTADA': { icon: '✅', color: '#3b82f6' },
+            'EN_CAMINO': { icon: '🚛', color: '#8b5cf6' },
+            'EN_CURSO': { icon: '🔄', color: '#10b981' },
+            'PAUSADA': { icon: '⏸️', color: '#f97316' },
+            'COMPLETADA': { icon: '🏁', color: '#059669' },
+            'CANCELADA': { icon: '❌', color: '#ef4444' }
+        };
+        var s = statusMap[e.status] || { icon: '❓', color: '#666' };
+
+        html += '<a href="/Executions/Detail/' + e.id + '" class="exec-card">';
+        html += '<div class="exec-card-header">';
+        html += '<span class="exec-card-status" style="color:' + s.color + ';">' + s.icon + ' ' + e.status.replace(/_/g, ' ') + '</span>';
+        html += '<span class="exec-card-date">' + formatDate(e.createdAt) + '</span>';
+        html += '</div>';
+        html += '<div class="exec-card-body">';
+        html += '<strong>' + e.recipePublicCode + '</strong>';
+        if (e.crop) html += ' · ' + e.crop;
+        if (e.surfaceHa) html += ' · ' + e.surfaceHa + ' ha';
+        html += '<br/><span class="exec-card-producer">Productor: ' + e.producerName + '</span>';
+        if (e.totalActiveMinutes) html += '<br/><span class="exec-card-time">⏱️ ' + e.totalActiveMinutes + ' min</span>';
+        if (e.reviewRating) html += ' <span class="exec-card-rating">' + '★'.repeat(e.reviewRating) + '</span>';
+        html += '</div></a>';
+    });
+
+    list.innerHTML = html;
+
+    function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
+    function formatDate(d) { return d ? new Date(d).toLocaleDateString('es-AR') : ''; }
+    function filterExecs(type) {
+        if (type === 'activas') location.href = '/Executions/MyExecutions';
+        // Default view already shows all
+    }
+})();
+</script>
+}

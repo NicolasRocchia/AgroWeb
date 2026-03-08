@@ -1,0 +1,75 @@
+@{
+    ViewData["Title"] = "Mis Asignaciones";
+    var executionsJson = ViewBag.ExecutionsJson as string ?? "[]";
+}
+
+<div class="page-container" style="max-width: 1000px; margin: 0 auto; padding: 0 20px 40px;">
+    <a asp-controller="Home" asp-action="Index" class="back-link">← Inicio</a>
+    <h1 class="page-title">📋 Mis Asignaciones</h1>
+    <p style="color: #64748b; margin-bottom: 24px;">Aplicaciones asignadas a aplicadores para tus recetas.</p>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert-box alert-error-box"><span>⚠️</span> @ViewBag.Error</div>
+    }
+
+    <div id="execList"></div>
+    <div id="emptyState" style="display:none; text-align:center; padding:60px 20px; color:#64748b;">
+        <div style="font-size:3rem; margin-bottom:16px;">📋</div>
+        <h3>No tenés asignaciones aún</h3>
+        <p>Cuando asignes un aplicador a una receta (directamente o por la bolsa de trabajo), aparecerá acá.</p>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/execution.css" asp-append-version="true" />
+}
+
+@section Scripts {
+<script>
+(function() {
+    var execs = @Html.Raw(executionsJson);
+    if (!Array.isArray(execs)) execs = [];
+
+    if (execs.length === 0) {
+        document.getElementById('emptyState').style.display = '';
+        return;
+    }
+
+    var list = document.getElementById('execList');
+    var html = '';
+
+    execs.forEach(function(e) {
+        var statusMap = {
+            'PENDIENTE': { icon: '⏳', label: 'Pendiente', color: '#f59e0b' },
+            'ACEPTADA': { icon: '✅', label: 'Aceptada', color: '#3b82f6' },
+            'EN_CAMINO': { icon: '🚛', label: 'En camino', color: '#8b5cf6' },
+            'EN_CURSO': { icon: '🔄', label: 'En curso', color: '#10b981' },
+            'PAUSADA': { icon: '⏸️', label: 'Pausada', color: '#f97316' },
+            'COMPLETADA': { icon: '🏁', label: 'Completada', color: '#059669' },
+            'CANCELADA': { icon: '❌', label: 'Cancelada', color: '#ef4444' }
+        };
+        var s = statusMap[e.status] || { icon: '❓', label: e.status, color: '#666' };
+
+        html += '<a href="/Executions/Detail/' + e.id + '" class="exec-card">';
+        html += '<div class="exec-card-header">';
+        html += '<span class="exec-card-status" style="color:' + s.color + ';">' + s.icon + ' ' + s.label + '</span>';
+        html += '<span class="exec-card-date">' + formatDate(e.createdAt) + '</span>';
+        html += '</div>';
+        html += '<div class="exec-card-body">';
+        html += '<strong>' + e.recipePublicCode + '</strong>';
+        if (e.crop) html += ' · ' + e.crop;
+        if (e.surfaceHa) html += ' · ' + e.surfaceHa + ' ha';
+        html += '<br/><span style="color:#64748b;">🚜 ' + e.applicatorBusinessName + '</span>';
+        if (e.totalActiveMinutes) html += '<br/><span class="exec-card-time">⏱️ ' + e.totalActiveMinutes + ' min</span>';
+        if (e.reviewRating) html += ' <span class="exec-card-rating">' + '★'.repeat(e.reviewRating) + '</span>';
+        else if (e.status === 'COMPLETADA') html += ' <span style="color:#f59e0b; font-size:12px;">⭐ Pendiente de calificar</span>';
+        html += '</div></a>';
+    });
+
+    list.innerHTML = html;
+
+    function formatDate(d) { return d ? new Date(d).toLocaleDateString('es-AR') : ''; }
+})();
+</script>
+}
