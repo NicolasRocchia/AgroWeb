@@ -2,302 +2,376 @@
     ViewData["Title"] = "Detalle del Lote";
 }
 
-<div class="recipes-header">
-    <div class="recipes-header-content">
-        <h1 class="recipes-title">
-            <span class="recipes-title-icon">🗺️</span>
-            <span id="lotTitle">Detalle del Lote</span>
-        </h1>
-        <p class="recipes-subtitle">Información y recetas asociadas a este lote</p>
+<!-- Header sticky (same pattern as recipe detail) -->
+<div class="detail-header">
+    <div class="detail-header-content">
+        <a asp-action="Lots" asp-controller="Applicator" class="back-button">← Mis Lotes</a>
+        <h1 class="detail-title" id="lotTitle">Detalle del Lote</h1>
+        <div class="detail-meta">
+            <span id="lotCodeBadge" class="lot-code-badge"></span>
+            <span id="lotAreaBadge" class="lot-area-badge"></span>
+        </div>
     </div>
 </div>
 
-<div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+<div class="lot-detail-container">
 
     @if (TempData["Error"] is string errorMsg)
     {
-        <div class="alert-error">
-            <span class="alert-icon">⚠️</span>
-            <div><strong>Error:</strong> @errorMsg</div>
-        </div>
+        <div class="lot-alert lot-alert-error"><span>⚠️</span> @errorMsg</div>
     }
-
     @if (TempData["Success"] is string successMsg)
     {
-        <div class="alert-success">
-            <span class="alert-icon">✅</span>
-            <div>@successMsg</div>
-        </div>
+        <div class="lot-alert lot-alert-success"><span>✅</span> @successMsg</div>
     }
-
     @if (ViewBag.Error != null)
     {
-        <div class="alert-error">
-            <span class="alert-icon">⚠️</span>
-            <div><strong>Error:</strong> @ViewBag.Error</div>
-        </div>
+        <div class="lot-alert lot-alert-error"><span>⚠️</span> @ViewBag.Error</div>
     }
 
-    <!-- Map + Info -->
-    <div class="lot-detail-grid">
-        <div class="lot-map-container">
-            <div id="lotMap" class="lot-detail-map"></div>
+    <!-- Map + Info grid -->
+    <div class="lot-grid">
+        <div class="lot-map-wrapper">
+            <div id="lotMap" class="lot-map"></div>
         </div>
 
-        <div class="lot-info-panel">
-            <div class="lot-info-section">
-                <h3 class="section-title">📝 Información del Lote</h3>
-
+        <div class="lot-sidebar">
+            <!-- Info card -->
+            <div class="lot-card">
+                <h3 class="lot-card-title">📝 Información</h3>
                 <form method="post" asp-action="EditLot" asp-controller="Applicator" id="editForm">
                     <input type="hidden" name="id" id="lotId" />
 
-                    <div class="form-group">
+                    <div class="lot-field">
                         <label for="name">Nombre</label>
                         <input type="text" id="name" name="name" maxlength="200" placeholder="Ej: Lote 5 - Campo Norte" />
                     </div>
-
-                    <div class="form-group">
+                    <div class="lot-field">
                         <label for="locality">Localidad</label>
                         <input type="text" id="locality" name="locality" maxlength="150" placeholder="Marcos Juárez..." />
                     </div>
-
-                    <div class="form-group">
+                    <div class="lot-field">
                         <label for="department">Departamento</label>
                         <input type="text" id="department" name="department" maxlength="150" placeholder="Marcos Juárez" />
                     </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
+                    <div class="lot-field-row">
+                        <div class="lot-field">
                             <label>Superficie</label>
-                            <div class="form-value" id="lotArea">-</div>
+                            <div class="lot-field-value" id="lotArea">—</div>
                         </div>
-                        <div class="form-group">
+                        <div class="lot-field">
                             <label>Creado</label>
-                            <div class="form-value" id="lotCreated">-</div>
+                            <div class="lot-field-value" id="lotCreated">—</div>
                         </div>
                     </div>
-
-                    <button type="submit" class="btn-save">💾 Guardar Cambios</button>
+                    <button type="submit" class="lot-btn-save">💾 Guardar Cambios</button>
                 </form>
+            </div>
+
+            <!-- Stats card -->
+            <div class="lot-card lot-stats-card">
+                <div class="lot-stat">
+                    <span class="lot-stat-value" id="statRecipes">0</span>
+                    <span class="lot-stat-label">Recetas</span>
+                </div>
+                <div class="lot-stat">
+                    <span class="lot-stat-value" id="statVertices">0</span>
+                    <span class="lot-stat-label">Vértices</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Recipes History -->
-    <div class="lot-recipes-section">
-        <h3 class="section-title">📋 Recetas Asociadas</h3>
-
-        <div id="recipesTable" class="recipes-table-container">
-            <p style="color:#a0aec0; text-align:center; padding:2rem;">Cargando...</p>
+    <!-- Recipes table -->
+    <div class="lot-card" style="margin-top:20px;">
+        <h3 class="lot-card-title">📋 Recetas Asociadas</h3>
+        <div id="recipesTable">
+            <p style="color:#94a3b8; text-align:center; padding:2rem;">Cargando...</p>
         </div>
-    </div>
-
-    <div class="lot-actions">
-        <a asp-action="Lots" asp-controller="Applicator" class="btn-back">← Volver a Mis Lotes</a>
     </div>
 </div>
 
 @section Styles {
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="~/css/recipeDetail.css" asp-append-version="true" />
     <style>
-        .lot-detail-grid {
+        .lot-detail-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 20px 40px;
+        }
+
+        /* ── Header badges ── */
+        .lot-code-badge {
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        .lot-area-badge {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* ── Alerts ── */
+        .lot-alert {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+        }
+
+        .lot-alert-error {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+
+        .lot-alert-success {
+            background: #d1fae5;
+            border: 1px solid #6ee7b7;
+            color: #065f46;
+        }
+
+        /* ── Grid ── */
+        .lot-grid {
             display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 1.5rem;
-            margin-top: 1.5rem;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 20px;
         }
 
-        .lot-detail-map {
-            height: 400px;
-            border-radius: 12px;
-            border: 2px solid #e2e8f0;
-            z-index: 0;
-        }
-
-        .lot-info-panel {
-            background: white;
+        /* ── Map ── */
+        .lot-map-wrapper {
+            background: #fff;
             border-radius: 14px;
             border: 1px solid #e2e8f0;
-            padding: 1.5rem;
+            overflow: hidden;
         }
 
-        .section-title {
-            font-size: 1.05rem;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
+        .lot-map {
+            height: 420px;
+        }
+
+        /* ── Sidebar cards ── */
+        .lot-card {
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+        }
+
+        .lot-card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0 0 16px;
+            padding-bottom: 10px;
             border-bottom: 2px solid #667eea;
         }
 
-        .form-group {
-            margin-bottom: 0.75rem;
+        /* ── Form ── */
+        .lot-field {
+            margin-bottom: 12px;
         }
 
-        .form-group label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 0.25rem;
-            font-size: 0.85rem;
-            color: #4a5568;
-        }
+            .lot-field label {
+                display: block;
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: #475569;
+                margin-bottom: 4px;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+            }
 
-        .form-group input {
-            width: 100%;
-            padding: 0.5rem 0.7rem;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            box-sizing: border-box;
-        }
+            .lot-field input {
+                width: 100%;
+                padding: 9px 12px;
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                font-size: 0.9rem;
+                font-family: inherit;
+                box-sizing: border-box;
+            }
 
-        .form-group input:focus {
-            border-color: #667eea;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
-        }
+                .lot-field input:focus {
+                    border-color: #667eea;
+                    outline: none;
+                    box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+                }
 
-        .form-row {
+        .lot-field-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
+            gap: 12px;
         }
 
-        .form-value {
-            font-size: 0.9rem;
-            color: #2d3748;
-            font-weight: 500;
-            padding: 0.5rem 0;
+        .lot-field-value {
+            font-size: 0.95rem;
+            color: #1e293b;
+            font-weight: 600;
+            padding: 8px 0;
         }
 
-        .btn-save {
+        .lot-btn-save {
             width: 100%;
-            padding: 0.65rem;
+            padding: 10px;
             border: none;
             background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
+            color: #fff;
             border-radius: 10px;
             cursor: pointer;
             font-weight: 600;
             font-size: 0.95rem;
-            margin-top: 0.5rem;
+            margin-top: 8px;
             transition: all 0.2s;
         }
 
-        .btn-save:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+            .lot-btn-save:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 14px rgba(102,126,234,0.4);
+            }
+
+        /* ── Stats card ── */
+        .lot-stats-card {
+            display: flex;
+            gap: 0;
+            margin-top: 16px;
+            padding: 0;
+            overflow: hidden;
         }
 
-        /* Recipes table */
-        .lot-recipes-section {
-            background: white;
-            border-radius: 14px;
-            border: 1px solid #e2e8f0;
-            padding: 1.5rem;
-            margin-top: 1.5rem;
+        .lot-stat {
+            flex: 1;
+            text-align: center;
+            padding: 16px 12px;
+            border-right: 1px solid #e2e8f0;
         }
 
-        .recipes-table {
+            .lot-stat:last-child {
+                border-right: none;
+            }
+
+        .lot-stat-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        .lot-stat-label {
+            display: block;
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        /* ── Recipes table ── */
+        .lot-recipes-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
         }
 
-        .recipes-table th {
-            text-align: left;
-            padding: 0.6rem 0.8rem;
-            background: #f7fafc;
-            color: #4a5568;
-            font-weight: 600;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-            border-bottom: 2px solid #e2e8f0;
-        }
+            .lot-recipes-table th {
+                text-align: left;
+                padding: 10px 12px;
+                background: #f8fafc;
+                color: #475569;
+                font-weight: 600;
+                font-size: 0.78rem;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                border-bottom: 2px solid #e2e8f0;
+            }
 
-        .recipes-table td {
-            padding: 0.6rem 0.8rem;
-            border-bottom: 1px solid #edf2f7;
-            color: #2d3748;
-        }
+            .lot-recipes-table td {
+                padding: 10px 12px;
+                border-bottom: 1px solid #f1f5f9;
+                color: #334155;
+            }
 
-        .recipes-table tr:hover td {
-            background: #f7fafc;
-        }
+            .lot-recipes-table tr:hover td {
+                background: #f8fafc;
+            }
 
-        .recipes-table a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 500;
-        }
+            .lot-recipes-table a {
+                color: #667eea;
+                text-decoration: none;
+                font-weight: 600;
+            }
 
-        .recipes-table a:hover {
-            text-decoration: underline;
-        }
+                .lot-recipes-table a:hover {
+                    text-decoration: underline;
+                }
 
-        .status-badge {
+        .lot-status {
             display: inline-block;
-            padding: 0.15rem 0.5rem;
-            border-radius: 12px;
+            padding: 3px 10px;
+            border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 600;
         }
 
-        .status-ABIERTA   { background: #fefcbf; color: #975a16; }
-        .status-PENDIENTE  { background: #bee3f8; color: #2a69ac; }
-        .status-APROBADA   { background: #c6f6d5; color: #276749; }
-        .status-RECHAZADA  { background: #fed7d7; color: #c53030; }
-        .status-OBSERVADA  { background: #feebc8; color: #9c4221; }
-        .status-CERRADA    { background: #e2e8f0; color: #4a5568; }
-        .status-ANULADA    { background: #fed7d7; color: #c53030; }
+        .lot-status-ABIERTA {
+            background: #fef3c7;
+            color: #92400e;
+        }
 
-        .no-recipes {
+        .lot-status-PENDIENTE {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .lot-status-APROBADA {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .lot-status-RECHAZADA {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .lot-status-OBSERVADA {
+            background: #ffedd5;
+            color: #9a3412;
+        }
+
+        .lot-status-CERRADA {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .lot-status-ANULADA {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .lot-no-recipes {
             text-align: center;
-            padding: 2rem;
-            color: #a0aec0;
-        }
-
-        .lot-actions {
-            margin: 1.5rem 0 2rem;
-        }
-
-        .btn-back {
-            display: inline-block;
-            padding: 0.6rem 1.2rem;
-            border: 1px solid #d1d5db;
-            background: white;
-            color: #4a5568;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-
-        .btn-back:hover {
-            background: #f7fafc;
-            border-color: #667eea;
-            color: #667eea;
-        }
-
-        .alert-error {
-            display: flex; align-items: center; gap: 0.75rem;
-            background: #fed7d7; border: 1px solid #e53e3e; color: #c53030;
-            padding: 1rem; border-radius: 10px; margin-top: 1rem;
-        }
-
-        .alert-success {
-            display: flex; align-items: center; gap: 0.75rem;
-            background: #c6f6d5; border: 1px solid #38a169; color: #276749;
-            padding: 1rem; border-radius: 10px; margin-top: 1rem;
+            padding: 3rem;
+            color: #94a3b8;
         }
 
         @@media (max-width: 768px) {
-            .lot-detail-grid {
+            .lot-grid {
                 grid-template-columns: 1fr;
             }
 
-            .lot-detail-map {
+            .lot-map {
                 height: 300px;
             }
         }
@@ -307,15 +381,16 @@
 @section Scripts {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const lot = @Html.Raw(ViewBag.LotJson ?? "null");
-
-        document.addEventListener('DOMContentLoaded', function () {
+        (function() {
+            var lot = @Html.Raw(ViewBag.LotJson ?? "null");
             if (!lot) return;
 
-            // Title
-            document.getElementById('lotTitle').textContent = lot.name || ('Lote #' + lot.id);
+            // ── Header ──
+            document.getElementById('lotTitle').textContent = lot.name || ('Lote ' + lot.code);
+            document.getElementById('lotCodeBadge').textContent = lot.code;
+            document.getElementById('lotAreaBadge').textContent = lot.areaHa ? ('📐 ' + lot.areaHa.toFixed(1) + ' ha') : '';
 
-            // Form fields
+            // ── Form ──
             document.getElementById('lotId').value = lot.id;
             document.getElementById('name').value = lot.name || '';
             document.getElementById('locality').value = lot.locality || '';
@@ -325,28 +400,31 @@
                 ? new Date(lot.createdAt).toLocaleDateString('es-AR')
                 : 'N/D';
 
-            // Map
+            // ── Stats ──
+            var recipes = lot.recipes || [];
+            document.getElementById('statRecipes').textContent = recipes.length;
+            document.getElementById('statVertices').textContent = (lot.vertices || []).length;
+
+            // ── Map ──
             if (lot.vertices && lot.vertices.length >= 3) {
                 var map = L.map('lotMap').setView([lot.centroidLat || -32.69, lot.centroidLng || -62.10], 14);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; OpenStreetMap'
                 }).addTo(map);
 
-                var coords = lot.vertices.map(v => [v.latitude, v.longitude]);
+                var coords = lot.vertices.map(function(v) { return [v.latitude, v.longitude]; });
                 var polygon = L.polygon(coords, {
-                    color: '#667eea', weight: 2,
-                    fillColor: '#667eea', fillOpacity: 0.2
+                    color: '#667eea', weight: 3, fillColor: '#667eea', fillOpacity: 0.15
                 }).addTo(map);
 
                 map.fitBounds(polygon.getBounds(), { padding: [40, 40] });
             }
 
-            // Recipes table
+            // ── Recipes table ──
             var recipesDiv = document.getElementById('recipesTable');
-            var recipes = lot.recipes || [];
 
             if (recipes.length === 0) {
-                recipesDiv.innerHTML = '<div class="no-recipes">🌾 No hay recetas asociadas a este lote.</div>';
+                recipesDiv.innerHTML = '<div class="lot-no-recipes">🌾 No hay recetas asociadas a este lote.</div>';
                 return;
             }
 
@@ -356,26 +434,26 @@
                 'OBSERVADA': 'Observada', 'CERRADA': 'Cerrada', 'ANULADA': 'Anulada'
             };
 
-            var html = '<table class="recipes-table"><thead><tr>'
+            var html = '<table class="lot-recipes-table"><thead><tr>'
                 + '<th>RFD</th><th>Fecha</th><th>Cultivo</th>'
                 + '<th>Solicitante</th><th>Asesor</th><th>Estado</th>'
                 + '</tr></thead><tbody>';
 
-            recipes.forEach(function (r) {
+            recipes.forEach(function(r) {
                 var st = (r.status || '').toUpperCase();
-                var date = r.issueDate ? new Date(r.issueDate).toLocaleDateString('es-AR') : '-';
+                var date = r.issueDate ? new Date(r.issueDate).toLocaleDateString('es-AR') : '—';
                 html += '<tr>'
                     + '<td><a href="/Applicator/Details?code=' + encodeURIComponent(r.publicCode) + '">#' + (r.rfdNumber || r.publicCode) + '</a></td>'
                     + '<td>' + date + '</td>'
-                    + '<td>' + (r.crop || '-') + '</td>'
-                    + '<td>' + (r.requesterName || '-') + '</td>'
-                    + '<td>' + (r.advisorName || '-') + '</td>'
-                    + '<td><span class="status-badge status-' + st + '">' + (statusLabels[st] || st) + '</span></td>'
+                    + '<td>' + (r.crop || '—') + '</td>'
+                    + '<td>' + (r.requesterName || '—') + '</td>'
+                    + '<td>' + (r.advisorName || '—') + '</td>'
+                    + '<td><span class="lot-status lot-status-' + st + '">' + (statusLabels[st] || st) + '</span></td>'
                     + '</tr>';
             });
 
             html += '</tbody></table>';
             recipesDiv.innerHTML = html;
-        });
+        })();
     </script>
 }
