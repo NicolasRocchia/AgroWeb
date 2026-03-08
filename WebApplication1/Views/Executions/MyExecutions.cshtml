@@ -4,10 +4,16 @@
     var statusFilter = ViewBag.StatusFilter as string;
 }
 
-<div class="page-container" style="max-width: 1000px; margin: 0 auto; padding: 0 20px 40px;">
-    <a asp-controller="Home" asp-action="Index" class="back-link">← Inicio</a>
-    <h1 class="page-title">🚜 Mis Ejecuciones</h1>
-    <p style="color: #64748b; margin-bottom: 24px;">Aplicaciones en campo asignadas.</p>
+<!-- Header -->
+<div class="detail-header">
+    <div class="detail-header-content">
+        <a asp-controller="Home" asp-action="Index" class="back-button">← Inicio</a>
+        <h1 class="detail-title">🚜 Mis Ejecuciones</h1>
+        <p style="opacity:.85; margin:0; font-size:.95rem;">Aplicaciones en campo asignadas.</p>
+    </div>
+</div>
+
+<div style="max-width: 1000px; margin: 0 auto; padding: 20px 20px 40px;">
 
     @if (ViewBag.Error != null)
     {
@@ -35,7 +41,14 @@
 </div>
 
 @section Styles {
+    <link rel="stylesheet" href="~/css/recipeDetail.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/execution.css" asp-append-version="true" />
+    <style>
+        .tasks-tabs { display:flex; gap:0; margin-bottom:20px; border-radius:10px; overflow:hidden; border:2px solid #e2e8f0; }
+        .tasks-tab { flex:1; padding:12px 16px; border:none; background:#f8fafc; color:#475569; font-weight:600; font-size:.88rem; cursor:pointer; transition:all .2s; text-align:center; display:flex; align-items:center; justify-content:center; gap:6px; }
+        .tasks-tab.active { background:#667eea; color:white; }
+        .tab-count { font-size:.78rem; opacity:.8; }
+    </style>
 }
 
 @section Scripts {
@@ -62,20 +75,20 @@
 
     execs.forEach(function(e) {
         var statusMap = {
-            'PENDIENTE': { icon: '⏳', color: '#f59e0b' },
-            'ACEPTADA': { icon: '✅', color: '#3b82f6' },
-            'EN_CAMINO': { icon: '🚛', color: '#8b5cf6' },
-            'EN_CURSO': { icon: '🔄', color: '#10b981' },
-            'PAUSADA': { icon: '⏸️', color: '#f97316' },
-            'COMPLETADA': { icon: '🏁', color: '#059669' },
-            'COMPLETADA_ADMIN': { icon: '✅', color: '#0d9488' },
-            'CANCELADA': { icon: '❌', color: '#ef4444' }
+            'PENDIENTE': { icon: '⏳', label: 'Pendiente', color: '#f59e0b' },
+            'ACEPTADA': { icon: '✅', label: 'Aceptada', color: '#3b82f6' },
+            'EN_CAMINO': { icon: '🚛', label: 'En camino', color: '#8b5cf6' },
+            'EN_CURSO': { icon: '🔄', label: 'En curso', color: '#10b981' },
+            'PAUSADA': { icon: '⏸️', label: 'Pausada', color: '#f97316' },
+            'COMPLETADA': { icon: '🏁', label: 'Completada', color: '#059669' },
+            'COMPLETADA_ADMIN': { icon: '✅', label: 'Confirmada', color: '#0d9488' },
+            'CANCELADA': { icon: '❌', label: 'Cancelada', color: '#ef4444' }
         };
-        var s = statusMap[e.status] || { icon: '❓', color: '#666' };
+        var s = statusMap[e.status] || { icon: '❓', label: e.status, color: '#666' };
 
-        html += '<a href="/Executions/Detail/' + e.id + '" class="exec-card">';
+        html += '<a href="/Executions/Detail/' + e.id + '" class="exec-card" style="border-left: 4px solid ' + s.color + ';">';
         html += '<div class="exec-card-header">';
-        html += '<span class="exec-card-status" style="color:' + s.color + ';">' + s.icon + ' ' + e.status.replace(/_/g, ' ') + '</span>';
+        html += '<span class="exec-card-status" style="color:' + s.color + ';">' + s.icon + ' ' + s.label + '</span>';
         html += '<span class="exec-card-date">' + formatDate(e.createdAt) + '</span>';
         html += '</div>';
         html += '<div class="exec-card-body">';
@@ -83,8 +96,13 @@
         if (e.crop) html += ' · ' + e.crop;
         if (e.surfaceHa) html += ' · ' + e.surfaceHa + ' ha';
         html += '<br/><span class="exec-card-producer">Productor: ' + e.producerName + '</span>';
-        if (e.totalActiveMinutes) html += '<br/><span class="exec-card-time">⏱️ ' + e.totalActiveMinutes + ' min</span>';
-        if (e.reviewRating) html += ' <span class="exec-card-rating">' + '★'.repeat(e.reviewRating) + '</span>';
+
+        // Métricas en una línea
+        var metrics = [];
+        if (e.totalActiveMinutes) metrics.push('⏱️ ' + e.totalActiveMinutes + ' min');
+        if (e.reviewRating) metrics.push('<span class="exec-card-rating">' + '★'.repeat(e.reviewRating) + '</span>');
+        if (metrics.length) html += '<br/><span class="exec-card-time">' + metrics.join(' · ') + '</span>';
+
         html += '</div></a>';
     });
 
