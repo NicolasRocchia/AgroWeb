@@ -207,12 +207,7 @@
 
         } else if (e.status === 'EN_CURSO') {
             h += '<div class="exec-live-indicator">🔴 Aplicación en curso</div>';
-            h += '<button type="button" class="btn-warning btn-large" onclick="pauseExecution(' + e.id + ')">⏸️ Pausar</button>';
-            h += '<button type="button" class="btn-success btn-large" onclick="completeExecution(' + e.id + ')">🏁 Completar</button>';
-            h += actionButton('cancel', '❌ Cancelar', 'btn-danger-outline');
-
-        } else if (e.status === 'PAUSADA') {
-            h += '<div class="pause-form">';
+            h += '<div id="pausePanel" style="display:none;">';
             h += '<p class="pause-label">Motivo de pausa:</p>';
             h += '<select id="pauseReason" class="exec-select">';
             h += '<option value="">Sin especificar</option>';
@@ -222,7 +217,21 @@
             h += '<option value="DESCANSO">☕ Descanso</option>';
             h += '<option value="OTRO">📝 Otro</option>';
             h += '</select>';
+            h += '<button type="button" class="btn-warning btn-large" style="margin-top:10px;" onclick="confirmPause(' + e.id + ')">✅ Confirmar pausa</button>';
+            h += '<button type="button" class="btn-danger-outline" style="margin-top:6px;" onclick="document.getElementById(\'pausePanel\').style.display=\'none\';document.getElementById(\'btnPause\').style.display=\'\';">Cancelar</button>';
             h += '</div>';
+            h += '<button type="button" class="btn-warning btn-large" id="btnPause" onclick="showPausePanel()">⏸️ Pausar</button>';
+            h += '<button type="button" class="btn-success btn-large" onclick="completeExecution(' + e.id + ')">🏁 Completar</button>';
+            h += actionButton('cancel', '❌ Cancelar', 'btn-danger-outline');
+
+        } else if (e.status === 'PAUSADA') {
+            h += '<div class="exec-live-indicator" style="color:#f97316;">⏸️ Aplicación pausada</div>';
+            if (e.events && e.events.length > 0) {
+                var lastPause = e.events.filter(function(ev) { return ev.eventType === 'PAUSED'; }).pop();
+                if (lastPause && lastPause.pauseReason) {
+                    h += '<p style="text-align:center; color:#64748b; font-size:0.9rem;">Motivo: ' + pauseReasonLabel(lastPause.pauseReason) + '</p>';
+                }
+            }
             h += '<button type="button" class="btn-success btn-large" onclick="resumeExecution(' + e.id + ')">▶️ Reanudar</button>';
             h += actionButton('cancel', '❌ Cancelar', 'btn-danger-outline');
         }
@@ -367,11 +376,17 @@ function startExecution(execId) {
     );
 }
 
-function pauseExecution(execId) { getGpsAndSubmit(execId, 'pause'); }
-function resumeExecution(execId) {
+function showPausePanel() {
+    document.getElementById('pausePanel').style.display = '';
+    document.getElementById('btnPause').style.display = 'none';
+}
+function confirmPause(execId) {
     var reason = document.getElementById('pauseReason');
     var data = reason ? { pauseReason: reason.value } : {};
-    getGpsAndSubmit(execId, 'resume', data);
+    getGpsAndSubmit(execId, 'pause', data);
+}
+function resumeExecution(execId) {
+    getGpsAndSubmit(execId, 'resume');
 }
 function completeExecution(execId) {
     if (!confirm('¿Confirmar que se completó la aplicación?')) return;
