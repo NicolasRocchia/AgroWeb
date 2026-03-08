@@ -79,6 +79,10 @@ public class ApplicatorController : Controller
         var applicatorsResult = await _api.GetVerifiedApplicatorsAsync();
         ViewBag.ApplicatorsJson = applicatorsResult.Success ? applicatorsResult.Data : "[]";
 
+        // Cargar ejecución activa (si existe) para mostrar en el detalle
+        var execResult = await _api.GetExecutionByRecipeAsync(result.Data!.Id);
+        ViewBag.ExecutionJson = execResult.Success ? execResult.Data : "null";
+
         return View(new RecipeDetailViewModel { Recipe = result.Data! });
     }
 
