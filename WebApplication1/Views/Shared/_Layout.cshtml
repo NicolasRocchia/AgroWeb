@@ -30,6 +30,16 @@
                         @if (User.IsInRole("Municipio"))
                         {
                             <li><a class="nav-link-custom" asp-controller="Municipio" asp-action="Dashboard">🏠 Inicio</a></li>
+                            <li><a class="nav-link-custom" asp-controller="Municipio" asp-action="Index">🏛️ Recetas</a></li>
+                            <li class="nav-dropdown">
+                                <button class="nav-link-custom nav-dropdown-toggle">🗺️ Territorio <span class="dd-arrow">▾</span></button>
+                                <ul class="nav-dropdown-menu">
+                                    <li><a asp-controller="Municipio" asp-action="GeoInsights">🗺️ Mapa Territorial</a></li>
+                                    <li><a asp-controller="Municipio" asp-action="ExclusionZones">🚫 Zonas de Exclusión</a></li>
+                                    <li><a asp-controller="Municipio" asp-action="SensitivePoints">📍 Puntos Sensibles</a></li>
+                                    <li><a asp-controller="Municipio" asp-action="Jurisdiction">📐 Mi Jurisdicción</a></li>
+                                </ul>
+                            </li>
                         }
                         else
                         {
@@ -38,40 +48,52 @@
 
                         @if (User.IsInRole("Productor"))
                         {
-                            <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="Upload">Subir Receta</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="CreateManual">Receta Manual</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="Index">Mis Recetas</a></li>
+                            <li class="nav-dropdown">
+                                <button class="nav-link-custom nav-dropdown-toggle">📄 Recetas <span class="dd-arrow">▾</span></button>
+                                <ul class="nav-dropdown-menu">
+                                    <li><a asp-controller="Applicator" asp-action="Upload">📤 Subir Receta</a></li>
+                                    <li><a asp-controller="Applicator" asp-action="CreateManual">✏️ Receta Manual</a></li>
+                                    <li><a asp-controller="Applicator" asp-action="Index">📋 Mis Recetas</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-dropdown">
+                                <button class="nav-link-custom nav-dropdown-toggle">🤝 Trabajos <span class="dd-arrow">▾</span></button>
+                                <ul class="nav-dropdown-menu">
+                                    <li><a asp-controller="Jobs" asp-action="MyJobs">📋 Mis Trabajos</a></li>
+                                    <li><a asp-controller="Executions" asp-action="MyAssignments">📌 Mis Asignaciones</a></li>
+                                </ul>
+                            </li>
                             <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="Lots">🗺️ Mis Lotes</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Jobs" asp-action="MyJobs">📋 Mis Trabajos</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Executions" asp-action="MyAssignments">📋 Mis Asignaciones</a></li>
                         }
 
                         @if (User.IsInRole("Aplicador"))
                         {
                             <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="MyProfile">🚜 Mi Perfil</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Jobs" asp-action="Available">📋 Bolsa de Trabajo</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Jobs" asp-action="MyTasks">📌 Mis Tareas</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Executions" asp-action="MyExecutions">🚜 Mis Ejecuciones</a></li>
+                            <li class="nav-dropdown">
+                                <button class="nav-link-custom nav-dropdown-toggle">💼 Trabajos <span class="dd-arrow">▾</span></button>
+                                <ul class="nav-dropdown-menu">
+                                    <li><a asp-controller="Jobs" asp-action="Available">🔍 Bolsa de Trabajo</a></li>
+                                    <li><a asp-controller="Jobs" asp-action="MyTasks">📌 Mis Tareas</a></li>
+                                    <li><a asp-controller="Executions" asp-action="MyExecutions">🚜 Mis Ejecuciones</a></li>
+                                </ul>
+                            </li>
                         }
 
                         @if (User.IsInRole("Admin"))
                         {
-                            <li><a class="nav-link-custom" asp-controller="AdminRecipes" asp-action="Index">Recetas</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Admin" asp-action="Users">Usuarios</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Admin" asp-action="Municipalities">🏛️ Municipios</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Admin" asp-action="ApplicatorVerification">🚜 Aplicadores</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Admin" asp-action="GeoInsights">🗺️ Mapa Territorial</a></li>
-                            <li><a class="nav-link-custom" href="/swagger" target="_blank">API Docs</a></li>
+                            <li><a class="nav-link-custom" asp-controller="AdminRecipes" asp-action="Index">📄 Recetas</a></li>
+                            <li class="nav-dropdown">
+                                <button class="nav-link-custom nav-dropdown-toggle">⚙️ Gestión <span class="dd-arrow">▾</span></button>
+                                <ul class="nav-dropdown-menu">
+                                    <li><a asp-controller="Admin" asp-action="Users">👥 Usuarios</a></li>
+                                    <li><a asp-controller="Admin" asp-action="Municipalities">🏛️ Municipios</a></li>
+                                    <li><a asp-controller="Admin" asp-action="ApplicatorVerification">🚜 Aplicadores</a></li>
+                                </ul>
+                            </li>
+                            <li><a class="nav-link-custom" asp-controller="Admin" asp-action="GeoInsights">🗺️ Mapa</a></li>
+                            <li><a class="nav-link-custom" href="/swagger" target="_blank">API</a></li>
                         }
 
-                        @if (User.IsInRole("Municipio"))
-                        {
-                            <li><a class="nav-link-custom" asp-controller="Municipio" asp-action="Index">🏛️ Recetas Asignadas</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Municipio" asp-action="GeoInsights">🗺️ Mapa Territorial</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Municipio" asp-action="ExclusionZones">🚫 Zonas de Exclusión</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Municipio" asp-action="SensitivePoints">📍 Puntos Sensibles</a></li>
-                            <li><a class="nav-link-custom" asp-controller="Municipio" asp-action="Jurisdiction">🗺️ Mi Jurisdicción</a></li>
-                        }
 
                         @if (User?.Identity?.IsAuthenticated ?? false)
                         {
@@ -149,6 +171,28 @@
         document.getElementById('navbarToggler')?.addEventListener('click', function() {
             const menu = document.getElementById('navbarMenu');
             menu.classList.toggle('active');
+        });
+
+        // Nav dropdowns: click toggle (mobile) + close on outside click
+        document.querySelectorAll('.nav-dropdown-toggle').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var parent = btn.closest('.nav-dropdown');
+                // Cerrar los demás
+                document.querySelectorAll('.nav-dropdown.open').forEach(function(d) {
+                    if (d !== parent) d.classList.remove('open');
+                });
+                parent.classList.toggle('open');
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.nav-dropdown')) {
+                document.querySelectorAll('.nav-dropdown.open').forEach(function(d) {
+                    d.classList.remove('open');
+                });
+            }
         });
 
         // Toggle del menú de usuario
