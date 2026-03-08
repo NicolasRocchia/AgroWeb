@@ -9,6 +9,10 @@
             Mis Lotes
         </h1>
         <p class="recipes-subtitle">Parcelas registradas a partir de tus recetas fitosanitarias</p>
+        <a asp-action="CreateLot" class="btn-primary"
+           style="margin-top:0.75rem; display:inline-block; text-decoration:none; background:#667eea; color:#fff; padding:10px 20px; border-radius:10px; font-weight:600;">
+            + Crear Lote
+        </a>
     </div>
 </div>
 
@@ -37,8 +41,15 @@
     <div id="emptyState" class="empty-state" style="display:none;">
         <div class="empty-icon">🌾</div>
         <h3>No tenés lotes registrados</h3>
-        <p>Los lotes se crean automáticamente cuando subís una receta con polígono de ubicación.</p>
-        <a asp-action="Upload" class="btn-primary" style="margin-top:1rem;">📄 Subir Receta PDF</a>
+        <p>Podés crear un lote dibujando su polígono en el mapa, o se crean automáticamente al subir una receta.</p>
+        <div style="display:flex; gap:12px; justify-content:center; margin-top:1rem;">
+            <a asp-action="CreateLot" class="btn-primary" style="text-decoration:none; background:#667eea; color:#fff; padding:10px 20px; border-radius:10px; font-weight:600;">
+                🗺️ Crear Lote
+            </a>
+            <a asp-action="Upload" class="btn-primary" style="text-decoration:none; background:#10b981; color:#fff; padding:10px 20px; border-radius:10px; font-weight:600;">
+                📄 Subir Receta PDF
+            </a>
+        </div>
     </div>
 </div>
 

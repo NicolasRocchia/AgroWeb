@@ -1,0 +1,207 @@
+@{
+    ViewData["Title"] = "Crear Lote";
+}
+
+<div class="recipes-header">
+    <div class="recipes-header-content">
+        <h1 class="recipes-title">
+            <span class="recipes-title-icon">🗺️</span>
+            Crear Nuevo Lote
+        </h1>
+        <p class="recipes-subtitle">Dibujá el polígono del lote en el mapa y completá los datos</p>
+    </div>
+</div>
+
+<div style="max-width: 1000px; margin: 0 auto; padding: 0 20px 40px;">
+
+    <a asp-action="Lots" class="back-link" style="display:inline-block; margin-bottom:16px;">← Volver a Mis Lotes</a>
+
+    @if (TempData["Error"] is string errorMsg)
+    {
+        <div class="alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div><strong>Error:</strong> @errorMsg</div>
+        </div>
+    }
+
+    <!-- Map -->
+    <div style="background:#fff; border-radius:14px; border:1px solid #e2e8f0; overflow:hidden; margin-bottom:20px;">
+        <div id="lotMap" style="height:450px;"></div>
+        <div id="mapHint" style="padding:10px 16px; font-size:0.85rem; color:#64748b; background:#f8fafc; border-top:1px solid #e2e8f0;">
+            👆 Usá la herramienta de dibujo (arriba a la izquierda) para trazar el polígono del lote.
+        </div>
+    </div>
+
+    <!-- Match warning -->
+    <div id="matchWarning" style="display:none; background:#fef3c7; border:1px solid #f59e0b; border-radius:10px; padding:14px 18px; margin-bottom:16px; color:#92400e;">
+        <strong>⚠️ Lote similar encontrado:</strong>
+        <span id="matchWarningText"></span>
+        <div style="margin-top:8px;">
+            <a id="matchLink" href="#" style="color:#1e40af; font-weight:600;">Ver lote existente →</a>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="post" asp-action="CreateLot" id="createLotForm">
+        <input type="hidden" name="verticesJson" id="verticesJson" />
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+            <div>
+                <label class="form-label">Nombre del lote <span style="color:#94a3b8;">(opcional)</span></label>
+                <input name="name" type="text" class="form-control" placeholder="Ej: Lote Sur, Campo El Porvenir" maxlength="200" />
+            </div>
+            <div>
+                <label class="form-label">Superficie (ha) <span style="color:#94a3b8;">(se calcula automáticamente)</span></label>
+                <input name="surfaceHa" id="fieldSurface" type="number" step="0.01" class="form-control" placeholder="Se calcula del polígono" readonly />
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+            <div>
+                <label class="form-label">Localidad <span style="color:#94a3b8;">(opcional)</span></label>
+                <input name="locality" type="text" class="form-control" placeholder="Ej: Marcos Juárez" maxlength="150" />
+            </div>
+            <div>
+                <label class="form-label">Departamento <span style="color:#94a3b8;">(opcional)</span></label>
+                <input name="department" type="text" class="form-control" placeholder="Ej: Marcos Juárez" maxlength="150" />
+            </div>
+        </div>
+
+        <div style="display:flex; gap:12px;">
+            <button type="submit" class="btn-primary" id="btnSubmit" disabled style="flex:1;">
+                💾 Guardar Lote
+            </button>
+            <a asp-action="Lots" class="btn-secondary" style="flex:0; padding:12px 24px; text-decoration:none; text-align:center;">
+                Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <link rel="stylesheet" href="~/css/recipeDetail.css" asp-append-version="true" />
+    <style>
+        .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: #334155; margin-bottom: 6px; }
+        .form-control { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; font-family: inherit; box-sizing: border-box; }
+        .form-control:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.15); }
+        .form-control[readonly] { background: #f1f5f9; color: #64748b; }
+        .btn-primary { background: #667eea; color: #fff; border: none; border-radius: 10px; padding: 12px 24px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+        .btn-primary:hover { background: #5a6fd6; }
+        .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+        .btn-secondary { background: #f1f5f9; color: #475569; border: 1px solid #d1d5db; border-radius: 10px; }
+        .back-link { color: #667eea; text-decoration: none; font-size: 0.9rem; }
+        .back-link:hover { text-decoration: underline; }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script>
+    (function() {
+        // Default center: Marcos Juárez, Córdoba
+        var defaultLat = -32.69;
+        var defaultLng = -62.10;
+
+        var map = L.map('lotMap').setView([defaultLat, defaultLng], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        var drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        var drawControl = new L.Control.Draw({
+            draw: {
+                polygon: {
+                    allowIntersection: false,
+                    shapeOptions: { color: '#667eea', weight: 3, fillOpacity: 0.2 }
+                },
+                polyline: false, rectangle: false, circle: false, marker: false, circlemarker: false
+            },
+            edit: {
+                featureGroup: drawnItems,
+                remove: true
+            }
+        });
+        map.addControl(drawControl);
+
+        var currentPolygon = null;
+        var hint = document.getElementById('mapHint');
+        var btnSubmit = document.getElementById('btnSubmit');
+        var verticesInput = document.getElementById('verticesJson');
+        var surfaceField = document.getElementById('fieldSurface');
+
+        map.on(L.Draw.Event.CREATED, function(e) {
+            // Remove previous polygon
+            drawnItems.clearLayers();
+            currentPolygon = e.layer;
+            drawnItems.addLayer(currentPolygon);
+            updateFromPolygon();
+        });
+
+        map.on(L.Draw.Event.EDITED, function() {
+            if (currentPolygon) updateFromPolygon();
+        });
+
+        map.on(L.Draw.Event.DELETED, function() {
+            currentPolygon = null;
+            verticesInput.value = '';
+            surfaceField.value = '';
+            btnSubmit.disabled = true;
+            hint.textContent = '👆 Dibujá un polígono para definir el lote.';
+        });
+
+        function updateFromPolygon() {
+            var latlngs = currentPolygon.getLatLngs()[0];
+            var vertices = latlngs.map(function(ll) {
+                return { latitude: Math.round(ll.lat * 10000000) / 10000000, longitude: Math.round(ll.lng * 10000000) / 10000000 };
+            });
+
+            verticesInput.value = JSON.stringify(vertices);
+            btnSubmit.disabled = false;
+
+            // Calculate area (Shoelace in meters)
+            var refLat = vertices[0].latitude;
+            var mPerDegLat = 111320;
+            var mPerDegLng = 111320 * Math.cos(refLat * Math.PI / 180);
+
+            var points = vertices.map(function(v) {
+                return {
+                    x: (v.longitude - vertices[0].longitude) * mPerDegLng,
+                    y: (v.latitude - vertices[0].latitude) * mPerDegLat
+                };
+            });
+
+            var area = 0;
+            for (var i = 0; i < points.length; i++) {
+                var j = (i + 1) % points.length;
+                area += points[i].x * points[j].y;
+                area -= points[j].x * points[i].y;
+            }
+            area = Math.abs(area) / 2 / 10000; // m² → ha
+
+            surfaceField.value = area.toFixed(1);
+            hint.innerHTML = '✅ Polígono dibujado — <strong>' + area.toFixed(1) + ' ha</strong> · ' + vertices.length + ' vértices. Podés editarlo o guardarlo.';
+        }
+
+        // Try to center map on user location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(pos) {
+                map.setView([pos.coords.latitude, pos.coords.longitude], 14);
+            }, function() {}, { enableHighAccuracy: false, timeout: 5000 });
+        }
+
+        // Form submission — inject vertices
+        document.getElementById('createLotForm').addEventListener('submit', function(e) {
+            if (!verticesInput.value) {
+                e.preventDefault();
+                alert('Dibujá el polígono del lote antes de guardar.');
+                return;
+            }
+        });
+    })();
+    </script>
+}

@@ -588,6 +588,72 @@ public class ApplicatorController : Controller
         }
     }
 
+    // =============================================
+    // CREAR LOTE
+    // =============================================
+
+    [HttpGet]
+    [Authorize(Roles = "Productor")]
+    public IActionResult CreateLot()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Productor")]
+    public async Task<IActionResult> CreateLot(string? name, string? locality, string? department,
+        decimal? surfaceHa, string verticesJson)
+    {
+        if (string.IsNullOrEmpty(verticesJson))
+        {
+            TempData["Error"] = "Debés dibujar el polígono del lote.";
+            return View();
+        }
+
+        try
+        {
+            var vertices = System.Text.Json.JsonSerializer.Deserialize<List<VertexInput>>(verticesJson,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (vertices == null || vertices.Count < 3)
+            {
+                TempData["Error"] = "El polígono debe tener al menos 3 vértices.";
+                return View();
+            }
+
+            var body = new
+            {
+                name,
+                locality,
+                department,
+                surfaceHa,
+                vertices = vertices.Select(v => new { v.Latitude, v.Longitude }).ToList()
+            };
+
+            var result = await _api.CreateLotAsync(body);
+
+            if (result.Success)
+            {
+                TempData["Success"] = "Lote creado correctamente.";
+                return RedirectToAction("Lots");
+            }
+
+            TempData["Error"] = result.Error ?? "Error al crear el lote.";
+            return View();
+        }
+        catch (Exception ex)
+        {
+            TempData["Error"] = $"Error al procesar los datos: {ex.Message}";
+            return View();
+        }
+    }
+
+    private class VertexInput
+    {
+        public decimal Latitude { get; set; }
+        public decimal Longitude { get; set; }
+    }
+
     [HttpGet]
     [Authorize(Roles = "Productor,Aplicador,Municipio,Admin")]
     public async Task<IActionResult> ExclusionZones()

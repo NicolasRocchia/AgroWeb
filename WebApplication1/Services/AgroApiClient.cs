@@ -303,6 +303,9 @@ public class AgroApiClient
     public Task<ApiResult<string>> UpdateLotAsync(long id, object body)
         => PutAsync($"/api/lots/{id}", body);
 
+    public Task<ApiResult<string>> CreateLotAsync(object body)
+        => PostAsync("/api/lots", body);
+
     // ══════════════════════════════════════════════
     // BOLSA DE TRABAJO
     // ══════════════════════════════════════════════
