@@ -345,6 +345,10 @@
                 });
             }
 
+            // Auto-seleccionar receta si viene por URL (?recipeId=X)
+            var urlParams = new URLSearchParams(window.location.search);
+            var preselectedRecipeId = urlParams.get('recipeId');
+
             recipeSelect.addEventListener('change', function() {
                 var val = this.value;
                 recipeIdHidden.value = val || '';
@@ -434,6 +438,20 @@
                 hint.textContent = 'Receta desvinculada. Podés modificar los datos y elegir la ubicación.';
             }
             window.unlinkRecipe = function() { unlinkRecipeInternal(); };
+
+            // ── Auto-seleccionar receta desde URL y bloquear dropdown ──
+            if (preselectedRecipeId) {
+                recipeSelect.value = preselectedRecipeId;
+                if (recipeSelect.value === preselectedRecipeId) {
+                    // Triggear el change manualmente
+                    recipeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                    // Deshabilitar el dropdown para que no se pueda cambiar
+                    setTimeout(function() {
+                        recipeSelect.disabled = true;
+                        recipeSelect.title = 'Receta preseleccionada desde el detalle';
+                    }, 100);
+                }
+            }
 
             // ══════════════════════════════════════
             // EXCLUSION ZONES (display on map + check)
