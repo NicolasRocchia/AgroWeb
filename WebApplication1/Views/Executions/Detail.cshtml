@@ -5,8 +5,14 @@
     var isProducer = (bool)(ViewBag.IsProducer ?? false);
 }
 
-<div class="page-container" style="max-width: 800px; margin: 0 auto; padding: 0 16px 40px;">
-    <a asp-controller="Home" asp-action="Index" class="back-link">← Inicio</a>
+<div class="detail-header">
+    <div class="detail-header-content">
+        <a asp-controller="Home" asp-action="Index" class="back-button">← Inicio</a>
+        <h1 class="detail-title" id="execHeaderTitle">🚜 Detalle de Ejecución</h1>
+    </div>
+</div>
+
+<div style="max-width: 800px; margin: 0 auto; padding: 20px 16px 40px;">
 
     @if (TempData["Success"] != null)
     {
@@ -21,6 +27,7 @@
 </div>
 
 @section Styles {
+    <link rel="stylesheet" href="~/css/recipeDetail.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/execution.css" asp-append-version="true" />
 }
 

@@ -2,18 +2,18 @@
     ViewData["Title"] = "Mis Lotes";
 }
 
-<div class="page-container" style="max-width: 1400px; margin: 0 auto; padding: 0 20px 40px;">
-
-    <!-- Header -->
-    <div class="lots-header">
-        <div class="lots-header-left">
-            <h1 class="lots-title">🗺️ Mis Lotes</h1>
-            <p class="lots-subtitle">Parcelas de tu campo para vincular a recetas y trabajos</p>
+<div class="detail-header">
+    <div class="detail-header-content" style="justify-content:space-between;">
+        <div>
+            <a asp-controller="Home" asp-action="Index" class="back-button">← Inicio</a>
+            <h1 class="detail-title">🗺️ Mis Lotes</h1>
+            <p style="opacity:.85; margin:0; font-size:.95rem;">Parcelas de tu campo para vincular a recetas y trabajos</p>
         </div>
-        <a asp-action="CreateLot" class="lots-btn-create">
-            + Crear Lote
-        </a>
+        <a asp-action="CreateLot" style="background:rgba(255,255,255,.2); color:white; padding:10px 20px; border-radius:10px; text-decoration:none; font-weight:600; font-size:.9rem;">+ Crear Lote</a>
     </div>
+</div>
+
+<div style="max-width: 1400px; margin: 0 auto; padding: 20px 20px 40px;">
 
     @if (TempData["Error"] is string errorMsg)
     {
@@ -49,6 +49,7 @@
 </div>
 
 @section Styles {
+    <link rel="stylesheet" href="~/css/recipeDetail.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         /* ── Header ── */

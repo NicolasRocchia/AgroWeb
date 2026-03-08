@@ -5,15 +5,21 @@
     var isAplicador = (bool)(ViewBag.IsAplicador ?? false);
 }
 
-<div class="page-container" style="max-width: 900px; margin: 0 auto; padding: 0 20px 40px;">
-    @if (isProductor)
-    {
-        <a asp-action="MyJobs" class="back-link">← Mis Trabajos</a>
-    }
-    else
-    {
-        <a asp-action="Available" class="back-link">← Bolsa de Trabajo</a>
-    }
+<div class="detail-header">
+    <div class="detail-header-content">
+        @if (isProductor)
+        {
+            <a asp-action="MyJobs" class="back-button">← Mis Trabajos</a>
+        }
+        else
+        {
+            <a asp-action="Available" class="back-button">← Bolsa de Trabajo</a>
+        }
+        <h1 class="detail-title" id="headerJobTitle">📋 Detalle del Trabajo</h1>
+    </div>
+</div>
+
+<div style="max-width: 900px; margin: 0 auto; padding: 20px 20px 40px;">
 
     @if (TempData["Success"] != null)
     {
@@ -117,6 +123,7 @@
 </div>
 
 @section Styles {
+    <link rel="stylesheet" href="~/css/recipeDetail.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/jobs.css" asp-append-version="true" />

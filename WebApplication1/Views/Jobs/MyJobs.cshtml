@@ -3,14 +3,17 @@
     var jobsJson = ViewBag.JobsJson as string ?? "[]";
 }
 
-<div class="page-container" style="max-width: 1000px; margin: 0 auto; padding: 0 20px 40px;">
-    <div class="page-header">
+<div class="detail-header">
+    <div class="detail-header-content" style="justify-content:space-between;">
         <div>
-            <a asp-controller="Home" asp-action="Index" class="back-link">← Inicio</a>
-            <h1 class="page-title">📋 Mis Trabajos Publicados</h1>
+            <a asp-controller="Home" asp-action="Index" class="back-button">← Inicio</a>
+            <h1 class="detail-title">📋 Mis Trabajos Publicados</h1>
         </div>
-        <a asp-action="Create" class="btn-create">+ Publicar Trabajo</a>
+        <a asp-action="Create" class="btn-create" style="background:rgba(255,255,255,.2); color:white; padding:10px 20px; border-radius:10px; text-decoration:none; font-weight:600; font-size:.9rem;">+ Publicar Trabajo</a>
     </div>
+</div>
+
+<div style="max-width: 1000px; margin: 0 auto; padding: 20px 20px 40px;">
 
     @if (TempData["Success"] != null)
     {
@@ -31,6 +34,7 @@
 </div>
 
 @section Styles {
+    <link rel="stylesheet" href="~/css/recipeDetail.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/jobs.css" asp-append-version="true" />
 }
