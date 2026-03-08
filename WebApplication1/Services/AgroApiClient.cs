@@ -350,6 +350,9 @@ public class AgroApiClient
     public Task<ApiResult<string>> AdminResetPasswordAsync(long userId)
         => PostAsync("/api/auth/admin-reset-password", new { userId });
 
+    public Task<ApiResult<string>> GetVerifiedApplicatorsAsync()
+        => GetRawJsonAsync("/api/applicator/verified");
+
     // ══════════════════════════════════════════════
     // PUNTOS SENSIBLES
     // ══════════════════════════════════════════════
@@ -464,6 +467,7 @@ public class AgroApiClient
     public Task<ApiResult<string>> CreateExecutionReviewAsync(long id, object body)
         => PostAsync($"/api/executions/{id}/review", body);
 
+
     /// <summary>
     /// Extracts error with support for both "error" (string) and "errors" (array) formats.
     /// Returns the ApiError for richer handling in controllers.
@@ -559,4 +563,6 @@ public class QueryBuilder
 
 
 }
+
+
 

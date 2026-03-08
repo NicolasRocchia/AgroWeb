@@ -75,6 +75,10 @@ public class ApplicatorController : Controller
             return View(new RecipeDetailViewModel());
         }
 
+        // Cargar aplicadores verificados para el panel de asignación directa
+        var applicatorsResult = await _api.GetVerifiedApplicatorsAsync();
+        ViewBag.ApplicatorsJson = applicatorsResult.Success ? applicatorsResult.Data : "[]";
+
         return View(new RecipeDetailViewModel { Recipe = result.Data! });
     }
 
