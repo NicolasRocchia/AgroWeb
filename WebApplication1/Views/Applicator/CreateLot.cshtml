@@ -2,19 +2,16 @@
     ViewData["Title"] = "Crear Lote";
 }
 
-<div class="recipes-header">
-    <div class="recipes-header-content">
-        <h1 class="recipes-title">
-            <span class="recipes-title-icon">🗺️</span>
-            Crear Nuevo Lote
-        </h1>
-        <p class="recipes-subtitle">Dibujá el polígono del lote en el mapa y completá los datos</p>
+<!-- Header -->
+<div class="detail-header">
+    <div class="detail-header-content">
+        <a asp-action="Lots" class="back-button">← Volver a Mis Lotes</a>
+        <h1 class="detail-title">🗺️ Crear Nuevo Lote</h1>
+        <p style="opacity:.85; margin:0; font-size:.95rem;">Dibujá el polígono del lote en el mapa y completá los datos</p>
     </div>
 </div>
 
-<div style="max-width: 1000px; margin: 0 auto; padding: 0 20px 40px;">
-
-    <a asp-action="Lots" class="back-link" style="display:inline-block; margin-bottom:16px;">← Volver a Mis Lotes</a>
+<div style="max-width: 1000px; margin: 0 auto; padding: 20px 20px 40px;">
 
     @if (TempData["Error"] is string errorMsg)
     {
@@ -25,12 +22,15 @@
     }
 
     <!-- Map -->
-    <div style="background:#fff; border-radius:14px; border:1px solid #e2e8f0; overflow:hidden; margin-bottom:20px;">
-        <div id="lotMap" style="height:450px;"></div>
-        <div id="mapHint" style="padding:10px 16px; font-size:0.85rem; color:#64748b; background:#f8fafc; border-top:1px solid #e2e8f0;">
+    <section class="detail-section">
+        <h2 class="section-title"><span class="section-icon">📍</span> Ubicación del lote</h2>
+        <div style="border-radius:10px; overflow:hidden; border:1px solid #e2e8f0;">
+            <div id="lotMap" style="height:450px;"></div>
+        </div>
+        <div id="mapHint" style="padding:10px 0; font-size:0.85rem; color:#64748b;">
             👆 Usá la herramienta de dibujo (arriba a la izquierda) para trazar el polígono del lote.
         </div>
-    </div>
+    </section>
 
     <!-- Match warning -->
     <div id="matchWarning" style="display:none; background:#fef3c7; border:1px solid #f59e0b; border-radius:10px; padding:14px 18px; margin-bottom:16px; color:#92400e;">
@@ -42,40 +42,43 @@
     </div>
 
     <!-- Form -->
-    <form method="post" asp-action="CreateLot" id="createLotForm">
-        <input type="hidden" name="verticesJson" id="verticesJson" />
+    <section class="detail-section">
+        <h2 class="section-title"><span class="section-icon">📝</span> Datos del lote</h2>
+        <form method="post" asp-action="CreateLot" id="createLotForm">
+            <input type="hidden" name="verticesJson" id="verticesJson" />
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-            <div>
-                <label class="form-label">Nombre del lote <span style="color:#94a3b8;">(opcional)</span></label>
-                <input name="name" type="text" class="form-control" placeholder="Ej: Lote Sur, Campo El Porvenir" maxlength="200" />
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div>
+                    <label class="form-label">Nombre del lote <span style="color:#94a3b8;">(opcional)</span></label>
+                    <input name="name" type="text" class="form-control" placeholder="Ej: Lote Sur, Campo El Porvenir" maxlength="200" />
+                </div>
+                <div>
+                    <label class="form-label">Superficie (ha) <span style="color:#94a3b8;">(se calcula automáticamente)</span></label>
+                    <input name="surfaceHa" id="fieldSurface" type="number" step="0.01" class="form-control" placeholder="Se calcula del polígono" readonly />
+                </div>
             </div>
-            <div>
-                <label class="form-label">Superficie (ha) <span style="color:#94a3b8;">(se calcula automáticamente)</span></label>
-                <input name="surfaceHa" id="fieldSurface" type="number" step="0.01" class="form-control" placeholder="Se calcula del polígono" readonly />
-            </div>
-        </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
-            <div>
-                <label class="form-label">Localidad <span style="color:#94a3b8;">(opcional)</span></label>
-                <input name="locality" type="text" class="form-control" placeholder="Ej: Marcos Juárez" maxlength="150" />
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+                <div>
+                    <label class="form-label">Localidad <span style="color:#94a3b8;">(opcional)</span></label>
+                    <input name="locality" type="text" class="form-control" placeholder="Ej: Marcos Juárez" maxlength="150" />
+                </div>
+                <div>
+                    <label class="form-label">Departamento <span style="color:#94a3b8;">(opcional)</span></label>
+                    <input name="department" type="text" class="form-control" placeholder="Ej: Marcos Juárez" maxlength="150" />
+                </div>
             </div>
-            <div>
-                <label class="form-label">Departamento <span style="color:#94a3b8;">(opcional)</span></label>
-                <input name="department" type="text" class="form-control" placeholder="Ej: Marcos Juárez" maxlength="150" />
-            </div>
-        </div>
 
-        <div style="display:flex; gap:12px;">
-            <button type="submit" class="btn-primary" id="btnSubmit" disabled style="flex:1;">
-                💾 Guardar Lote
-            </button>
-            <a asp-action="Lots" class="btn-secondary" style="flex:0; padding:12px 24px; text-decoration:none; text-align:center;">
-                Cancelar
-            </a>
-        </div>
-    </form>
+            <div style="display:flex; gap:12px;">
+                <button type="submit" class="btn-primary" id="btnSubmit" disabled style="flex:1;">
+                    💾 Guardar Lote
+                </button>
+                <a asp-action="Lots" class="btn-secondary" style="flex:0; padding:12px 24px; text-decoration:none; text-align:center;">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </section>
 </div>
 
 @section Styles {
