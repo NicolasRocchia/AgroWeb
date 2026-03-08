@@ -33,6 +33,18 @@
     <div class="lot-grid">
         <div class="lot-map-wrapper">
             <div id="lotMap" class="lot-map"></div>
+            <div class="lot-map-toolbar">
+                <button type="button" id="btnEditPolygon" class="lot-btn-edit" onclick="startEditPolygon()">
+                    ✏️ Editar Polígono
+                </button>
+                <button type="button" id="btnSavePolygon" class="lot-btn-save-polygon" style="display:none;" onclick="savePolygon()">
+                    💾 Guardar Polígono
+                </button>
+                <button type="button" id="btnCancelEdit" class="lot-btn-cancel" style="display:none;" onclick="cancelEditPolygon()">
+                    ✕ Cancelar
+                </button>
+                <span id="editStatus" class="lot-edit-status"></span>
+            </div>
         </div>
 
         <div class="lot-sidebar">
@@ -93,6 +105,7 @@
 
 @section Styles {
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
     <link rel="stylesheet" href="~/css/recipeDetail.css" asp-append-version="true" />
     <style>
         .lot-detail-container {
@@ -162,6 +175,31 @@
         .lot-map {
             height: 420px;
         }
+
+        /* ── Map toolbar ── */
+        .lot-map-toolbar {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 14px; background: #f8fafc; border-top: 1px solid #e2e8f0;
+        }
+        .lot-btn-edit {
+            padding: 7px 16px; background: #fff; border: 1px solid #d1d5db;
+            border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+            color: #475569; cursor: pointer; transition: all 0.15s;
+        }
+        .lot-btn-edit:hover { border-color: #667eea; color: #667eea; }
+        .lot-btn-save-polygon {
+            padding: 7px 16px; background: #667eea; border: none;
+            border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+            color: #fff; cursor: pointer; transition: all 0.15s;
+        }
+        .lot-btn-save-polygon:hover { background: #5a6fd6; }
+        .lot-btn-cancel {
+            padding: 7px 14px; background: #fee2e2; border: 1px solid #fca5a5;
+            border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+            color: #991b1b; cursor: pointer;
+        }
+        .lot-btn-cancel:hover { background: #fecaca; }
+        .lot-edit-status { font-size: 0.82rem; color: #64748b; margin-left: auto; }
 
         /* ── Sidebar cards ── */
         .lot-card {
@@ -380,80 +418,202 @@
 
 @section Scripts {
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <script>
-        (function() {
-            var lot = @Html.Raw(ViewBag.LotJson ?? "null");
-            if (!lot) return;
+    var map, polygon, drawnItems, drawControl, originalCoords;
+    var isEditing = false;
+    var lotId;
 
-            // ── Header ──
-            document.getElementById('lotTitle').textContent = lot.name || ('Lote ' + lot.code);
-            document.getElementById('lotCodeBadge').textContent = lot.code;
-            document.getElementById('lotAreaBadge').textContent = lot.areaHa ? ('📐 ' + lot.areaHa.toFixed(1) + ' ha') : '';
+    (function() {
+        var lot = @Html.Raw(ViewBag.LotJson ?? "null");
+        if (!lot) return;
 
-            // ── Form ──
-            document.getElementById('lotId').value = lot.id;
-            document.getElementById('name').value = lot.name || '';
-            document.getElementById('locality').value = lot.locality || '';
-            document.getElementById('department').value = lot.department || '';
-            document.getElementById('lotArea').textContent = lot.areaHa ? lot.areaHa.toFixed(1) + ' ha' : 'N/D';
-            document.getElementById('lotCreated').textContent = lot.createdAt
-                ? new Date(lot.createdAt).toLocaleDateString('es-AR')
-                : 'N/D';
+        lotId = lot.id;
 
-            // ── Stats ──
-            var recipes = lot.recipes || [];
-            document.getElementById('statRecipes').textContent = recipes.length;
-            document.getElementById('statVertices').textContent = (lot.vertices || []).length;
+        // Header
+        document.getElementById('lotTitle').textContent = lot.name || ('Lote ' + lot.code);
+        document.getElementById('lotCodeBadge').textContent = lot.code;
+        document.getElementById('lotAreaBadge').textContent = lot.areaHa ? ('📐 ' + lot.areaHa.toFixed(1) + ' ha') : '';
 
-            // ── Map ──
-            if (lot.vertices && lot.vertices.length >= 3) {
-                var map = L.map('lotMap').setView([lot.centroidLat || -32.69, lot.centroidLng || -62.10], 14);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap'
-                }).addTo(map);
+        // Form
+        document.getElementById('lotId').value = lot.id;
+        document.getElementById('name').value = lot.name || '';
+        document.getElementById('locality').value = lot.locality || '';
+        document.getElementById('department').value = lot.department || '';
+        document.getElementById('lotArea').textContent = lot.areaHa ? lot.areaHa.toFixed(1) + ' ha' : 'N/D';
+        document.getElementById('lotCreated').textContent = lot.createdAt
+            ? new Date(lot.createdAt).toLocaleDateString('es-AR') : 'N/D';
 
-                var coords = lot.vertices.map(function(v) { return [v.latitude, v.longitude]; });
-                var polygon = L.polygon(coords, {
-                    color: '#667eea', weight: 3, fillColor: '#667eea', fillOpacity: 0.15
-                }).addTo(map);
+        // Stats
+        var recipes = lot.recipes || [];
+        document.getElementById('statRecipes').textContent = recipes.length;
+        document.getElementById('statVertices').textContent = (lot.vertices || []).length;
 
-                map.fitBounds(polygon.getBounds(), { padding: [40, 40] });
-            }
+        // Map
+        if (lot.vertices && lot.vertices.length >= 3) {
+            map = L.map('lotMap').setView([lot.centroidLat || -32.69, lot.centroidLng || -62.10], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(map);
 
-            // ── Recipes table ──
-            var recipesDiv = document.getElementById('recipesTable');
+            var coords = lot.vertices.map(function(v) { return [v.latitude, v.longitude]; });
+            originalCoords = JSON.parse(JSON.stringify(coords));
 
-            if (recipes.length === 0) {
-                recipesDiv.innerHTML = '<div class="lot-no-recipes">🌾 No hay recetas asociadas a este lote.</div>';
-                return;
-            }
+            drawnItems = new L.FeatureGroup();
+            map.addLayer(drawnItems);
 
-            var statusLabels = {
-                'ABIERTA': 'Abierta', 'PENDIENTE': 'Pendiente',
-                'APROBADA': 'Aprobada', 'RECHAZADA': 'Rechazada',
-                'OBSERVADA': 'Observada', 'CERRADA': 'Cerrada', 'ANULADA': 'Anulada'
-            };
-
-            var html = '<table class="lot-recipes-table"><thead><tr>'
-                + '<th>RFD</th><th>Fecha</th><th>Cultivo</th>'
-                + '<th>Solicitante</th><th>Asesor</th><th>Estado</th>'
-                + '</tr></thead><tbody>';
-
-            recipes.forEach(function(r) {
-                var st = (r.status || '').toUpperCase();
-                var date = r.issueDate ? new Date(r.issueDate).toLocaleDateString('es-AR') : '—';
-                html += '<tr>'
-                    + '<td><a href="/Applicator/Details?code=' + encodeURIComponent(r.publicCode) + '">#' + (r.rfdNumber || r.publicCode) + '</a></td>'
-                    + '<td>' + date + '</td>'
-                    + '<td>' + (r.crop || '—') + '</td>'
-                    + '<td>' + (r.requesterName || '—') + '</td>'
-                    + '<td>' + (r.advisorName || '—') + '</td>'
-                    + '<td><span class="lot-status lot-status-' + st + '">' + (statusLabels[st] || st) + '</span></td>'
-                    + '</tr>';
+            polygon = L.polygon(coords, {
+                color: '#667eea', weight: 3, fillColor: '#667eea', fillOpacity: 0.15
             });
+            drawnItems.addLayer(polygon);
+            map.fitBounds(polygon.getBounds(), { padding: [40, 40] });
+        }
 
-            html += '</tbody></table>';
-            recipesDiv.innerHTML = html;
-        })();
+        // Recipes table
+        var recipesDiv = document.getElementById('recipesTable');
+        if (recipes.length === 0) {
+            recipesDiv.innerHTML = '<div class="lot-no-recipes">🌾 No hay recetas asociadas a este lote.</div>';
+            return;
+        }
+
+        var statusLabels = {
+            'ABIERTA': 'Abierta', 'PENDIENTE': 'Pendiente', 'APROBADA': 'Aprobada',
+            'RECHAZADA': 'Rechazada', 'OBSERVADA': 'Observada', 'CERRADA': 'Cerrada', 'ANULADA': 'Anulada'
+        };
+
+        var html = '<table class="lot-recipes-table"><thead><tr>'
+            + '<th>RFD</th><th>Fecha</th><th>Cultivo</th>'
+            + '<th>Solicitante</th><th>Asesor</th><th>Estado</th>'
+            + '</tr></thead><tbody>';
+
+        recipes.forEach(function(r) {
+            var st = (r.status || '').toUpperCase();
+            var date = r.issueDate ? new Date(r.issueDate).toLocaleDateString('es-AR') : '—';
+            html += '<tr>'
+                + '<td><a href="/Applicator/Details?code=' + encodeURIComponent(r.publicCode) + '">#' + (r.rfdNumber || r.publicCode) + '</a></td>'
+                + '<td>' + date + '</td><td>' + (r.crop || '—') + '</td>'
+                + '<td>' + (r.requesterName || '—') + '</td><td>' + (r.advisorName || '—') + '</td>'
+                + '<td><span class="lot-status lot-status-' + st + '">' + (statusLabels[st] || st) + '</span></td></tr>';
+        });
+        html += '</tbody></table>';
+        recipesDiv.innerHTML = html;
+    })();
+
+    // ══════════════════════════════
+    // POLYGON EDITING
+    // ══════════════════════════════
+
+    function startEditPolygon() {
+        if (!polygon || !drawnItems) return;
+        isEditing = true;
+        document.getElementById('btnEditPolygon').style.display = 'none';
+        document.getElementById('btnSavePolygon').style.display = '';
+        document.getElementById('btnCancelEdit').style.display = '';
+        document.getElementById('editStatus').textContent = 'Arrastrá los vértices para editar, o dibujá un polígono nuevo.';
+
+        polygon.editing.enable();
+
+        drawControl = new L.Control.Draw({
+            draw: {
+                polygon: { allowIntersection: false, shapeOptions: { color: '#f59e0b', weight: 3, fillOpacity: 0.2, fillColor: '#f59e0b' } },
+                polyline: false, rectangle: false, circle: false, marker: false, circlemarker: false
+            },
+            edit: false
+        });
+        map.addControl(drawControl);
+
+        map.on(L.Draw.Event.CREATED, function(e) {
+            drawnItems.clearLayers();
+            polygon = e.layer;
+            polygon.setStyle({ color: '#667eea', weight: 3, fillColor: '#667eea', fillOpacity: 0.15 });
+            drawnItems.addLayer(polygon);
+            polygon.editing.enable();
+            updateEditStatus();
+        });
+        polygon.on('edit', updateEditStatus);
+    }
+
+    function updateEditStatus() {
+        if (!polygon) return;
+        var latlngs = polygon.getLatLngs()[0];
+        var area = calculateAreaHa(latlngs);
+        document.getElementById('editStatus').textContent = '📐 ' + area.toFixed(1) + ' ha · ' + latlngs.length + ' vértices';
+    }
+
+    function cancelEditPolygon() {
+        if (polygon && polygon.editing) polygon.editing.disable();
+        drawnItems.clearLayers();
+        polygon = L.polygon(originalCoords, { color: '#667eea', weight: 3, fillColor: '#667eea', fillOpacity: 0.15 });
+        drawnItems.addLayer(polygon);
+        if (drawControl) { map.removeControl(drawControl); drawControl = null; }
+        map.off(L.Draw.Event.CREATED);
+        isEditing = false;
+        document.getElementById('btnEditPolygon').style.display = '';
+        document.getElementById('btnSavePolygon').style.display = 'none';
+        document.getElementById('btnCancelEdit').style.display = 'none';
+        document.getElementById('editStatus').textContent = '';
+        document.getElementById('editStatus').style.color = '';
+    }
+
+    async function savePolygon() {
+        if (!polygon) return;
+        if (polygon.editing) polygon.editing.disable();
+        var latlngs = polygon.getLatLngs()[0];
+        if (latlngs.length < 3) { alert('El polígono debe tener al menos 3 vértices.'); polygon.editing.enable(); return; }
+
+        var vertices = latlngs.map(function(ll) {
+            return { latitude: Math.round(ll.lat * 10000000) / 10000000, longitude: Math.round(ll.lng * 10000000) / 10000000 };
+        });
+
+        document.getElementById('editStatus').textContent = '⏳ Guardando...';
+        document.getElementById('btnSavePolygon').disabled = true;
+
+        try {
+            var resp = await fetch('/Applicator/UpdateLotPolygon', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lotId: lotId, vertices: vertices })
+            });
+            var data = await resp.json();
+
+            if (data.success) {
+                originalCoords = latlngs.map(function(ll) { return [ll.lat, ll.lng]; });
+                document.getElementById('lotArea').textContent = data.areaHa ? data.areaHa.toFixed(1) + ' ha' : 'N/D';
+                document.getElementById('lotAreaBadge').textContent = data.areaHa ? ('📐 ' + data.areaHa.toFixed(1) + ' ha') : '';
+                document.getElementById('statVertices').textContent = data.verticesCount || latlngs.length;
+                document.getElementById('editStatus').textContent = '✅ Polígono guardado';
+                document.getElementById('editStatus').style.color = '#059669';
+                if (drawControl) { map.removeControl(drawControl); drawControl = null; }
+                map.off(L.Draw.Event.CREATED);
+                isEditing = false;
+                setTimeout(function() {
+                    document.getElementById('btnEditPolygon').style.display = '';
+                    document.getElementById('btnSavePolygon').style.display = 'none';
+                    document.getElementById('btnCancelEdit').style.display = 'none';
+                    document.getElementById('editStatus').textContent = '';
+                    document.getElementById('editStatus').style.color = '';
+                }, 2000);
+            } else {
+                document.getElementById('editStatus').textContent = '❌ ' + (data.error || 'Error al guardar');
+                document.getElementById('editStatus').style.color = '#dc2626';
+                polygon.editing.enable();
+            }
+        } catch (e) {
+            document.getElementById('editStatus').textContent = '❌ Error de conexión';
+            document.getElementById('editStatus').style.color = '#dc2626';
+            polygon.editing.enable();
+        }
+        document.getElementById('btnSavePolygon').disabled = false;
+    }
+
+    function calculateAreaHa(latlngs) {
+        if (latlngs.length < 3) return 0;
+        var R = 6371000, toRad = Math.PI / 180, area = 0;
+        for (var i = 0; i < latlngs.length; i++) {
+            var j = (i + 1) % latlngs.length;
+            area += (latlngs[j].lng - latlngs[i].lng) * toRad * (2 + Math.sin(latlngs[i].lat * toRad) + Math.sin(latlngs[j].lat * toRad));
+        }
+        return Math.abs(area * R * R / 2) / 10000;
+    }
     </script>
 }

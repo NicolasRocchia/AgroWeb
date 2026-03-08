@@ -545,6 +545,51 @@ public class ApplicatorController : Controller
         return RedirectToAction("LotDetails", new { id });
     }
 
+    [HttpPost]
+    [Authorize(Roles = "Productor")]
+    public async Task<IActionResult> UpdateLotPolygon([FromBody] UpdateLotPolygonInput input)
+    {
+        if (input?.Vertices == null || input.Vertices.Count < 3)
+            return Json(new { success = false, error = "El polígono debe tener al menos 3 vértices." });
+
+        try
+        {
+            var result = await _api.UpdateLotPolygonAsync(input.LotId, new
+            {
+                vertices = input.Vertices.Select(v => new { v.Latitude, v.Longitude }).ToList()
+            });
+
+            if (result.Success)
+            {
+                // Parse response to get updated data
+                var data = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(result.Data ?? "{}");
+                return Json(new
+                {
+                    success = true,
+                    areaHa = data.TryGetProperty("areaHa", out var a) ? a.GetDecimal() : (decimal?)null,
+                    verticesCount = data.TryGetProperty("verticesCount", out var vc) ? vc.GetInt32() : input.Vertices.Count
+                });
+            }
+
+            return Json(new { success = false, error = result.Error ?? "Error al actualizar el polígono." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, error = ex.Message });
+        }
+    }
+
+    public class UpdateLotPolygonInput
+    {
+        public long LotId { get; set; }
+        public List<VertexInput> Vertices { get; set; } = new();
+        public class VertexInput
+        {
+            public decimal Latitude { get; set; }
+            public decimal Longitude { get; set; }
+        }
+    }
+
     // =============================================
     // BÚSQUEDA DE PRODUCTOS (proxy para autocomplete)
     // =============================================
