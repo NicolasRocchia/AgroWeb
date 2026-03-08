@@ -67,6 +67,7 @@ public class JobsController : Controller
         ViewBag.RecipesJson = recipesResult.Success && recipesResult.Data?.Items != null
             ? JsonSerializer.Serialize(recipesResult.Data.Items
                 .Where(r => !usedRecipeIds.Contains(r.Id))
+                .Where(r => r.Status != "CERRADA" && r.Status != "RECHAZADA" && r.Status != "ANULADA")
                 .Select(r => (object)new
                 {
                     r.Id,
