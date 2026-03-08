@@ -338,7 +338,7 @@ public class MunicipioController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SaveJurisdictionRadius(string radiusKm)
+    public async Task<IActionResult> SaveJurisdictionRadius(string radiusKm, string? centerLat, string? centerLng)
     {
         if (!decimal.TryParse(radiusKm?.Replace(",", "."),
             System.Globalization.NumberStyles.Any,
@@ -348,7 +348,18 @@ public class MunicipioController : Controller
             return RedirectToAction("Jurisdiction");
         }
 
-        var result = await _api.PutAsync("/api/jurisdiction/radius", new { radiusKm = radius });
+        decimal? lat = null, lng = null;
+        if (!string.IsNullOrEmpty(centerLat) && !string.IsNullOrEmpty(centerLng))
+        {
+            decimal.TryParse(centerLat.Replace(",", "."), System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var parsedLat);
+            decimal.TryParse(centerLng.Replace(",", "."), System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var parsedLng);
+            lat = parsedLat;
+            lng = parsedLng;
+        }
+
+        var result = await _api.PutAsync("/api/jurisdiction/radius", new { radiusKm = radius, centerLat = lat, centerLng = lng });
         TempData[result.Success ? "Success" : "Error"] =
             result.Success ? "Jurisdicción por radio guardada." : result.Error;
         return RedirectToAction("Jurisdiction");

@@ -6,7 +6,9 @@
 
 <link rel="stylesheet" href="~/css/recipeDetail.css" asp-append-version="true" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 
 <div class="detail-header">
     <div class="detail-header-content">
@@ -61,12 +63,18 @@
         <div style="padding:16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px;">
             <form method="post" asp-action="SaveJurisdictionRadius">
                 @Html.AntiForgeryToken()
+                <input type="hidden" name="centerLat" id="radiusCenterLat" />
+                <input type="hidden" name="centerLng" id="radiusCenterLng" />
+                <div style="margin-bottom:10px; font-size:.85rem; color:#475569;">
+                    <span id="radiusCenterHint" style="color:#f59e0b; font-weight:600;">👆 Hacé click en el mapa para definir el centro del radio.</span>
+                </div>
                 <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                    <label style="font-size:.85rem; font-weight:600; color:#475569;">Radio de cobertura:</label>
+                    <label style="font-size:.85rem; font-weight:600; color:#475569;">Radio:</label>
                     <input type="range" id="radiusSlider" name="radiusKm" min="1" max="50" step="1" value="15"
-                           oninput="updateRadius(this.value)" style="flex:1; min-width:200px; accent-color:#667eea;">
+                           oninput="updateRadiusSlider(this.value)" style="flex:1; min-width:200px; accent-color:#667eea;">
                     <span id="radiusValue" style="font-size:1.1rem; font-weight:700; color:#1e293b; min-width:60px;">15 km</span>
-                    <button type="submit" style="padding:8px 20px; background:#667eea; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                    <button type="submit" id="btnSaveRadius" disabled
+                            style="padding:8px 20px; background:#667eea; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
                         💾 Guardar Radio
                     </button>
                 </div>
@@ -77,15 +85,23 @@
     <!-- POLYGON panel -->
     <div id="panelPolygon" style="display:none; margin-bottom:16px;">
         <div style="padding:12px 16px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button type="button" id="btnEditPoly" onclick="startEditPolygon()" style="display:none;
+                    padding:8px 16px; background:#f59e0b; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                ✏️ Editar vértices
+            </button>
             <button type="button" id="btnStartDraw" onclick="startDrawingPolygon()"
                     style="padding:8px 16px; background:#667eea; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
-                ✏️ Dibujar jurisdicción
+                🔷 Dibujar nuevo
             </button>
             <button type="button" id="btnFinishDraw" onclick="finishDrawingPolygon()" style="display:none;
                     padding:8px 16px; background:#16a34a; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
                 ✅ Finalizar dibujo
             </button>
-            <button type="button" id="btnCancelDraw" onclick="cancelDrawingPolygon()" style="display:none;
+            <button type="button" id="btnSaveEdit" onclick="saveEditedPolygon()" style="display:none;
+                    padding:8px 16px; background:#16a34a; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
+                ✅ Aceptar cambios
+            </button>
+            <button type="button" id="btnCancelAction" onclick="cancelAction()" style="display:none;
                     padding:8px 16px; background:#dc2626; color:#fff; border:none; border-radius:8px; font-weight:600; cursor:pointer;">
                 ✕ Cancelar
             </button>
@@ -120,158 +136,211 @@
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
-    var jurisdictionLayer = null; // circle or polygon currently displayed
-    var drawingPoints = [];
-    var drawingMarkers = [];
-    var drawingPolyline = null;
-    var isDrawing = false;
+    var drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
 
-    // Show existing jurisdiction
-    if (currentMode === 'RADIO' && data.radiusKm && data.centerLat) {
-        showRadius(data.centerLat, data.centerLng, data.radiusKm);
-        document.getElementById('radiusSlider').value = data.radiusKm;
-        updateRadius(data.radiusKm);
-    } else if (currentMode === 'POLYGON' && data.vertices && data.vertices.length >= 3) {
-        var coords = data.vertices.map(function(v) { return [v.latitude, v.longitude]; });
-        showPolygon(coords);
+    var jurisdictionCircle = null, centerMarker = null, polygon = null, originalCoords = null;
+    var radiusCenterLat = data.centerLat || null, radiusCenterLng = data.centerLng || null;
+    var drawingPoints = [], drawingMarkers = [], drawingPolyline = null;
+    var isDrawing = false, isEditing = false, isSettingCenter = false;
+
+    function clearRadius() {
+        if (jurisdictionCircle) { map.removeLayer(jurisdictionCircle); jurisdictionCircle = null; }
+        if (centerMarker) { map.removeLayer(centerMarker); centerMarker = null; }
     }
 
-    // Set initial mode UI
-    if (currentMode) setMode(currentMode);
+    function setCenterInputs(lat, lng) {
+        document.getElementById('radiusCenterLat').value = lat;
+        document.getElementById('radiusCenterLng').value = lng;
+    }
+
+    function updateRadiusLabel(val) {
+        document.getElementById('radiusValue').textContent = val + ' km';
+    }
+
+    function showRadius(lat, lng, km) {
+        clearRadius();
+        jurisdictionCircle = L.circle([lat, lng], {
+            radius: km * 1000, color: '#667eea', weight: 2, dashArray: '8,4',
+            fillOpacity: 0.08, fillColor: '#667eea'
+        }).addTo(map);
+        centerMarker = L.marker([lat, lng], {
+            icon: L.divIcon({
+                className: '',
+                html: '<div style="background:#667eea;width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3);"></div>',
+                iconSize: [14, 14], iconAnchor: [7, 7]
+            })
+        }).addTo(map);
+        map.fitBounds(jurisdictionCircle.getBounds(), { padding: [30, 30] });
+    }
+
+    function showPolygon(coords) {
+        drawnItems.clearLayers();
+        polygon = L.polygon(coords, { color: '#667eea', weight: 3, dashArray: '6,4', fillOpacity: 0.1, fillColor: '#667eea' });
+        drawnItems.addLayer(polygon);
+        originalCoords = coords.map(function(c) { return [c[0], c[1]]; });
+        map.fitBounds(polygon.getBounds(), { padding: [30, 30] });
+    }
+
+    function setFormVertices() {
+        if (!polygon) return;
+        var latlngs = polygon.getLatLngs()[0];
+        var vertices = latlngs.map(function(ll) {
+            return { latitude: parseFloat(ll.lat.toFixed(7)), longitude: parseFloat(ll.lng.toFixed(7)) };
+        });
+        document.getElementById('verticesJsonInput').value = JSON.stringify(vertices);
+    }
+
+    function resetPolyUI() {
+        document.getElementById('btnEditPoly').style.display = polygon ? 'inline-block' : 'none';
+        document.getElementById('btnStartDraw').style.display = 'inline-block';
+        document.getElementById('btnFinishDraw').style.display = 'none';
+        document.getElementById('btnSaveEdit').style.display = 'none';
+        document.getElementById('btnCancelAction').style.display = 'none';
+        document.getElementById('polygonForm').style.display = polygon ? 'inline-block' : 'none';
+        document.getElementById('drawHint').style.color = '#64748b';
+        if (polygon) {
+            setFormVertices();
+            document.getElementById('drawHint').textContent = polygon.getLatLngs()[0].length + ' vértices. Editá o dibujá nuevo para modificar.';
+        } else {
+            document.getElementById('drawHint').textContent = '';
+        }
+    }
 
     // ── MODE TOGGLE ──
     window.setMode = function(mode) {
         currentMode = mode;
         var btnR = document.getElementById('btnModeRadius');
         var btnP = document.getElementById('btnModePolygon');
-        var panelR = document.getElementById('panelRadius');
-        var panelP = document.getElementById('panelPolygon');
 
         if (mode === 'RADIO') {
             btnR.style.background = '#667eea'; btnR.style.color = '#fff';
             btnP.style.background = '#fff'; btnP.style.color = '#667eea';
-            panelR.style.display = 'block'; panelP.style.display = 'none';
-            cancelDrawingPolygon();
+            document.getElementById('panelRadius').style.display = 'block';
+            document.getElementById('panelPolygon').style.display = 'none';
+            cancelAction(); drawnItems.clearLayers(); polygon = null;
+            isSettingCenter = true;
+            map.getContainer().style.cursor = 'crosshair';
+            if (radiusCenterLat) {
+                showRadius(radiusCenterLat, radiusCenterLng, parseInt(document.getElementById('radiusSlider').value));
+                document.getElementById('btnSaveRadius').disabled = false;
+                document.getElementById('radiusCenterHint').innerHTML = '📍 Centro definido. Click en el mapa para moverlo.';
+                document.getElementById('radiusCenterHint').style.color = '#059669';
+            }
         } else {
             btnP.style.background = '#667eea'; btnP.style.color = '#fff';
             btnR.style.background = '#fff'; btnR.style.color = '#667eea';
-            panelP.style.display = 'block'; panelR.style.display = 'none';
-            clearJurisdictionLayer();
+            document.getElementById('panelPolygon').style.display = 'block';
+            document.getElementById('panelRadius').style.display = 'none';
+            isSettingCenter = false;
+            map.getContainer().style.cursor = '';
+            clearRadius();
+            if (data.mode === 'POLYGON' && data.vertices && data.vertices.length >= 3 && !polygon) {
+                showPolygon(data.vertices.map(function(v) { return [v.latitude, v.longitude]; }));
+            }
+            resetPolyUI();
         }
     };
 
-    // ── RADIUS ──
-    window.updateRadius = function(val) {
-        document.getElementById('radiusValue').textContent = val + ' km';
-        var center = map.getCenter();
-        showRadius(data.centerLat || center.lat, data.centerLng || center.lng, val);
+    window.updateRadiusSlider = function(val) {
+        updateRadiusLabel(val);
+        if (radiusCenterLat) showRadius(radiusCenterLat, radiusCenterLng, val);
     };
 
-    function showRadius(lat, lng, km) {
-        clearJurisdictionLayer();
-        jurisdictionLayer = L.circle([lat, lng], {
-            radius: km * 1000,
-            color: '#667eea', weight: 2, dashArray: '8,4',
-            fillOpacity: 0.08, fillColor: '#667eea'
-        }).addTo(map);
-        map.fitBounds(jurisdictionLayer.getBounds(), { padding: [30, 30] });
-    }
+    // ── EDIT POLYGON (drag vertices) ──
+    window.startEditPolygon = function() {
+        if (!polygon) return;
+        isEditing = true;
+        polygon.editing.enable();
+        document.getElementById('btnEditPoly').style.display = 'none';
+        document.getElementById('btnStartDraw').style.display = 'none';
+        document.getElementById('btnSaveEdit').style.display = 'inline-block';
+        document.getElementById('btnCancelAction').style.display = 'inline-block';
+        document.getElementById('polygonForm').style.display = 'none';
+        document.getElementById('drawHint').textContent = 'Arrastrá los vértices para ajustar la jurisdicción.';
+        document.getElementById('drawHint').style.color = '#f59e0b';
+    };
 
-    // ── POLYGON DRAWING ──
+    window.saveEditedPolygon = function() {
+        if (!polygon) return;
+        polygon.editing.disable();
+        isEditing = false;
+        originalCoords = polygon.getLatLngs()[0].map(function(ll) { return [ll.lat, ll.lng]; });
+        resetPolyUI();
+    };
+
+    // ── DRAW NEW POLYGON ──
     window.startDrawingPolygon = function() {
         isDrawing = true;
-        drawingPoints = [];
-        drawingMarkers.forEach(function(m) { map.removeLayer(m); });
-        drawingMarkers = [];
+        drawingPoints = []; drawingMarkers.forEach(function(m) { map.removeLayer(m); }); drawingMarkers = [];
         if (drawingPolyline) { map.removeLayer(drawingPolyline); drawingPolyline = null; }
-        clearJurisdictionLayer();
-
+        if (polygon && polygon.editing) polygon.editing.disable();
+        drawnItems.clearLayers(); polygon = null;
+        document.getElementById('btnEditPoly').style.display = 'none';
         document.getElementById('btnStartDraw').style.display = 'none';
         document.getElementById('btnFinishDraw').style.display = 'inline-block';
-        document.getElementById('btnCancelDraw').style.display = 'inline-block';
+        document.getElementById('btnCancelAction').style.display = 'inline-block';
+        document.getElementById('btnSaveEdit').style.display = 'none';
         document.getElementById('polygonForm').style.display = 'none';
-        document.getElementById('drawHint').textContent = 'Hacé click en el mapa para agregar puntos. Mínimo 3.';
-
+        document.getElementById('drawHint').textContent = 'Click en el mapa para agregar puntos. Mínimo 3.';
+        document.getElementById('drawHint').style.color = '#64748b';
         map.getContainer().style.cursor = 'crosshair';
     };
 
     window.finishDrawingPolygon = function() {
-        if (drawingPoints.length < 3) {
-            alert('Necesitás al menos 3 puntos para definir la jurisdicción.');
+        if (drawingPoints.length < 3) { alert('Necesitás al menos 3 puntos.'); return; }
+        isDrawing = false;
+        map.getContainer().style.cursor = '';
+        drawingMarkers.forEach(function(m) { map.removeLayer(m); }); drawingMarkers = [];
+        if (drawingPolyline) { map.removeLayer(drawingPolyline); drawingPolyline = null; }
+        showPolygon(drawingPoints);
+        resetPolyUI();
+    };
+
+    // ── CANCEL (edit or draw) ──
+    window.cancelAction = function() {
+        isDrawing = false;
+        map.getContainer().style.cursor = currentMode === 'RADIO' ? 'crosshair' : '';
+        drawingMarkers.forEach(function(m) { map.removeLayer(m); }); drawingMarkers = []; drawingPoints = [];
+        if (drawingPolyline) { map.removeLayer(drawingPolyline); drawingPolyline = null; }
+        if (isEditing && polygon && polygon.editing) {
+            polygon.editing.disable();
+            if (originalCoords && originalCoords.length >= 3) showPolygon(originalCoords);
+        }
+        isEditing = false;
+        resetPolyUI();
+    };
+
+    // ── MAP CLICK ──
+    map.on('click', function(e) {
+        if (currentMode === 'RADIO' && isSettingCenter && !isDrawing) {
+            radiusCenterLat = parseFloat(e.latlng.lat.toFixed(7));
+            radiusCenterLng = parseFloat(e.latlng.lng.toFixed(7));
+            setCenterInputs(radiusCenterLat, radiusCenterLng);
+            showRadius(radiusCenterLat, radiusCenterLng, parseInt(document.getElementById('radiusSlider').value));
+            document.getElementById('btnSaveRadius').disabled = false;
+            document.getElementById('radiusCenterHint').innerHTML = '📍 Centro definido. Click en el mapa para moverlo.';
+            document.getElementById('radiusCenterHint').style.color = '#059669';
             return;
         }
-        isDrawing = false;
-        map.getContainer().style.cursor = '';
-
-        // Remove markers and polyline, show final polygon
-        drawingMarkers.forEach(function(m) { map.removeLayer(m); });
-        drawingMarkers = [];
-        if (drawingPolyline) { map.removeLayer(drawingPolyline); drawingPolyline = null; }
-
-        showPolygon(drawingPoints);
-
-        // Prepare form data
-        var vertices = drawingPoints.map(function(p, i) {
-            return { latitude: parseFloat(p[0].toFixed(7)), longitude: parseFloat(p[1].toFixed(7)) };
-        });
-        document.getElementById('verticesJsonInput').value = JSON.stringify(vertices);
-
-        document.getElementById('btnStartDraw').style.display = 'inline-block';
-        document.getElementById('btnFinishDraw').style.display = 'none';
-        document.getElementById('btnCancelDraw').style.display = 'none';
-        document.getElementById('polygonForm').style.display = 'inline-block';
-        document.getElementById('drawHint').textContent = drawingPoints.length + ' puntos. Revisá el polígono y guardá.';
-    };
-
-    window.cancelDrawingPolygon = function() {
-        isDrawing = false;
-        map.getContainer().style.cursor = '';
-        drawingMarkers.forEach(function(m) { map.removeLayer(m); });
-        drawingMarkers = [];
-        drawingPoints = [];
-        if (drawingPolyline) { map.removeLayer(drawingPolyline); drawingPolyline = null; }
-
-        document.getElementById('btnStartDraw').style.display = 'inline-block';
-        document.getElementById('btnFinishDraw').style.display = 'none';
-        document.getElementById('btnCancelDraw').style.display = 'none';
-        document.getElementById('polygonForm').style.display = 'none';
-        document.getElementById('drawHint').textContent = '';
-    };
-
-    map.on('click', function(e) {
         if (!isDrawing) return;
         drawingPoints.push([e.latlng.lat, e.latlng.lng]);
-
-        var marker = L.circleMarker(e.latlng, {
-            radius: 5, color: '#667eea', fillColor: '#667eea', fillOpacity: 1
-        }).addTo(map);
-        drawingMarkers.push(marker);
-
+        drawingMarkers.push(L.circleMarker(e.latlng, { radius: 5, color: '#667eea', fillColor: '#667eea', fillOpacity: 1 }).addTo(map));
         if (drawingPolyline) map.removeLayer(drawingPolyline);
-        if (drawingPoints.length >= 2) {
-            drawingPolyline = L.polyline(drawingPoints, {
-                color: '#667eea', weight: 2, dashArray: '4,4'
-            }).addTo(map);
-        }
-
-        document.getElementById('drawHint').textContent = drawingPoints.length + ' puntos. ' +
-            (drawingPoints.length < 3 ? 'Mínimo 3.' : 'Podés finalizar o seguir agregando.');
+        if (drawingPoints.length >= 2) drawingPolyline = L.polyline(drawingPoints, { color: '#667eea', weight: 2, dashArray: '4,4' }).addTo(map);
+        document.getElementById('drawHint').textContent = drawingPoints.length + ' puntos. ' + (drawingPoints.length < 3 ? 'Mínimo 3.' : 'Podés finalizar o seguir agregando.');
     });
 
-    function showPolygon(coords) {
-        clearJurisdictionLayer();
-        jurisdictionLayer = L.polygon(coords, {
-            color: '#667eea', weight: 3, dashArray: '6,4',
-            fillOpacity: 0.1, fillColor: '#667eea'
-        }).addTo(map);
-        map.fitBounds(jurisdictionLayer.getBounds(), { padding: [30, 30] });
+    // ── INIT ──
+    if (currentMode === 'RADIO' && data.radiusKm && data.centerLat) {
+        radiusCenterLat = data.centerLat; radiusCenterLng = data.centerLng;
+        showRadius(data.centerLat, data.centerLng, data.radiusKm);
+        setCenterInputs(data.centerLat, data.centerLng);
+        document.getElementById('radiusSlider').value = data.radiusKm;
+        updateRadiusLabel(data.radiusKm);
+    } else if (currentMode === 'POLYGON' && data.vertices && data.vertices.length >= 3) {
+        showPolygon(data.vertices.map(function(v) { return [v.latitude, v.longitude]; }));
     }
-
-    function clearJurisdictionLayer() {
-        if (jurisdictionLayer) {
-            map.removeLayer(jurisdictionLayer);
-            jurisdictionLayer = null;
-        }
-    }
+    if (currentMode) setMode(currentMode === 'RADIO' ? 'RADIO' : 'POLYGON');
 })();
 </script>
