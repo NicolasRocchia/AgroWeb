@@ -54,7 +54,7 @@ public class JobsController : Controller
                 foreach (var j in jobs.RootElement.EnumerateArray())
                 {
                     var status = j.GetProperty("status").GetString() ?? "";
-                    if (status != "COMPLETADO" && status != "CANCELADO" &&
+                    if (status != "COMPLETADO" && status != "COMPLETADO_MANUAL" && status != "CANCELADO" &&
                         j.TryGetProperty("recipeId", out var rid) && rid.ValueKind == JsonValueKind.Number)
                     {
                         usedRecipeIds.Add(rid.GetInt64());

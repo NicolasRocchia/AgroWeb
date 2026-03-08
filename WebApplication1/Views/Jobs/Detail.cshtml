@@ -203,7 +203,7 @@
             }
 
             // Producer contact (applicator sees producer contact when assigned)
-            if (isAplicador && job.assignedApplicatorName && (job.status === 'ASIGNADO' || job.status === 'COMPLETADO')) {
+            if (isAplicador && job.assignedApplicatorName && (job.status === 'ASIGNADO' || job.status === 'COMPLETADO' || job.status === 'COMPLETADO_MANUAL')) {
                 var pcSection = document.getElementById('producer-contact-section');
                 var pcInfo = document.getElementById('producer-contact-info');
                 pcSection.style.display = 'block';
