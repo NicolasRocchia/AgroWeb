@@ -277,6 +277,9 @@ public class AgroApiClient
     public Task<ApiResult<string>> VerifyApplicatorProfileAsync(long profileId, bool approve)
         => PutAsync($"/api/applicator/profiles/{profileId}/verify", new { approve });
 
+    public Task<ApiResult<string>> GetApplicatorPublicProfileAsync(long profileId)
+        => GetRawJsonAsync($"/api/applicator/public-profile/{profileId}");
+
     // ══════════════════════════════════════════════
     // MANUAL RECIPES
     // ══════════════════════════════════════════════

@@ -255,11 +255,29 @@
                     apps.forEach(function(a) {
                         var card = document.createElement('div');
                         card.className = 'app-card';
+
+                        // Rating display
+                        var ratingHtml = '';
+                        if (a.applicatorRating) {
+                            var full = Math.floor(a.applicatorRating);
+                            var starsStr = '';
+                            for (var s = 0; s < full; s++) starsStr += '★';
+                            if (a.applicatorRating % 1 >= 0.5) starsStr += '½';
+                            ratingHtml = '<span style="color:#f59e0b;">' + starsStr + '</span> <strong>' + a.applicatorRating + '</strong>';
+                        }
+
+                        // Badges
+                        var badgesHtml = (a.applicatorBadges || []).map(function(b) {
+                            return '<span style="background:#f0f4ff; color:#4338ca; padding:2px 8px; border-radius:10px; font-size:.75rem; font-weight:600;">' + b + '</span>';
+                        }).join(' ');
+
                         var html =
                             '<div class="app-header">' +
-                            '<span class="app-name">' + a.applicatorBusinessName + '</span>' +
-                            (a.applicatorIsVerified ? '<span class="app-verified">✅ Verificado</span>' : '<span class="app-unverified">⏳ Sin verificar</span>') +
+                            '<a href="/Jobs/ApplicatorProfile/' + a.applicatorProfileId + '" class="app-name" style="color:#667eea; text-decoration:none;" title="Ver perfil completo">' + a.applicatorBusinessName + '</a>' +
+                            (ratingHtml ? ' ' + ratingHtml : '') +
+                            (a.applicatorTotalExecutions > 0 ? ' <span style="color:#94a3b8; font-size:.8rem;">(' + a.applicatorTotalExecutions + ' trabajos)</span>' : '') +
                             '</div>' +
+                            (badgesHtml ? '<div style="margin: 4px 0 8px; display:flex; flex-wrap:wrap; gap:4px;">' + badgesHtml + '</div>' : '') +
                             '<div class="app-details">' +
                             (a.applicatorPhone ? '<span>📞 ' + a.applicatorPhone + '</span>' : '') +
                             (a.applicatorMachines.length ? '<span>🔧 ' + a.applicatorMachines.join(', ') + '</span>' : '') +

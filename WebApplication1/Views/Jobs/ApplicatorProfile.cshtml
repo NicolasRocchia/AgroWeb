@@ -1,0 +1,118 @@
+@{
+    ViewData["Title"] = "Perfil de Aplicador";
+}
+
+<div class="profile-container" id="profileContainer">
+    <p style="text-align:center; color:#94a3b8;">Cargando perfil...</p>
+</div>
+
+@section Styles {
+<style>
+    .profile-container { max-width: 700px; margin: 30px auto; padding: 0 16px; }
+    .profile-card { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.08); overflow: hidden; }
+    .profile-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 28px 24px; color: white; }
+    .profile-name { font-size: 1.5rem; font-weight: 700; margin: 0; }
+    .profile-desc { opacity: .85; margin: 6px 0 0; font-size: .95rem; }
+    .profile-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .profile-badge { background: rgba(255,255,255,.2); padding: 4px 12px; border-radius: 20px; font-size: .82rem; font-weight: 600; backdrop-filter: blur(4px); }
+    .profile-body { padding: 24px; }
+    .profile-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .stat-card { background: #f8fafc; border-radius: 12px; padding: 16px; text-align: center; }
+    .stat-value { font-size: 1.6rem; font-weight: 700; color: #334155; }
+    .stat-label { font-size: .78rem; color: #94a3b8; margin-top: 4px; }
+    .stat-value.gold { color: #f59e0b; }
+    .profile-section { margin-bottom: 20px; }
+    .profile-section-title { font-size: .85rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+    .profile-info-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; color: #475569; font-size: .95rem; }
+    .review-card { background: #fefce8; border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+    .review-stars { color: #f59e0b; font-size: 1.1rem; }
+    .review-comment { margin: 6px 0; color: #334155; font-style: italic; }
+    .review-meta { font-size: .78rem; color: #94a3b8; }
+    .no-reviews { color: #94a3b8; font-style: italic; font-size: .9rem; }
+    .btn-back { display: inline-block; margin-bottom: 16px; color: #667eea; text-decoration: none; font-weight: 500; font-size: .9rem; }
+    .btn-back:hover { text-decoration: underline; }
+    .completion-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-top: 6px; }
+    .completion-fill { height: 100%; background: #10b981; border-radius: 3px; transition: width .5s; }
+</style>
+}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var profileData = @Html.Raw(ViewBag.ProfileJson);
+        var p = typeof profileData === 'string' ? JSON.parse(profileData) : profileData;
+        renderProfile(p);
+    });
+
+    function renderProfile(p) {
+        var container = document.getElementById('profileContainer');
+        var stars = function(rating) {
+            if (!rating) return '<span style="color:#94a3b8;">Sin calificaciones</span>';
+            var full = Math.floor(rating);
+            var half = rating % 1 >= 0.5 ? 1 : 0;
+            var s = '';
+            for (var i = 0; i < full; i++) s += '★';
+            if (half) s += '½';
+            return '<span class="review-stars">' + s + '</span> <strong>' + rating + '</strong>/5';
+        };
+
+        var badgesHtml = (p.badges || []).map(function(b) {
+            return '<span class="profile-badge">' + b + '</span>';
+        }).join('');
+
+        var machinesHtml = (p.machineTypes || []).map(function(m) {
+            return '<span style="background:#e0e7ff; color:#3730a3; padding:3px 10px; border-radius:12px; font-size:.82rem; font-weight:500;">' + m + '</span>';
+        }).join(' ');
+
+        var completionPct = p.stats.completionRate || 0;
+
+        var html = '<a href="javascript:history.back()" class="btn-back">← Volver</a>';
+        html += '<div class="profile-card">';
+
+        // Header
+        html += '<div class="profile-header">';
+        html += '<h1 class="profile-name">' + p.businessName + '</h1>';
+        if (p.description) html += '<p class="profile-desc">' + p.description + '</p>';
+        if (badgesHtml) html += '<div class="profile-badges">' + badgesHtml + '</div>';
+        html += '</div>';
+
+        // Body
+        html += '<div class="profile-body">';
+
+        // Stats
+        html += '<div class="profile-stats">';
+        html += '<div class="stat-card"><div class="stat-value gold">' + (p.stats.averageRating ? p.stats.averageRating : '—') + '</div><div class="stat-label">Rating promedio</div></div>';
+        html += '<div class="stat-card"><div class="stat-value">' + (p.stats.completedNormal + p.stats.completedAdmin) + '</div><div class="stat-label">Trabajos completados</div></div>';
+        html += '<div class="stat-card"><div class="stat-value">' + p.stats.totalReviews + '</div><div class="stat-label">Calificaciones</div></div>';
+        html += '<div class="stat-card"><div class="stat-value">' + (completionPct > 0 ? completionPct + '%' : '—') + '</div><div class="stat-label">Cumplimiento</div>';
+        if (completionPct > 0) html += '<div class="completion-bar"><div class="completion-fill" style="width:' + completionPct + '%;"></div></div>';
+        html += '</div>';
+        html += '</div>';
+
+        // Info
+        html += '<div class="profile-section">';
+        html += '<div class="profile-section-title">Información</div>';
+        if (machinesHtml) html += '<div class="profile-info-row">🔧 ' + machinesHtml + '</div>';
+        if (p.primaryLocationName) html += '<div class="profile-info-row">📍 ' + p.primaryLocationName + '</div>';
+        html += '<div class="profile-info-row">' + (p.isVerified ? '✅ Verificado' : '⏳ Sin verificar') + '</div>';
+        html += '</div>';
+
+        // Reviews
+        html += '<div class="profile-section">';
+        html += '<div class="profile-section-title">Últimas calificaciones</div>';
+        if (p.recentReviews && p.recentReviews.length > 0) {
+            p.recentReviews.forEach(function(r) {
+                html += '<div class="review-card">';
+                html += '<div>' + stars(r.rating) + '</div>';
+                if (r.comment) html += '<p class="review-comment">"' + r.comment + '"</p>';
+                html += '<div class="review-meta">' + r.reviewerName + ' — ' + new Date(r.createdAt).toLocaleDateString('es-AR') + '</div>';
+                html += '</div>';
+            });
+        } else {
+            html += '<p class="no-reviews">Este aplicador aún no tiene calificaciones.</p>';
+        }
+        html += '</div>';
+
+        html += '</div></div>';
+        container.innerHTML = html;
+    }
+</script>

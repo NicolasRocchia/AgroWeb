@@ -197,6 +197,25 @@ public class JobsController : Controller
     }
 
     // =============================================
+    // PERFIL PÚBLICO APLICADOR
+    // =============================================
+
+    [HttpGet]
+    public async Task<IActionResult> ApplicatorProfile(long id)
+    {
+        var result = await _api.GetApplicatorPublicProfileAsync(id);
+
+        if (!result.Success)
+        {
+            TempData["Error"] = result.Error ?? "Aplicador no encontrado.";
+            return RedirectToAction("MyJobs");
+        }
+
+        ViewBag.ProfileJson = result.Data;
+        return View();
+    }
+
+    // =============================================
     // DETALLE DEL TRABAJO (ambos roles)
     // =============================================
 
