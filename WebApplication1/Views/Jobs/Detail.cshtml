@@ -234,12 +234,12 @@
                         '<input type="hidden" name="__RequestVerificationToken" value="' + document.querySelector('[name=__RequestVerificationToken]').value + '">' +
                         '<input type="hidden" name="jobId" value="' + job.id + '">' +
                         '<input type="hidden" name="status" value="COMPLETADO">' +
-                        '<button type="submit" class="btn-complete">Marcar como Completado</button></form>' +
+                        '<button type="submit" class="btn-complete" onclick="return confirm(\'¿Marcar como completado? Si hay una ejecución en curso se cancelará automáticamente.\')">Marcar como Completado</button></form>' +
                         '<form method="post" action="/Jobs/ChangeStatus" style="display:inline;">' +
                         '<input type="hidden" name="__RequestVerificationToken" value="' + document.querySelector('[name=__RequestVerificationToken]').value + '">' +
                         '<input type="hidden" name="jobId" value="' + job.id + '">' +
                         '<input type="hidden" name="status" value="CANCELADO">' +
-                        '<button type="submit" class="btn-cancel-job" onclick="return confirm(\'¿Cancelar?\')">Cancelar</button></form>';
+                        '<button type="submit" class="btn-cancel-job" onclick="return confirm(\'¿Cancelar este trabajo? Si hay una ejecución en curso se cancelará automáticamente.\')">Cancelar</button></form>';
                 } else {
                     actionsDiv.innerHTML = '<span style="color:#94a3b8;">No hay acciones disponibles.</span>';
                 }

@@ -89,7 +89,7 @@
                         <button type="submit" class="btn-status btn-cerrar">✅ Cerrar Receta</button>
                     </form>
                     <form asp-action="ChangeStatus" method="post" style="margin: 0;"
-                          onsubmit="return confirm('¿Anular esta receta?');">
+                          onsubmit="return confirm('¿Anular esta receta? Si hay una ejecución en curso se cancelará automáticamente.');">
                         <input type="hidden" name="id" value="@Model.Recipe.Id" />
                         <input type="hidden" name="code" value="@Model.Recipe.PublicCode" />
                         <input type="hidden" name="status" value="ANULADA" />
@@ -99,7 +99,7 @@
                 @if (st == "APROBADA")
                 {
                     <form asp-action="ChangeStatus" method="post" style="margin: 0;"
-                          onsubmit="return confirm('¿Confirmar que la aplicación fue realizada?');">
+                          onsubmit="return confirm('¿Confirmar que la aplicación fue realizada? Si hay una ejecución en curso se cancelará automáticamente.');">
                         <input type="hidden" name="id" value="@Model.Recipe.Id" />
                         <input type="hidden" name="code" value="@Model.Recipe.PublicCode" />
                         <input type="hidden" name="status" value="CERRADA" />
