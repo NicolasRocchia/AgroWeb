@@ -46,7 +46,7 @@
 
     var activeStatuses = ['PENDIENTE','ACEPTADA','EN_CAMINO','EN_CURSO','PAUSADA'];
     var countActive = execs.filter(function(e) { return activeStatuses.indexOf(e.status) >= 0; }).length;
-    var countDone = execs.filter(function(e) { return e.status === 'COMPLETADA'; }).length;
+    var countDone = execs.filter(function(e) { return e.status === 'COMPLETADA' || e.status === 'COMPLETADA_ADMIN'; }).length;
 
     setText('countAll', execs.length);
     setText('countActive', countActive);
@@ -68,6 +68,7 @@
             'EN_CURSO': { icon: '🔄', color: '#10b981' },
             'PAUSADA': { icon: '⏸️', color: '#f97316' },
             'COMPLETADA': { icon: '🏁', color: '#059669' },
+            'COMPLETADA_ADMIN': { icon: '✅', color: '#0d9488' },
             'CANCELADA': { icon: '❌', color: '#ef4444' }
         };
         var s = statusMap[e.status] || { icon: '❓', color: '#666' };

@@ -47,6 +47,7 @@
             'EN_CURSO': { icon: '🔄', label: 'En curso', color: '#10b981' },
             'PAUSADA': { icon: '⏸️', label: 'Pausada', color: '#f97316' },
             'COMPLETADA': { icon: '🏁', label: 'Completada', color: '#059669' },
+            'COMPLETADA_ADMIN': { icon: '✅', label: 'Confirmada por productor', color: '#0d9488' },
             'CANCELADA': { icon: '❌', label: 'Cancelada', color: '#ef4444' }
         };
         var s = statusMap[e.status] || { icon: '❓', label: e.status, color: '#666' };
@@ -63,7 +64,7 @@
         html += '<br/><span style="color:#64748b;">🚜 ' + e.applicatorBusinessName + '</span>';
         if (e.totalActiveMinutes) html += '<br/><span class="exec-card-time">⏱️ ' + e.totalActiveMinutes + ' min</span>';
         if (e.reviewRating) html += ' <span class="exec-card-rating">' + '★'.repeat(e.reviewRating) + '</span>';
-        else if (e.status === 'COMPLETADA') html += ' <span style="color:#f59e0b; font-size:12px;">⭐ Pendiente de calificar</span>';
+        else if (e.status === 'COMPLETADA' || e.status === 'COMPLETADA_ADMIN') html += ' <span style="color:#f59e0b; font-size:12px;">⭐ Pendiente de calificar</span>';
         html += '</div></a>';
     });
 

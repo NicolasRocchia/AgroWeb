@@ -50,6 +50,7 @@
                     <option value="RECHAZADA">❌ Rechazada</option>
                     <option value="ABIERTA">📝 Abierta</option>
                     <option value="CERRADA">🔒 Cerrada</option>
+                    <option value="CERRADA_MANUAL">🔒 Cerrada Manual</option>
                     <option value="ANULADA">🚫 Anulada</option>
                 </select>
         </div>
@@ -121,6 +122,7 @@
                                                     "RECHAZADA" => "status-rejected",
                                                     "OBSERVADA" => "status-warning",
                                                     "CERRADA" => "status-expired",
+                                                    "CERRADA_MANUAL" => "status-expired",
                                                     "ANULADA" => "status-rejected",
                             _ => "status-draft"
                         };

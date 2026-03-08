@@ -97,6 +97,7 @@
         }
         .task-tag-asignado { background: #ede9fe; color: #5b21b6; }
         .task-tag-completado { background: #dcfce7; color: #166534; }
+        .task-tag-completado_manual { background: #ccfbf1; color: #0d9488; }
         .task-tag-cancelado { background: #fee2e2; color: #991b1b; }
     </style>
 }
@@ -148,7 +149,7 @@
 
                 tasks.forEach(function (t) {
                     var statusKey = (t.status || '').toLowerCase();
-                    var statusLabels = { 'asignado': 'Asignado', 'completado': 'Completado', 'cancelado': 'Cancelado' };
+                    var statusLabels = { 'asignado': 'Asignado', 'completado': 'Completado', 'completado_manual': 'Cerrado Manual', 'cancelado': 'Cancelado' };
                     var tagClass = 'task-tag-' + statusKey;
 
                     var card = document.createElement('a');

@@ -160,7 +160,7 @@
 
             // Status badge
             var statusKey = (job.status || '').toLowerCase().replace(' ', '_');
-            var statusLabels = { 'abierto': 'Abierto', 'en_seleccion': 'En Selección', 'asignado': 'Asignado', 'completado': 'Completado', 'cancelado': 'Cancelado' };
+            var statusLabels = { 'abierto': 'Abierto', 'en_seleccion': 'En Selección', 'asignado': 'Asignado', 'completado': 'Completado', 'completado_manual': 'Cerrado Manual', 'cancelado': 'Cancelado' };
             var badge = document.getElementById('job-status-badge');
             badge.className = 'status-tag tag-' + statusKey;
             badge.textContent = statusLabels[statusKey] || job.status;
@@ -233,13 +233,13 @@
                         '<form method="post" action="/Jobs/ChangeStatus" style="display:inline;">' +
                         '<input type="hidden" name="__RequestVerificationToken" value="' + document.querySelector('[name=__RequestVerificationToken]').value + '">' +
                         '<input type="hidden" name="jobId" value="' + job.id + '">' +
-                        '<input type="hidden" name="status" value="COMPLETADO">' +
-                        '<button type="submit" class="btn-complete" onclick="return confirm(\'¿Marcar como completado? Si hay una ejecución en curso se cancelará automáticamente.\')">Marcar como Completado</button></form>' +
+                        '<input type="hidden" name="status" value="COMPLETADO_MANUAL">' +
+                        '<button type="submit" class="btn-complete" onclick="return confirm(\'¿Cerrar este trabajo manualmente?\\n\\nSi hay una ejecución en curso, se marcará como confirmada por el productor.\')">✅ Cerrar Manualmente</button></form>' +
                         '<form method="post" action="/Jobs/ChangeStatus" style="display:inline;">' +
                         '<input type="hidden" name="__RequestVerificationToken" value="' + document.querySelector('[name=__RequestVerificationToken]').value + '">' +
                         '<input type="hidden" name="jobId" value="' + job.id + '">' +
                         '<input type="hidden" name="status" value="CANCELADO">' +
-                        '<button type="submit" class="btn-cancel-job" onclick="return confirm(\'¿Cancelar este trabajo? Si hay una ejecución en curso se cancelará automáticamente.\')">Cancelar</button></form>';
+                        '<button type="submit" class="btn-cancel-job" onclick="return confirm(\'¿Cancelar este trabajo?\\n\\nSi hay una ejecución en curso, se cancelará.\')">Cancelar</button></form>';
                 } else {
                     actionsDiv.innerHTML = '<span style="color:#94a3b8;">No hay acciones disponibles.</span>';
                 }
