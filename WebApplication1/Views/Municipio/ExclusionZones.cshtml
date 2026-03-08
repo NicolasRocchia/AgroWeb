@@ -3,10 +3,15 @@
     var zonesJson = ViewBag.ZonesJson as string ?? "[]";
 }
 
-<div class="page-container" style="max-width: 1100px; margin: 0 auto; padding: 0 20px 40px;">
-    <a asp-controller="Municipio" asp-action="GeoInsights" class="back-link">← Mapa Territorial</a>
-    <h1 class="page-title">🚫 Zonas de Exclusión</h1>
-    <p style="color: #64748b; margin-bottom: 20px;">Dibujá polígonos sobre el mapa para definir zonas donde se prohíbe la aplicación de agroquímicos.</p>
+<div class="detail-header">
+    <div class="detail-header-content">
+        <a asp-controller="Municipio" asp-action="GeoInsights" class="back-button">← Mapa Territorial</a>
+        <h1 class="detail-title">🚫 Zonas de Exclusión</h1>
+        <p style="opacity:.85; margin:0; font-size:.95rem;">Dibujá polígonos sobre el mapa para definir zonas donde se prohíbe la aplicación de agroquímicos.</p>
+    </div>
+</div>
+
+<div style="max-width: 1100px; margin: 0 auto; padding: 20px 20px 40px;">
 
     @if (TempData["Success"] != null)
     {
@@ -88,10 +93,10 @@
 </div>
 
 @section Styles {
+    <link rel="stylesheet" href="~/css/recipeDetail.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
     <style>
-        .back-link { display:inline-block; margin-bottom:1rem; color:var(--primary-color,#667eea); text-decoration:none; font-weight:600; }
         .back-link:hover { text-decoration:underline; }
         .page-title { font-size:1.5rem; color:#1e293b; margin:4px 0 0; }
         .alert-box { border-radius:10px; padding:12px 18px; margin-bottom:16px; display:flex; align-items:center; gap:10px; }

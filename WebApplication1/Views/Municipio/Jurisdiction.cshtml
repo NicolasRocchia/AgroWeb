@@ -4,17 +4,21 @@
     var jurisdictionJson = ViewBag.JurisdictionJson as string ?? "{}";
 }
 
+<link rel="stylesheet" href="~/css/recipeDetail.css" asp-append-version="true" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
-<div style="max-width:1200px; margin:0 auto; padding:0 20px 40px;">
-
-    <div style="margin-bottom:20px;">
-        <h1 style="font-size:1.5rem; font-weight:700; color:#1e293b; margin:0;">🗺️ Mi Jurisdicción</h1>
-        <p style="color:#64748b; margin:4px 0 0; font-size:.9rem;">
+<div class="detail-header">
+    <div class="detail-header-content">
+        <a asp-controller="Municipio" asp-action="GeoInsights" class="back-button">← Mapa Territorial</a>
+        <h1 class="detail-title">🗺️ Mi Jurisdicción</h1>
+        <p style="opacity:.85; margin:0; font-size:.95rem;">
             Definí el área territorial de tu municipio. Las recetas cuyos lotes caigan dentro serán asignadas automáticamente.
         </p>
     </div>
+</div>
+
+<div style="max-width:1200px; margin:0 auto; padding:20px 20px 40px;">
 
     @if (TempData["Success"] != null)
     {
