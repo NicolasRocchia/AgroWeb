@@ -101,10 +101,17 @@ public class ExecutionsController : Controller
 
     [HttpPost]
     [Authorize(Roles = "Aplicador")]
-    public async Task<IActionResult> Transition(long id, string action, decimal? gpsLat, decimal? gpsLng,
+    public async Task<IActionResult> Transition(long id, string action, string? gpsLat, string? gpsLng,
         string? pauseReason, string? notes)
     {
-        var body = new { gpsLat, gpsLng, pauseReason, notes };
+        // GPS viene del JS con punto decimal — parsear con InvariantCulture
+        decimal? lat = null, lng = null;
+        if (!string.IsNullOrEmpty(gpsLat) && decimal.TryParse(gpsLat, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedLat))
+            lat = parsedLat;
+        if (!string.IsNullOrEmpty(gpsLng) && decimal.TryParse(gpsLng, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedLng))
+            lng = parsedLng;
+
+        var body = new { gpsLat = lat, gpsLng = lng, pauseReason, notes };
         var result = await _api.ExecutionTransitionAsync(id, action, body);
 
         if (!result.Success)
