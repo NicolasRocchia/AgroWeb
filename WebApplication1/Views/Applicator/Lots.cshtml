@@ -2,53 +2,48 @@
     ViewData["Title"] = "Mis Lotes";
 }
 
-<div class="recipes-header">
-    <div class="recipes-header-content">
-        <h1 class="recipes-title">
-            <span class="recipes-title-icon">🗺️</span>
-            Mis Lotes
-        </h1>
-        <p class="recipes-subtitle">Parcelas registradas a partir de tus recetas fitosanitarias</p>
-        <a asp-action="CreateLot" class="btn-primary"
-           style="margin-top:0.75rem; display:inline-block; text-decoration:none; background:#667eea; color:#fff; padding:10px 20px; border-radius:10px; font-weight:600;">
+<div class="page-container" style="max-width: 1400px; margin: 0 auto; padding: 0 20px 40px;">
+
+    <!-- Header -->
+    <div class="lots-header">
+        <div class="lots-header-left">
+            <h1 class="lots-title">🗺️ Mis Lotes</h1>
+            <p class="lots-subtitle">Parcelas de tu campo para vincular a recetas y trabajos</p>
+        </div>
+        <a asp-action="CreateLot" class="lots-btn-create">
             + Crear Lote
         </a>
     </div>
-</div>
-
-<div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
 
     @if (TempData["Error"] is string errorMsg)
     {
-        <div class="alert-error">
-            <span class="alert-icon">⚠️</span>
-            <div><strong>Error:</strong> @errorMsg</div>
+        <div class="lots-alert lots-alert-error">
+            <span>⚠️</span> @errorMsg
         </div>
     }
-
     @if (TempData["Success"] is string successMsg)
     {
-        <div class="alert-success">
-            <span class="alert-icon">✅</span>
-            <div>@successMsg</div>
+        <div class="lots-alert lots-alert-success">
+            <span>✅</span> @successMsg
         </div>
     }
 
+    <!-- Stats summary -->
+    <div id="lotStats" class="lots-stats" style="display:none;"></div>
+
+    <!-- Grid -->
     <div id="lotsContainer" class="lots-grid">
         <div class="lots-loading">⏳ Cargando lotes...</div>
     </div>
 
-    <div id="emptyState" class="empty-state" style="display:none;">
-        <div class="empty-icon">🌾</div>
+    <!-- Empty state -->
+    <div id="emptyState" class="lots-empty" style="display:none;">
+        <div class="lots-empty-icon">🌾</div>
         <h3>No tenés lotes registrados</h3>
         <p>Podés crear un lote dibujando su polígono en el mapa, o se crean automáticamente al subir una receta.</p>
-        <div style="display:flex; gap:12px; justify-content:center; margin-top:1rem;">
-            <a asp-action="CreateLot" class="btn-primary" style="text-decoration:none; background:#667eea; color:#fff; padding:10px 20px; border-radius:10px; font-weight:600;">
-                🗺️ Crear Lote
-            </a>
-            <a asp-action="Upload" class="btn-primary" style="text-decoration:none; background:#10b981; color:#fff; padding:10px 20px; border-radius:10px; font-weight:600;">
-                📄 Subir Receta PDF
-            </a>
+        <div class="lots-empty-actions">
+            <a asp-action="CreateLot" class="lots-btn-create">🗺️ Crear Lote</a>
+            <a asp-action="Upload" class="lots-btn-secondary">📄 Subir Receta PDF</a>
         </div>
     </div>
 </div>
@@ -56,16 +51,135 @@
 @section Styles {
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
+        /* ── Header ── */
+        .lots-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-top: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .lots-header-left {
+            flex: 1;
+        }
+
+        .lots-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin: 0 0 4px;
+        }
+
+        .lots-subtitle {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .lots-btn-create {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 22px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+            .lots-btn-create:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+            }
+
+        .lots-btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 22px;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+            .lots-btn-secondary:hover {
+                background: #e2e8f0;
+            }
+
+        /* ── Alerts ── */
+        .lots-alert {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .lots-alert-error {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+
+        .lots-alert-success {
+            background: #d1fae5;
+            border: 1px solid #6ee7b7;
+            color: #065f46;
+        }
+
+        /* ── Stats ── */
+        .lots-stats {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .lots-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            color: #475569;
+        }
+
+        .lots-stat-value {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 1.1rem;
+        }
+
+        /* ── Grid ── */
         .lots-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 1.25rem;
-            margin-top: 1.5rem;
             margin-bottom: 2rem;
         }
 
+        /* ── Card ── */
         .lot-card {
-            background: white;
+            background: #fff;
             border-radius: 14px;
             border: 1px solid #e2e8f0;
             overflow: hidden;
@@ -76,135 +190,120 @@
             display: block;
         }
 
-        .lot-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
-            transform: translateY(-2px);
-        }
+            .lot-card:hover {
+                border-color: #667eea;
+                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.15);
+                transform: translateY(-3px);
+            }
 
         .lot-card-map {
-            height: 160px;
+            height: 180px;
             background: #f0f4f8;
+            position: relative;
         }
 
         .lot-card-body {
-            padding: 1rem 1.25rem;
+            padding: 14px 18px 16px;
         }
 
         .lot-card-name {
             font-size: 1.05rem;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 0.4rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 6px;
         }
 
-        .lot-card-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem 1rem;
+        .lot-card-location {
             font-size: 0.85rem;
-            color: #718096;
+            color: #64748b;
+            margin-bottom: 10px;
         }
 
-        .lot-card-meta span {
+        .lot-card-footer {
             display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .lot-card-badges {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.6rem;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .lot-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.25rem;
-            padding: 0.2rem 0.6rem;
+            gap: 4px;
+            padding: 4px 10px;
             border-radius: 20px;
             font-size: 0.78rem;
-            font-weight: 500;
-        }
-
-        .lot-badge-recipes {
-            background: #ebf0ff;
-            color: #4c63b6;
+            font-weight: 600;
         }
 
         .lot-badge-area {
-            background: #f0fff4;
-            color: #276749;
+            background: #ecfdf5;
+            color: #065f46;
         }
 
+        .lot-badge-recipes {
+            background: #eff6ff;
+            color: #1e40af;
+        }
+
+        .lot-badge-code {
+            background: #f5f3ff;
+            color: #6d28d9;
+        }
+
+        /* ── Loading ── */
         .lots-loading {
             grid-column: 1 / -1;
             text-align: center;
-            padding: 3rem;
-            color: #a0aec0;
+            padding: 4rem;
+            color: #94a3b8;
             font-size: 1rem;
         }
 
-        .empty-state {
+        /* ── Empty ── */
+        .lots-empty {
             text-align: center;
-            padding: 4rem 2rem;
-            color: #718096;
+            padding: 5rem 2rem;
+            background: #fff;
+            border-radius: 16px;
+            border: 2px dashed #d1d5db;
         }
 
-        .empty-icon {
-            font-size: 3rem;
+        .lots-empty-icon {
+            font-size: 3.5rem;
             margin-bottom: 1rem;
         }
 
-        .empty-state h3 {
-            color: #4a5568;
-            margin-bottom: 0.5rem;
+        .lots-empty h3 {
+            color: #334155;
+            margin-bottom: 8px;
+            font-size: 1.2rem;
         }
 
-        .btn-primary {
-            display: inline-block;
-            padding: 0.7rem 1.5rem;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.2s;
+        .lots-empty p {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 0;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        .alert-error {
+        .lots-empty-actions {
             display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            background: #fed7d7;
-            border: 1px solid #e53e3e;
-            color: #c53030;
-            padding: 1rem;
-            border-radius: 10px;
-            margin-top: 1rem;
-        }
-
-        .alert-success {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            background: #c6f6d5;
-            border: 1px solid #38a169;
-            color: #276749;
-            padding: 1rem;
-            border-radius: 10px;
-            margin-top: 1rem;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 1.5rem;
         }
 
         @@media (max-width: 768px) {
             .lots-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .lots-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .lots-stats {
+                flex-direction: column;
             }
         }
     </style>
@@ -218,13 +317,29 @@
         document.addEventListener('DOMContentLoaded', function () {
             const container = document.getElementById('lotsContainer');
             const emptyState = document.getElementById('emptyState');
+            const statsEl = document.getElementById('lotStats');
 
             if (!lots || lots.length === 0) {
                 container.style.display = 'none';
-                emptyState.style.display = 'block';
+                emptyState.style.display = '';
                 return;
             }
 
+            // ── Stats summary ──
+            var totalArea = 0;
+            var totalRecipes = 0;
+            lots.forEach(function(l) {
+                totalArea += l.areaHa || 0;
+                totalRecipes += l.recipesCount || 0;
+            });
+
+            statsEl.style.display = '';
+            statsEl.innerHTML =
+                '<div class="lots-stat"><span class="lots-stat-value">' + lots.length + '</span> lote' + (lots.length !== 1 ? 's' : '') + '</div>' +
+                '<div class="lots-stat"><span class="lots-stat-value">' + totalArea.toFixed(0) + '</span> ha totales</div>' +
+                '<div class="lots-stat"><span class="lots-stat-value">' + totalRecipes + '</span> receta' + (totalRecipes !== 1 ? 's' : '') + ' vinculadas</div>';
+
+            // ── Cards ──
             container.innerHTML = '';
 
             lots.forEach(function (lot, index) {
@@ -232,63 +347,53 @@
                 card.className = 'lot-card';
                 card.href = '@Url.Action("LotDetails", "Applicator")' + '?code=' + encodeURIComponent(lot.code);
 
-                const name = lot.name || ('Lote #' + lot.id);
+                const name = lot.name || ('Lote ' + lot.code);
                 const locality = lot.locality || '';
                 const department = lot.department || '';
                 const location = [locality, department].filter(Boolean).join(', ') || 'Sin ubicación';
                 const area = lot.areaHa ? lot.areaHa.toFixed(1) + ' ha' : 'N/D';
                 const recipesCount = lot.recipesCount || 0;
 
-                card.innerHTML = `
-                    <div class="lot-card-map" id="minimap-${index}"></div>
-                    <div class="lot-card-body">
-                        <div class="lot-card-name">${name}</div>
-                        <div class="lot-card-meta">
-                            <span>📍 ${location}</span>
-                        </div>
-                        <div class="lot-card-badges">
-                            <span class="lot-badge lot-badge-area">📐 ${area}</span>
-                            <span class="lot-badge lot-badge-recipes">📋 ${recipesCount} receta${recipesCount !== 1 ? 's' : ''}</span>
-                        </div>
-                    </div>
-                `;
+                card.innerHTML =
+                    '<div class="lot-card-map" id="minimap-' + index + '"></div>' +
+                    '<div class="lot-card-body">' +
+                        '<div class="lot-card-name">' + name + '</div>' +
+                        '<div class="lot-card-location">📍 ' + location + '</div>' +
+                        '<div class="lot-card-footer">' +
+                            '<span class="lot-badge lot-badge-area">📐 ' + area + '</span>' +
+                            '<span class="lot-badge lot-badge-recipes">📋 ' + recipesCount + ' receta' + (recipesCount !== 1 ? 's' : '') + '</span>' +
+                            '<span class="lot-badge lot-badge-code">' + lot.code + '</span>' +
+                        '</div>' +
+                    '</div>';
 
                 container.appendChild(card);
 
-                // Init mini-map after DOM insertion
-                setTimeout(function () {
-                    initMiniMap('minimap-' + index, lot);
-                }, 50);
+                setTimeout(function () { initMiniMap('minimap-' + index, lot); }, 50);
             });
         });
 
         function initMiniMap(elementId, lot) {
             const el = document.getElementById(elementId);
             if (!el || !lot.vertices || lot.vertices.length < 3) {
-                el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#a0aec0;">Sin polígono</div>';
+                el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#a0aec0;font-size:0.9rem;">Sin polígono</div>';
                 return;
             }
 
             const map = L.map(elementId, {
-                zoomControl: false,
-                attributionControl: false,
-                dragging: false,
-                scrollWheelZoom: false,
-                doubleClickZoom: false,
-                touchZoom: false
+                zoomControl: false, attributionControl: false,
+                dragging: false, scrollWheelZoom: false,
+                doubleClickZoom: false, touchZoom: false
             });
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
             const coords = lot.vertices.map(v => [v.latitude, v.longitude]);
             const polygon = L.polygon(coords, {
-                color: '#667eea',
-                weight: 2,
-                fillColor: '#667eea',
-                fillOpacity: 0.2
+                color: '#667eea', weight: 2.5,
+                fillColor: '#667eea', fillOpacity: 0.15
             }).addTo(map);
 
-            map.fitBounds(polygon.getBounds(), { padding: [15, 15] });
+            map.fitBounds(polygon.getBounds(), { padding: [20, 20] });
         }
     </script>
 }
