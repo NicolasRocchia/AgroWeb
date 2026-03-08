@@ -118,7 +118,7 @@
 
             // Count by category
             var activos = allTasks.filter(function (t) { return t.status === 'ASIGNADO'; });
-            var completados = allTasks.filter(function (t) { return t.status === 'COMPLETADO'; });
+            var completados = allTasks.filter(function (t) { return t.status === 'COMPLETADO' || t.status === 'COMPLETADO_MANUAL'; });
 
             document.getElementById('countActivos').textContent = activos.length;
             document.getElementById('countCompletados').textContent = completados.length;
