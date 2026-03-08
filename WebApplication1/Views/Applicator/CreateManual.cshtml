@@ -149,6 +149,25 @@
                     <button type="button" class="btn-edit-vertices" onclick="editLastVertex()" title="Editar último vértice">✏️</button>
                 </div>
 
+                @* Match notification: appears when drawn polygon matches existing lot *@
+                <div id="lotMatchBanner" style="display:none; background:#eff6ff; border:2px solid #93c5fd; border-radius:10px; padding:12px 16px; margin-top:8px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:1.2rem;">🔗</span>
+                        <div>
+                            <strong style="color:#1e40af;">Lote similar encontrado</strong>
+                            <div id="lotMatchText" style="font-size:0.85rem; color:#475569; margin-top:2px;"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px; margin-top:8px;">
+                        <button type="button" onclick="acceptLotMatch()" class="lot-match-btn lot-match-accept">
+                            ✅ Usar lote existente
+                        </button>
+                        <button type="button" onclick="rejectLotMatch()" class="lot-match-btn lot-match-reject">
+                            ➕ Crear como nuevo
+                        </button>
+                    </div>
+                </div>
+
                 <div class="map-actions">
                     <button type="button" id="btnGeolocate" class="btn-geo" onclick="geolocateUser()">
                         📡 Centrar en mi ubicación
@@ -213,8 +232,8 @@
     <link rel="stylesheet" href="~/css/upload.css" asp-append-version="true">
     <style>
         /* ═══════════════════════════════════════════════════
-                   FORM SECTIONS
-                   ═══════════════════════════════════════════════════ */
+                           FORM SECTIONS
+                           ═══════════════════════════════════════════════════ */
         .form-section {
             margin-bottom: 2rem;
             padding: 1.5rem;
@@ -239,8 +258,8 @@
         }
 
         /* ═══════════════════════════════════════════════════
-                   FORM GRID & INPUTS
-                   ═══════════════════════════════════════════════════ */
+                           FORM GRID & INPUTS
+                           ═══════════════════════════════════════════════════ */
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -296,8 +315,8 @@
         }
 
         /* ═══════════════════════════════════════════════════
-                   LOT MODE SELECTOR (existing vs new)
-                   ═══════════════════════════════════════════════════ */
+                           LOT MODE SELECTOR (existing vs new)
+                           ═══════════════════════════════════════════════════ */
         .lot-mode-selector {
             display: flex;
             gap: 0.5rem;
@@ -317,17 +336,17 @@
             transition: all 0.2s;
         }
 
-        .lot-mode-btn:hover {
-            border-color: #667eea;
-            color: #667eea;
-        }
+            .lot-mode-btn:hover {
+                border-color: #667eea;
+                color: #667eea;
+            }
 
-        .lot-mode-btn.active {
-            border-color: #667eea;
-            background: #ebf0ff;
-            color: #667eea;
-            font-weight: 600;
-        }
+            .lot-mode-btn.active {
+                border-color: #667eea;
+                background: #ebf0ff;
+                color: #667eea;
+                font-weight: 600;
+            }
 
         .existing-lots-message {
             padding: 0.8rem;
@@ -372,13 +391,13 @@
             transition: all 0.2s;
         }
 
-        .btn-deselect-lot:hover {
-            background: #fed7d7;
-        }
+            .btn-deselect-lot:hover {
+                background: #fed7d7;
+            }
 
         /* ═══════════════════════════════════════════════════
-                   MAP & POLYGON
-                   ═══════════════════════════════════════════════════ */
+                           MAP & POLYGON
+                           ═══════════════════════════════════════════════════ */
         .lot-map {
             height: 400px;
             border-radius: 10px;
@@ -454,6 +473,35 @@
             padding: 0.1rem 0.3rem;
         }
 
+        .lot-match-btn {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.15s;
+        }
+
+        .lot-match-accept {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+            .lot-match-accept:hover {
+                background: #bfdbfe;
+            }
+
+        .lot-match-reject {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #d1d5db;
+        }
+
+            .lot-match-reject:hover {
+                background: #e2e8f0;
+            }
+
         /* Surface auto-calc label */
         .surface-input-wrapper {
             position: relative;
@@ -467,8 +515,8 @@
         }
 
         /* ═══════════════════════════════════════════════════
-                   PRODUCT CARDS
-                   ═══════════════════════════════════════════════════ */
+                           PRODUCT CARDS
+                           ═══════════════════════════════════════════════════ */
         .product-card {
             background: white;
             border: 1px solid #e2e8f0;
@@ -650,8 +698,8 @@
             }
 
         /* ═══════════════════════════════════════════════════
-                   FORM ACTIONS
-                   ═══════════════════════════════════════════════════ */
+                           FORM ACTIONS
+                           ═══════════════════════════════════════════════════ */
         .form-actions {
             display: flex;
             justify-content: center;
@@ -692,8 +740,8 @@
             }
 
         /* ═══════════════════════════════════════════════════
-                   RESPONSIVE
-                   ═══════════════════════════════════════════════════ */
+                           RESPONSIVE
+                           ═══════════════════════════════════════════════════ */
         @@media (max-width: 768px) {
             .form-grid {
                 grid-template-columns: 1fr;
@@ -713,8 +761,8 @@
         }
 
         /* ═══════════════════════════════════════════════════
-                   LEAFLET.DRAW OVERRIDES
-                   ═══════════════════════════════════════════════════ */
+                           LEAFLET.DRAW OVERRIDES
+                           ═══════════════════════════════════════════════════ */
         .leaflet-draw-toolbar a {
             background-size: 270px 30px;
         }
@@ -834,7 +882,7 @@
                 existingLotsLayer = L.featureGroup();
 
                 if (existingLots.length === 0) {
-                    msgEl.innerHTML = '<span class="existing-lots-empty">No tenés lotes guardados. Podés dibujar uno nuevo.</span>';
+                    msgEl.innerHTML = '<span class="existing-lots-empty">No tenés lotes guardados aún. <a href="/Applicator/CreateLot" target="_blank" style="color:#667eea; font-weight:600;">Crear un lote</a> o cambiá a "Dibujar lote nuevo".</span>';
                     return;
                 }
 
@@ -1232,16 +1280,99 @@
             // Check sensitive point proximity for drawn polygon
             checkSensitivePointProximity(latlngs);
 
+            // Check if drawn polygon matches an existing lot
+            checkLotMatch(latlngs, area);
+
             // If user manually edits surface, hide the auto-label
             surfaceInput.addEventListener('input', function() {
                 surfaceLabel.style.display = 'none';
             }, { once: true });
         }
 
+        // ── Lot matching: compare drawn polygon with existing lots ──
+        var matchedLot = null;
+
+        function checkLotMatch(latlngs, areaHa) {
+            var banner = document.getElementById('lotMatchBanner');
+            matchedLot = null;
+            banner.style.display = 'none';
+
+            if (!existingLots || existingLots.length === 0) return;
+
+            // Calculate centroid of drawn polygon
+            var centLat = 0, centLng = 0;
+            latlngs.forEach(function(ll) { centLat += ll.lat; centLng += ll.lng; });
+            centLat /= latlngs.length;
+            centLng /= latlngs.length;
+
+            // Dynamic threshold based on area
+            var maxDistM = areaHa > 50 ? 300 : (areaHa > 10 ? 200 : 100);
+
+            var bestMatch = null;
+            var bestDist = Infinity;
+
+            existingLots.forEach(function(lot) {
+                if (!lot.centroidLat || !lot.centroidLng) return;
+
+                // Distance between centroids
+                var distM = haversineM(centLat, centLng, lot.centroidLat, lot.centroidLng);
+                if (distM > maxDistM) return;
+
+                // Area difference
+                if (lot.areaHa && areaHa > 0) {
+                    var areaDiff = Math.abs(lot.areaHa - areaHa) / areaHa;
+                    if (areaDiff > 0.20) return; // >20% difference
+                }
+
+                if (distM < bestDist) {
+                    bestDist = distM;
+                    bestMatch = lot;
+                }
+            });
+
+            if (bestMatch) {
+                matchedLot = bestMatch;
+                var text = '"' + (bestMatch.name || bestMatch.code) + '"';
+                if (bestMatch.areaHa) text += ' · ' + bestMatch.areaHa.toFixed(1) + ' ha';
+                if (bestMatch.locality) text += ' · ' + bestMatch.locality;
+                text += ' (a ' + Math.round(bestDist) + 'm de distancia)';
+
+                document.getElementById('lotMatchText').textContent = text;
+                banner.style.display = '';
+            }
+        }
+
+        function acceptLotMatch() {
+            if (!matchedLot) return;
+            // Switch to existing lot mode and select the matched lot
+            setLotMode('existing');
+            selectExistingLot(matchedLot);
+            document.getElementById('lotMatchBanner').style.display = 'none';
+            matchedLot = null;
+        }
+
+        function rejectLotMatch() {
+            // User wants a new lot — hide banner and keep drawing
+            document.getElementById('lotMatchBanner').style.display = 'none';
+            matchedLot = null;
+        }
+
+        function haversineM(lat1, lng1, lat2, lng2) {
+            var R = 6371000;
+            var dLat = (lat2 - lat1) * Math.PI / 180;
+            var dLng = (lng2 - lng1) * Math.PI / 180;
+            var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) *
+                    Math.sin(dLng/2) * Math.sin(dLng/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+
         function clearPolygon() {
             drawnItems.clearLayers();
             currentPolygon = null;
             onPolygonChanged();
+            document.getElementById('lotMatchBanner').style.display = 'none';
+            matchedLot = null;
         }
 
         function editLastVertex() {
