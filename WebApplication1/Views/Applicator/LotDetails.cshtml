@@ -53,6 +53,7 @@
                 <h3 class="lot-card-title">📝 Información</h3>
                 <form method="post" asp-action="EditLot" asp-controller="Applicator" id="editForm">
                     <input type="hidden" name="id" id="lotId" />
+                    <input type="hidden" name="code" id="lotCode" />
 
                     <div class="lot-field">
                         <label for="name">Nombre</label>
@@ -437,6 +438,7 @@
 
         // Form
         document.getElementById('lotId').value = lot.id;
+        document.getElementById('lotCode').value = lot.code;
         document.getElementById('name').value = lot.name || '';
         document.getElementById('locality').value = lot.locality || '';
         document.getElementById('department').value = lot.department || '';

@@ -534,7 +534,7 @@ public class ApplicatorController : Controller
     [HttpPost]
     [Authorize(Roles = "Productor")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditLot(long id, string? name, string? locality, string? department)
+    public async Task<IActionResult> EditLot(long id, string? code, string? name, string? locality, string? department)
     {
         var result = await _api.UpdateLotAsync(id, new
         {
@@ -546,7 +546,7 @@ public class ApplicatorController : Controller
         TempData[result.Success ? "Success" : "Error"] =
             result.Success ? "Lote actualizado correctamente." : (result.Error ?? "Error al actualizar.");
 
-        return RedirectToAction("LotDetails", new { id });
+        return RedirectToAction("LotDetails", new { code = code ?? id.ToString() });
     }
 
     [HttpPost]

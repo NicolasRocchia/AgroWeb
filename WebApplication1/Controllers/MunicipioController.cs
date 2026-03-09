@@ -291,7 +291,7 @@ public class MunicipioController : Controller
         if (data == null)
         {
             TempData["Error"] = error ?? "No se pudo generar el PDF.";
-            return RedirectToAction("Details", new { id });
+            return RedirectToAction("Details", new { code = code ?? id.ToString() });
         }
         var fileName = $"Expediente_{code ?? id.ToString()}_{DateTime.UtcNow:yyyyMMdd}.pdf";
         return File(data, "application/pdf", fileName);
