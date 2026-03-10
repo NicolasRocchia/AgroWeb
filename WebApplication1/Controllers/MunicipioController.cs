@@ -285,15 +285,18 @@ public class MunicipioController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> ExportPdf(long id, string? code)
+    public async Task<IActionResult> ExportPdf(long id, string code)
     {
         var (data, statusCode, error) = await _api.GetBytesAsync($"/api/recipes/{id}/export-pdf");
+
         if (data == null)
         {
             TempData["Error"] = error ?? "No se pudo generar el PDF.";
-            return RedirectToAction("Details", new { code = code ?? id.ToString() });
+            // Redirección limpia forzando el uso de 'code'
+            return RedirectToAction("Details", new { code });
         }
-        var fileName = $"Expediente_{code ?? id.ToString()}_{DateTime.UtcNow:yyyyMMdd}.pdf";
+
+        var fileName = $"Expediente_{code}_{DateTime.UtcNow:yyyyMMdd}.pdf";
         return File(data, "application/pdf", fileName);
     }
 
