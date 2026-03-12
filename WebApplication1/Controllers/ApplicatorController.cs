@@ -586,13 +586,28 @@ public class ApplicatorController : Controller
 
             if (result.Success)
             {
-                // Parse response to get updated data
+                // Parse response to get updated data + overlap warnings
                 var data = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(result.Data ?? "{}");
+
+                List<object> overlappingLots = new();
+                if (data.TryGetProperty("overlappingLots", out var overlapsEl))
+                {
+                    overlappingLots = overlapsEl.EnumerateArray().Select(o => (object)new
+                    {
+                        id = o.TryGetProperty("id", out var id) ? id.GetInt64() : 0,
+                        code = o.TryGetProperty("code", out var code) ? code.GetString() : null,
+                        name = o.TryGetProperty("name", out var name) && name.ValueKind != System.Text.Json.JsonValueKind.Null ? name.GetString() : null,
+                        areaHa = o.TryGetProperty("areaHa", out var area) && area.ValueKind != System.Text.Json.JsonValueKind.Null ? area.GetDecimal() : (decimal?)null,
+                        overlapPercent = o.TryGetProperty("overlapPercent", out var pct) ? pct.GetDouble() : 0
+                    }).ToList();
+                }
+
                 return Json(new
                 {
                     success = true,
                     areaHa = data.TryGetProperty("areaHa", out var a) ? a.GetDecimal() : (decimal?)null,
-                    verticesCount = data.TryGetProperty("verticesCount", out var vc) ? vc.GetInt32() : input.Vertices.Count
+                    verticesCount = data.TryGetProperty("verticesCount", out var vc) ? vc.GetInt32() : input.Vertices.Count,
+                    overlappingLots
                 });
             }
 
@@ -704,7 +719,23 @@ public class ApplicatorController : Controller
 
             if (result.Success)
             {
-                TempData["Success"] = "Lote creado correctamente.";
+                // Detectar superposición en la respuesta
+                var data = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(result.Data ?? "{}");
+                if (data.TryGetProperty("overlappingLots", out var overlapsEl) && overlapsEl.GetArrayLength() > 0)
+                {
+                    // Hay superposición — advertir pero el lote ya fue creado
+                    var overlapNames = overlapsEl.EnumerateArray()
+                        .Select(o => o.TryGetProperty("name", out var n) && n.ValueKind != System.Text.Json.JsonValueKind.Null
+                            ? n.GetString()
+                            : o.TryGetProperty("code", out var c) ? c.GetString() : "?")
+                        .Where(n => n != null)
+                        .ToList();
+                    TempData["Warning"] = $"⚠️ Lote creado, pero se detectó superposición con: {string.Join(", ", overlapNames)}. Revisá los polígonos.";
+                }
+                else
+                {
+                    TempData["Success"] = "Lote creado correctamente.";
+                }
                 return RedirectToAction("Lots");
             }
 

@@ -45,6 +45,7 @@
                 </button>
                 <span id="editStatus" class="lot-edit-status"></span>
             </div>
+            <div id="overlapWarningBanner" style="display:none; margin-top:10px; padding:10px 14px; background:#fffbeb; border:1px solid #f59e0b; border-left:4px solid #f59e0b; border-radius:8px; color:#92400e; font-size:.875rem;"></div>
         </div>
 
         <div class="lot-sidebar">
@@ -985,18 +986,33 @@
                 document.getElementById('lotArea').textContent = data.areaHa ? data.areaHa.toFixed(1) + ' ha' : 'N/D';
                 document.getElementById('lotAreaBadge').textContent = data.areaHa ? ('📐 ' + data.areaHa.toFixed(1) + ' ha') : '';
                 document.getElementById('statVertices').textContent = data.verticesCount || latlngs.length;
-                document.getElementById('editStatus').textContent = '✅ Polígono guardado';
-                document.getElementById('editStatus').style.color = '#059669';
                 if (drawControl) { map.removeControl(drawControl); drawControl = null; }
                 map.off(L.Draw.Event.CREATED);
                 isEditing = false;
+
+                // Mostrar advertencia de superposición si corresponde
+                var overlapBanner = document.getElementById('overlapWarningBanner');
+                if (data.overlappingLots && data.overlappingLots.length > 0) {
+                    var names = data.overlappingLots.map(function(o) {
+                        return (o.name || o.code) + ' (' + o.overlapPercent + '% superposición)';
+                    }).join(', ');
+                    overlapBanner.innerHTML = '⚠️ <strong>Superposición detectada</strong> con: ' + names + '. Revisá los polígonos.';
+                    overlapBanner.style.display = '';
+                    document.getElementById('editStatus').textContent = '✅ Polígono guardado con advertencias';
+                    document.getElementById('editStatus').style.color = '#d97706';
+                } else {
+                    overlapBanner.style.display = 'none';
+                    document.getElementById('editStatus').textContent = '✅ Polígono guardado';
+                    document.getElementById('editStatus').style.color = '#059669';
+                }
+
                 setTimeout(function() {
                     document.getElementById('btnEditPolygon').style.display = '';
                     document.getElementById('btnSavePolygon').style.display = 'none';
                     document.getElementById('btnCancelEdit').style.display = 'none';
                     document.getElementById('editStatus').textContent = '';
                     document.getElementById('editStatus').style.color = '';
-                }, 2000);
+                }, 3000);
             } else {
                 document.getElementById('editStatus').textContent = '❌ ' + (data.error || 'Error al guardar');
                 document.getElementById('editStatus').style.color = '#dc2626';
