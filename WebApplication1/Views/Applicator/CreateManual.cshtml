@@ -1277,6 +1277,9 @@
             surfaceInput.value = area.toFixed(2);
             surfaceLabel.style.display = 'block';
 
+            // Recalcular totales de productos con la nueva superficie
+            if (typeof recalcAllProductTotals === 'function') recalcAllProductTotals();
+
             // Check sensitive point proximity for drawn polygon
             checkSensitivePointProximity(latlngs);
 
@@ -1462,24 +1465,32 @@
                         </div>
                         <div class="product-grid-dose">
                             <div class="form-group">
-                                <label>Dosis</label>
-                                <input type="number" name="Products[${idx}].DoseValue" step="0.01" min="0"
-                                       placeholder="2.5">
+                                <label>Dosis <span style="color:#ef4444;">*</span></label>
+                                <input type="number" name="Products[${idx}].DoseValue" step="0.01" min="0.01"
+                                       class="product-dose-value" placeholder="2.5" required>
                             </div>
                             <div class="form-group">
-                                <label>Unidad Dosis</label>
-                                <input type="text" name="Products[${idx}].DoseUnit" maxlength="30"
-                                       placeholder="l/ha, cc/ha...">
+                                <label>Unidad Dosis <span style="color:#ef4444;">*</span></label>
+                                <select name="Products[${idx}].DoseUnit" required class="product-dose-unit" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:6px;font-size:.9rem;">
+                                    <option value="">— Seleccionar —</option>
+                                    <option value="L/HA">L/HA (litros por hectárea)</option>
+                                    <option value="CM3/HA">CM3/HA (cc por hectárea)</option>
+                                    <option value="ML/HA">ML/HA (mililitros por hectárea)</option>
+                                    <option value="G/HA">G/HA (gramos por hectárea)</option>
+                                    <option value="KG/HA">KG/HA (kilos por hectárea)</option>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label>Total</label>
                                 <input type="number" name="Products[${idx}].TotalValue" step="0.01" min="0"
-                                       placeholder="375">
+                                       class="product-total-value" placeholder="auto" readonly
+                                       style="background:#f1f5f9;">
                             </div>
                             <div class="form-group">
                                 <label>Unidad Total</label>
                                 <input type="text" name="Products[${idx}].TotalUnit" maxlength="30"
-                                       placeholder="litros, kg...">
+                                       class="product-total-unit" placeholder="auto" readonly
+                                       style="background:#f1f5f9;">
                             </div>
                         </div>
                     `;
@@ -1498,6 +1509,12 @@
                 removeBtn.addEventListener('click', function() { removeProduct(idx); });
             }
 
+            // Auto-cálculo de Total = Dosis × Superficie
+            const doseInput = card.querySelector('.product-dose-value');
+            const doseUnitSelect = card.querySelector('.product-dose-unit');
+            if (doseInput) doseInput.addEventListener('input', function() { calcProductTotal(card); });
+            if (doseUnitSelect) doseUnitSelect.addEventListener('change', function() { calcProductTotal(card); });
+
             renumberProducts();
         }
 
@@ -1506,6 +1523,36 @@
             if (card) card.remove();
             renumberProducts();
         }
+
+        // Unidad de dosis → unidad de total (quitar "/HA")
+        var doseUnitToTotalUnit = {
+            'L/HA': 'L', 'CM3/HA': 'CM3', 'ML/HA': 'ML', 'G/HA': 'G', 'KG/HA': 'KG'
+        };
+
+        function calcProductTotal(card) {
+            var doseVal = parseFloat(card.querySelector('.product-dose-value')?.value) || 0;
+            var doseUnit = card.querySelector('.product-dose-unit')?.value || '';
+            var surface = parseFloat(document.getElementById('LotSurfaceHa')?.value) || 0;
+            var totalInput = card.querySelector('.product-total-value');
+            var totalUnitInput = card.querySelector('.product-total-unit');
+
+            if (doseVal > 0 && surface > 0) {
+                totalInput.value = (doseVal * surface).toFixed(2);
+                totalUnitInput.value = doseUnitToTotalUnit[doseUnit] || '';
+            } else {
+                totalInput.value = '';
+                totalUnitInput.value = '';
+            }
+        }
+
+        function recalcAllProductTotals() {
+            document.querySelectorAll('#productsContainer .product-card').forEach(function(card) {
+                calcProductTotal(card);
+            });
+        }
+
+        // Recalcular todos los totales cuando cambia la superficie del lote
+        document.getElementById('LotSurfaceHa')?.addEventListener('input', recalcAllProductTotals);
 
         function renumberProducts() {
             const cards = document.querySelectorAll('#productsContainer .product-card');
