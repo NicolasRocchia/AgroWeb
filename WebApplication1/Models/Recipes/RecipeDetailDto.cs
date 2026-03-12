@@ -64,6 +64,14 @@ public class RecipeDetailDto
     public List<RecipeReviewLogDto> ReviewLogs { get; set; } = new();
     public List<RecipeMessageDto> Messages { get; set; } = new();
     public List<RecipeExecutionDto> Executions { get; set; } = new();
+
+    // EIQ
+    public decimal? EiqScore { get; set; }
+    public string? EiqLevel { get; set; }
+    public string? EiqCoverage { get; set; }
+    public decimal? EiqFarmWorker { get; set; }
+    public decimal? EiqConsumer { get; set; }
+    public decimal? EiqEcological { get; set; }
 }
 
 public class RequesterDto

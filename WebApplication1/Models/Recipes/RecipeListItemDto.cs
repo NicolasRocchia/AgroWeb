@@ -25,4 +25,6 @@ public class RecipeListItemDto
     public DateTime? UpdatedAt { get; set; }
     public string? AssignedMunicipalityName { get; set; }
     public string? RiskLevel { get; set; }
+    public decimal? EiqScore { get; set; }
+    public string? EiqLevel { get; set; }
 }
