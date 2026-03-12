@@ -33,6 +33,21 @@ public class ExecutionsController : Controller
     }
 
     // =============================================
+    // OPERARIO: Mis ejecuciones asignadas
+    // =============================================
+
+    [HttpGet]
+    [Authorize(Roles = "Operario")]
+    public async Task<IActionResult> MyOperatorExecutions(string? status)
+    {
+        var result = await _api.GetMyOperatorExecutionsAsync(status);
+        ViewBag.ExecutionsJson = result.Success ? result.Data : "[]";
+        ViewBag.StatusFilter = status;
+        if (!result.Success) ViewBag.Error = result.Error;
+        return View("MyExecutions"); // Reutiliza la misma vista
+    }
+
+    // =============================================
     // PRODUCTOR: Mis asignaciones
     // =============================================
 
@@ -63,6 +78,19 @@ public class ExecutionsController : Controller
         ViewBag.ExecutionJson = result.Data;
         ViewBag.IsApplicator = User.IsInRole("Aplicador");
         ViewBag.IsProducer = User.IsInRole("Productor");
+        ViewBag.IsOperator = User.IsInRole("Operario");
+
+        // Cargar operarios para dropdown de asignación (solo para Aplicador)
+        if (User.IsInRole("Aplicador"))
+        {
+            var opsResult = await _api.GetMyOperatorsAsync();
+            ViewBag.OperatorsJson = opsResult.Success ? opsResult.Data : "[]";
+        }
+        else
+        {
+            ViewBag.OperatorsJson = "[]";
+        }
+
         return View();
     }
 
@@ -100,7 +128,7 @@ public class ExecutionsController : Controller
     // =============================================
 
     [HttpPost]
-    [Authorize(Roles = "Aplicador")]
+    [Authorize(Roles = "Aplicador,Operario")]
     public async Task<IActionResult> Transition(long id, string action, string? gpsLat, string? gpsLng,
         string? pauseReason, string? notes)
     {
@@ -125,7 +153,7 @@ public class ExecutionsController : Controller
     // =============================================
 
     [HttpPost]
-    [Authorize(Roles = "Aplicador")]
+    [Authorize(Roles = "Aplicador,Operario")]
     public async Task<IActionResult> SubmitChecklist(long id, bool equipmentCalibrated, bool ppeEquipped,
         bool mixturePrepared, bool exclusionZonesVerified, bool windConditionsOk, string? customNotes)
     {
@@ -145,6 +173,22 @@ public class ExecutionsController : Controller
         else
             TempData["Error"] = result.Error ?? "Error al guardar el checklist.";
 
+        return RedirectToAction("Detail", new { id });
+    }
+
+    // =============================================
+    // APLICADOR: Asignar operario a ejecución
+    // =============================================
+
+    [HttpPost]
+    [Authorize(Roles = "Aplicador")]
+    public async Task<IActionResult> AssignOperator(long id, long operatorProfileId)
+    {
+        var result = await _api.AssignOperatorToExecutionAsync(id, new { operatorProfileId });
+        if (result.Success)
+            TempData["Success"] = "Operario asignado correctamente.";
+        else
+            TempData["Error"] = result.Error ?? "Error al asignar operario.";
         return RedirectToAction("Detail", new { id });
     }
 

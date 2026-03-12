@@ -1,0 +1,97 @@
+@{
+    ViewData["Title"] = "Mi Equipo";
+    var operatorsJson = ViewBag.OperatorsJson as string ?? "[]";
+}
+
+<div class="detail-header">
+    <div class="detail-header-content">
+        <a asp-controller="Home" asp-action="Index" class="back-button">← Inicio</a>
+        <h1 class="detail-title">👥 Mi Equipo</h1>
+        <p style="opacity:.85; margin:0; font-size:.95rem;">Operarios de campo de tu empresa</p>
+    </div>
+</div>
+
+<div style="max-width: 800px; margin: 0 auto; padding: 20px 16px 40px;">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-box alert-success-box"><span>✅</span> @TempData["Success"]</div>
+    }
+    @if (TempData["TempPassword"] != null)
+    {
+        <div style="background:#eff6ff; border:1px solid #93c5fd; border-radius:8px; padding:16px; margin-bottom:16px;">
+            <p style="margin:0 0 8px; font-weight:600; color:#1e40af;">🔑 Credenciales del nuevo operario</p>
+            <p style="margin:0; color:#1e293b;">Contraseña temporal: <code style="background:#dbeafe; padding:2px 8px; border-radius:4px; font-weight:700;">@TempData["TempPassword"]</code></p>
+            <p style="margin:8px 0 0; font-size:0.85rem; color:#64748b;">Compartí estas credenciales con el operario. Podrá cambiar la contraseña al ingresar.</p>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-box alert-error-box"><span>⚠️</span> @TempData["Error"]</div>
+    }
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <p style="margin:0; color:#64748b;" id="teamCount"></p>
+        <a asp-action="CreateOperator" style="color:#667eea; font-weight:600; font-size:.9rem; text-decoration:none;">+ Agregar operario</a>
+    </div>
+
+    <div id="teamList"></div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/recipeDetail.css" asp-append-version="true" />
+}
+
+@section Scripts {
+<script>
+(function() {
+    var operators = @Html.Raw(operatorsJson);
+    var container = document.getElementById('teamList');
+    var countEl = document.getElementById('teamCount');
+
+    countEl.textContent = operators.length + ' operario' + (operators.length !== 1 ? 's' : '');
+
+    if (operators.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:#94a3b8;">'
+            + '<p style="font-size:2rem;">👥</p>'
+            + '<p>No tenés operarios registrados.</p>'
+            + '<p>Si trabajás con un equipo, podés agregar operarios para asignarles ejecuciones de campo.</p>'
+            + '</div>';
+        return;
+    }
+
+    var html = '';
+    operators.forEach(function(op) {
+        var statusBadge = op.isActive
+            ? '<span style="background:#dcfce7; color:#166534; padding:2px 10px; border-radius:20px; font-size:0.8rem;">Activo</span>'
+            : '<span style="background:#fee2e2; color:#991b1b; padding:2px 10px; border-radius:20px; font-size:0.8rem;">Inactivo</span>';
+
+        html += '<div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:12px;">';
+        html += '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">';
+        html += '<div>';
+        html += '<span style="font-weight:700; font-size:1.1rem; color:#1e293b;">' + op.name + '</span> ' + statusBadge;
+        html += '<div style="color:#64748b; font-size:0.85rem; margin-top:4px;">';
+        html += '📧 ' + op.email;
+        if (op.phone) html += ' · 📱 ' + op.phone;
+        html += '</div>';
+        html += '<div style="color:#94a3b8; font-size:0.8rem; margin-top:2px;">✅ ' + op.completedExecutions + ' ejecuciones completadas</div>';
+        html += '</div>';
+
+        html += '<div style="display:flex; gap:6px;">';
+        if (op.isActive) {
+            html += '<form method="post" action="/Applicator/DeactivateOperator" style="margin:0;">';
+            html += '<input type="hidden" name="id" value="' + op.id + '" />';
+            html += '<button type="submit" class="btn-danger-outline" style="font-size:0.8rem; padding:4px 12px;" '
+                  + 'onclick="return confirm(\'¿Desactivar a ' + op.name + '?\')">Desactivar</button>';
+            html += '</form>';
+        }
+        html += '</div>';
+
+        html += '</div>';
+        html += '</div>';
+    });
+
+    container.innerHTML = html;
+})();
+</script>
+}

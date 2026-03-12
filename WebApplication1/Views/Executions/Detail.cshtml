@@ -3,6 +3,8 @@
     var executionJson = ViewBag.ExecutionJson as string ?? "{}";
     var isApplicator = (bool)(ViewBag.IsApplicator ?? false);
     var isProducer = (bool)(ViewBag.IsProducer ?? false);
+    var isOperator = (bool)(ViewBag.IsOperator ?? false);
+    var operatorsJson = ViewBag.OperatorsJson as string ?? "[]";
 }
 
 <div class="detail-header">
@@ -37,6 +39,8 @@
     var exec = @Html.Raw(executionJson);
     var isApplicator = @(isApplicator ? "true" : "false");
     var isProducer = @(isProducer ? "true" : "false");
+    var isOperator = @(isOperator ? "true" : "false");
+    var myOperators = @Html.Raw(operatorsJson);
     var container = document.getElementById('execDetail');
 
     if (!exec || !exec.id) {
@@ -77,10 +81,32 @@
     html += '<div class="exec-info-item"><span class="exec-info-label">Productor</span><span class="exec-info-value">' + exec.producerName + '</span></div>';
     html += '<div class="exec-info-item"><span class="exec-info-label">Aplicador</span><span class="exec-info-value">' + exec.applicatorBusinessName + '</span></div>';
     if (exec.applicatorPhone) html += '<div class="exec-info-item"><span class="exec-info-label">Teléfono</span><span class="exec-info-value"><a href="tel:' + exec.applicatorPhone + '">' + exec.applicatorPhone + '</a></span></div>';
-    html += '</div></div>';
+    if (exec.operator) {
+        html += '<div class="exec-info-item"><span class="exec-info-label">Operario</span><span class="exec-info-value">👷 ' + exec.operator.name + '</span></div>';
+        if (exec.operator.phone) html += '<div class="exec-info-item"><span class="exec-info-label">Tel. Operario</span><span class="exec-info-value"><a href="tel:' + exec.operator.phone + '">' + exec.operator.phone + '</a></span></div>';
+    }
+    html += '</div>';
 
-    // ── Panel de acciones del aplicador (mobile-first) ──
-    if (isApplicator) {
+    // Botón asignar operario (solo Aplicador, solo PENDIENTE/ACEPTADA, si tiene operarios)
+    if (isApplicator && !exec.operator && (exec.status === 'PENDIENTE' || exec.status === 'ACEPTADA') && myOperators.length > 0) {
+        html += '<div style="margin-top:12px; padding:12px; background:#f0f9ff; border-radius:8px; border:1px solid #bae6fd;">';
+        html += '<form method="post" action="/Executions/AssignOperator" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">';
+        html += '<input type="hidden" name="id" value="' + exec.id + '" />';
+        html += '<select name="operatorProfileId" style="flex:1; min-width:180px; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">';
+        html += '<option value="">Seleccionar operario...</option>';
+        myOperators.forEach(function(op) {
+            if (op.isActive) html += '<option value="' + op.id + '">' + op.name + '</option>';
+        });
+        html += '</select>';
+        html += '<button type="submit" class="btn-primary" style="padding:8px 16px;">👷 Asignar</button>';
+        html += '</form>';
+        html += '</div>';
+    }
+
+    html += '</div>';
+
+    // ── Panel de acciones del aplicador/operario (mobile-first) ──
+    if (isApplicator || isOperator) {
         html += buildApplicatorPanel(exec);
     }
 

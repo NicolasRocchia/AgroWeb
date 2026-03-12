@@ -77,6 +77,12 @@
                                     <li><a asp-controller="Executions" asp-action="MyExecutions">🚜 Mis Ejecuciones</a></li>
                                 </ul>
                             </li>
+                            <li><a class="nav-link-custom" asp-controller="Applicator" asp-action="MyTeam">👥 Mi Equipo</a></li>
+                        }
+
+                        @if (User.IsInRole("Operario"))
+                        {
+                            <li><a class="nav-link-custom" asp-controller="Executions" asp-action="MyOperatorExecutions">🚜 Mis Ejecuciones</a></li>
                         }
 
                         @if (User.IsInRole("Admin"))

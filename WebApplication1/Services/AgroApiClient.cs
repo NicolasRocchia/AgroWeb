@@ -481,6 +481,29 @@ public class AgroApiClient
     public Task<ApiResult<string>> CreateExecutionReviewAsync(long id, object body)
         => PostAsync($"/api/executions/{id}/review", body);
 
+    // ── Operarios ──
+
+    public Task<ApiResult<string>> GetMyOperatorsAsync()
+        => GetRawJsonAsync("/api/operators");
+
+    public Task<ApiResult<string>> GetOperatorDetailAsync(long id)
+        => GetRawJsonAsync($"/api/operators/{id}");
+
+    public Task<ApiResult<string>> CreateOperatorAsync(object body)
+        => PostAsync("/api/operators", body);
+
+    public Task<ApiResult<string>> UpdateOperatorAsync(long id, object body)
+        => PutAsync($"/api/operators/{id}", body);
+
+    public Task<ApiResult<string>> DeactivateOperatorAsync(long id)
+        => PostAsync($"/api/operators/{id}/deactivate", new { });
+
+    public Task<ApiResult<string>> AssignOperatorToExecutionAsync(long executionId, object body)
+        => PostAsync($"/api/executions/{executionId}/assign-operator", body);
+
+    public Task<ApiResult<string>> GetMyOperatorExecutionsAsync(string? status = null)
+        => GetRawJsonAsync($"/api/executions/my-operator-executions{(status != null ? $"?status={status}" : "")}");
+
 
     /// <summary>
     /// Extracts error with support for both "error" (string) and "errors" (array) formats.

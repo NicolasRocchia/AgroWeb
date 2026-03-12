@@ -1,0 +1,51 @@
+@{
+    ViewData["Title"] = "Agregar Operario";
+}
+
+<div class="detail-header">
+    <div class="detail-header-content">
+        <a asp-controller="Applicator" asp-action="MyTeam" class="back-button">← Mi Equipo</a>
+        <h1 class="detail-title">➕ Agregar Operario</h1>
+    </div>
+</div>
+
+<div style="max-width: 500px; margin: 0 auto; padding: 20px 16px 40px;">
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-box alert-error-box"><span>⚠️</span> @TempData["Error"]</div>
+    }
+
+    <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:14px; margin-bottom:20px; font-size:0.9rem; color:#0369a1;">
+        Se creará una cuenta de usuario con rol <strong>Operario</strong> y una contraseña temporal que deberás compartir con el operario.
+    </div>
+
+    <form method="post" asp-action="CreateOperator" style="display:flex; flex-direction:column; gap:16px;">
+
+        <div>
+            <label style="font-weight:600; color:#1e293b; display:block; margin-bottom:4px;">Nombre *</label>
+            <input type="text" name="name" required maxlength="150" placeholder="Ej: Juan Pérez"
+                   style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:1rem;" />
+        </div>
+
+        <div>
+            <label style="font-weight:600; color:#1e293b; display:block; margin-bottom:4px;">Email *</label>
+            <input type="email" name="email" required maxlength="200" placeholder="operario@@empresa.com"
+                   style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:1rem;" />
+        </div>
+
+        <div>
+            <label style="font-weight:600; color:#1e293b; display:block; margin-bottom:4px;">Teléfono</label>
+            <input type="tel" name="phone" maxlength="30" placeholder="Ej: +54 9 351 1234567"
+                   style="width:100%; padding:10px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:1rem;" />
+        </div>
+
+        <button type="submit" class="btn-primary" style="padding:12px; font-size:1rem; margin-top:8px;">
+            Crear operario
+        </button>
+    </form>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/recipeDetail.css" asp-append-version="true" />
+}

@@ -771,4 +771,71 @@ public class ApplicatorController : Controller
             return Json(Array.Empty<object>());
         }
     }
+
+    // =============================================
+    // MI EQUIPO (operarios) — solo Aplicador
+    // =============================================
+
+    [HttpGet]
+    [Authorize(Roles = "Aplicador")]
+    public async Task<IActionResult> MyTeam()
+    {
+        var result = await _api.GetMyOperatorsAsync();
+        ViewBag.OperatorsJson = result.Success ? result.Data : "[]";
+        if (!result.Success) ViewBag.Error = result.Error;
+        return View();
+    }
+
+    [HttpGet]
+    [Authorize(Roles = "Aplicador")]
+    public IActionResult CreateOperator() => View();
+
+    [HttpPost]
+    [Authorize(Roles = "Aplicador")]
+    public async Task<IActionResult> CreateOperator(string name, string email, string? phone)
+    {
+        var result = await _api.CreateOperatorAsync(new { name, email, phone });
+        if (result.Success)
+        {
+            // Extraer contraseña temporal del response
+            try
+            {
+                var doc = JsonDocument.Parse(result.Data!);
+                var tempPass = doc.RootElement.GetProperty("tempPassword").GetString();
+                TempData["Success"] = $"Operario creado. Contraseña temporal: {tempPass}";
+                TempData["TempPassword"] = tempPass;
+            }
+            catch
+            {
+                TempData["Success"] = "Operario creado exitosamente.";
+            }
+            return RedirectToAction("MyTeam");
+        }
+        TempData["Error"] = result.Error ?? "Error al crear el operario.";
+        return RedirectToAction("CreateOperator");
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Aplicador")]
+    public async Task<IActionResult> UpdateOperator(long id, string name, string? phone, bool isActive)
+    {
+        var result = await _api.UpdateOperatorAsync(id, new { name, phone, isActive });
+        if (result.Success)
+            TempData["Success"] = "Operario actualizado.";
+        else
+            TempData["Error"] = result.Error ?? "Error al actualizar.";
+        return RedirectToAction("MyTeam");
+    }
+
+    [HttpPost]
+    [Authorize(Roles = "Aplicador")]
+    public async Task<IActionResult> DeactivateOperator(long id)
+    {
+        var result = await _api.DeactivateOperatorAsync(id);
+        if (result.Success)
+            TempData["Success"] = "Operario desactivado.";
+        else
+            TempData["Error"] = result.Error ?? "Error al desactivar.";
+        return RedirectToAction("MyTeam");
+    }
 }

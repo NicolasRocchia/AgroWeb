@@ -3,6 +3,7 @@
     var isAdmin = User.IsInRole("Admin");
     var isProductor = User.IsInRole("Productor");
     var isAplicador = User.IsInRole("Aplicador");
+    var isOperario = User.IsInRole("Operario");
     var isAuthenticated = User?.Identity?.IsAuthenticated ?? false;
     var userName = User?.Identity?.Name ?? "Usuario";
 }
@@ -261,6 +262,40 @@ else if (isAplicador)
                     <p>Consultá tu perfil de aplicador, tu maquinaria disponible y tus ubicaciones. Verificá el estado de tu cuenta.</p>
                     <a asp-controller="Applicator" asp-action="MyProfile" class="feature-btn">
                         Ver Mi Perfil <span>→</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+@* ======================================================
+   OPERARIO DASHBOARD
+   ====================================================== *@
+else if (isOperario)
+{
+    <div class="hero-section" style="background: linear-gradient(135deg, #1e3a5f 0%, #2d5f8a 100%);">
+        <div class="hero-content">
+            <div class="logo-container">
+                <span class="logo-icon">👷</span>
+                <h1 class="logo-text">AGROCONNECT</h1>
+            </div>
+            <p class="hero-subtitle">Bienvenido, @userName</p>
+            <p class="hero-description">
+                Consultá tus ejecuciones asignadas y ejecutá los trabajos de campo.
+            </p>
+        </div>
+    </div>
+
+    <div class="features-section">
+        <div class="container">
+            <h2 class="section-title">¿Qué querés hacer?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🚜</div>
+                    <h3>Mis Ejecuciones</h3>
+                    <p>Visualizá las ejecuciones asignadas por tu empresa. Aceptá, ejecutá el checklist e iniciá la aplicación.</p>
+                    <a asp-controller="Executions" asp-action="MyOperatorExecutions" class="feature-btn">
+                        Ver Ejecuciones <span>→</span>
                     </a>
                 </div>
             </div>
