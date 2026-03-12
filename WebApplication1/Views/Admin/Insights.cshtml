@@ -147,6 +147,25 @@
         </div>
     </div>
 
+    <!-- ═══════════════════════════════════════
+         EIQ — Herramientas Admin (temporal)
+         ═══════════════════════════════════════ -->
+    <div class="insight-card" style="grid-column: 1 / -1; border-left: 4px solid #8b5cf6;">
+        <h3 style="color: #8b5cf6; margin-bottom: 12px;">🧪 EIQ — Impacto Ambiental</h3>
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <button id="btnEiqStats" onclick="loadEiqStats()" 
+                    style="padding: 8px 16px; background: #6366f1; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                📊 Ver estadísticas
+            </button>
+            <button id="btnEiqParse" onclick="runEiqParse()" 
+                    style="padding: 8px 16px; background: #8b5cf6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                🔄 Re-parsear productos
+            </button>
+            <span id="eiqStatus" style="color: #94a3b8; font-size: 0.85rem;"></span>
+        </div>
+        <pre id="eiqResult" style="margin-top: 12px; padding: 12px; background: #1e293b; color: #e2e8f0; border-radius: 8px; font-size: 0.8rem; overflow-x: auto; display: none; max-height: 400px;"></pre>
+    </div>
+
 </div>
 
 @section Styles {
@@ -280,5 +299,47 @@
                 }
             }
         });
+
+        // ── EIQ Tools ──
+        async function loadEiqStats() {
+            const status = document.getElementById('eiqStatus');
+            const result = document.getElementById('eiqResult');
+            status.textContent = 'Consultando...';
+            result.style.display = 'none';
+            try {
+                const res = await fetch('/Admin/GetEiqStats');
+                const data = await res.json();
+                result.textContent = JSON.stringify(data, null, 2);
+                result.style.display = 'block';
+                status.textContent = '';
+            } catch (e) {
+                status.textContent = 'Error: ' + e.message;
+            }
+        }
+
+        async function runEiqParse() {
+            if (!confirm('¿Re-parsear todos los productos? Esto puede tardar unos segundos.')) return;
+            const status = document.getElementById('eiqStatus');
+            const result = document.getElementById('eiqResult');
+            const btn = document.getElementById('btnEiqParse');
+            btn.disabled = true;
+            btn.textContent = '⏳ Parseando...';
+            status.textContent = 'Procesando ~7000 productos...';
+            result.style.display = 'none';
+            try {
+                const res = await fetch('/Admin/RunEiqParse', { method: 'POST' });
+                const data = await res.json();
+                result.textContent = JSON.stringify(data, null, 2);
+                result.style.display = 'block';
+                const matched = (data.componentsMatchedDirect || 0) + (data.componentsMatchedAlias || 0) + (data.componentsMatchedPartial || 0);
+                const total = data.componentsParsed || 1;
+                status.textContent = `✅ ${matched}/${total} matcheados (${(matched/total*100).toFixed(1)}%) en ${data.duration}`;
+            } catch (e) {
+                status.textContent = 'Error: ' + e.message;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 Re-parsear productos';
+            }
+        }
     </script>
 }

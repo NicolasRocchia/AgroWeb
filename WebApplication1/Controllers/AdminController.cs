@@ -457,4 +457,28 @@ public class AdminController : Controller
 
         return Content(result.Data ?? "{}", "application/json");
     }
+
+    // =============================================
+    // EIQ — PARSEO DE ACTIVOS (temporal)
+    // =============================================
+
+    [HttpPost]
+    public async Task<IActionResult> RunEiqParse()
+    {
+        var result = await _api.PostAsync("/api/admin/eiq/parse-products", new { });
+        if (!result.Success)
+            return StatusCode(500, new { error = result.Error });
+
+        return Content(result.Data ?? "{}", "application/json");
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetEiqStats()
+    {
+        var result = await _api.GetRawJsonAsync("/api/admin/eiq/stats");
+        if (!result.Success)
+            return StatusCode(500, new { error = result.Error });
+
+        return Content(result.Data ?? "{}", "application/json");
+    }
 }
