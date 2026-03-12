@@ -134,6 +134,12 @@
     <!-- Historial de recetas -->
     <div class="lot-card" style="margin-top:20px;">
         <h3 class="lot-card-title">📋 Historial de Aplicaciones</h3>
+        @if (ViewBag.HistoryError != null)
+        {
+            <div style="padding:12px;background:#fee2e2;color:#991b1b;border-radius:8px;font-size:0.85rem;margin-bottom:8px;">
+                ⚠️ Error cargando historial: @ViewBag.HistoryError
+            </div>
+        }
         <div id="historialContent">
             <p style="color:#94a3b8; text-align:center; padding:2rem;">Cargando historial...</p>
         </div>
@@ -661,8 +667,8 @@
 
     // Datos del servidor
     var lot = @Html.Raw(ViewBag.LotJson ?? "null");
-    var _historyRaw = @Html.Raw(ViewBag.HistoryJson ?? "null");
-    var history = (_historyRaw && typeof _historyRaw === 'object') ? _historyRaw : null;
+    var _lotHistoryData = @Html.Raw(ViewBag.HistoryJson ?? "null");
+    var lotHistory = (_lotHistoryData && typeof _lotHistoryData === 'object') ? _lotHistoryData : null;
 
     (function() {
         if (!lot) return;
@@ -686,7 +692,7 @@
 
         // Stats (del historial si está disponible, sino de lot.recipes)
         var recipes = lot.recipes || [];
-        document.getElementById('statRecipes').textContent = (history && history.kpis) ? history.kpis.totalRecipes : recipes.length;
+        document.getElementById('statRecipes').textContent = (lotHistory && lotHistory.kpis) ? lotHistory.kpis.totalRecipes : recipes.length;
         document.getElementById('statVertices').textContent = (lot.vertices || []).length;
 
         // Map
@@ -710,9 +716,9 @@
         }
 
         // Renderizar historial o tabla simple de fallback
-        if (history && history.kpis) {
-            renderKpis(history.kpis);
-            renderHistorial(history.recipes);
+        if (lotHistory && lotHistory.kpis) {
+            renderKpis(lotHistory.kpis);
+            renderHistorial(lotHistory.recipes);
         } else {
             renderSimpleRecipes(recipes);
         }
@@ -747,7 +753,6 @@
         'ACEPTADA': 'Aceptada', 'EN_CAMINO': 'En camino'
     };
 
-    var riskColors = { 'ALTO': '#dc2626', 'MEDIO': '#f59e0b', 'BAJO': '#16a34a' };
 
     function toxDotClass(cls) {
         if (!cls) return 'hist-tox-';
@@ -762,6 +767,8 @@
 
     function renderHistorial(recipes) {
         var container = document.getElementById('historialContent');
+        var riskColors = { 'ALTO': '#dc2626', 'MEDIO': '#f59e0b', 'BAJO': '#16a34a' };
+        try {
         if (!recipes || recipes.length === 0) {
             container.innerHTML = '<div style="text-align:center;padding:3rem;color:#94a3b8;">🌾 No hay recetas asociadas a este lote.</div>';
             return;
@@ -843,6 +850,10 @@
         });
 
         container.innerHTML = html;
+        } catch(err) {
+            console.error('[renderHistorial] Error:', err.message, err);
+            container.innerHTML = '<div style="padding:12px;background:#fee2e2;color:#991b1b;border-radius:8px;font-size:0.85rem;">⚠️ Error renderizando historial: ' + err.message + '</div>';
+        }
     }
 
     function metaItem(label, value) {

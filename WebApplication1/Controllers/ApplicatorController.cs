@@ -539,9 +539,14 @@ public class ApplicatorController : Controller
                 var historyResult = await _api.GetLotHistoryAsync(lotId);
                 if (historyResult.Success)
                     ViewBag.HistoryJson = historyResult.Data;
+                else
+                    ViewBag.HistoryError = historyResult.Error ?? $"HTTP error al cargar historial (lotId={lotId})";
             }
         }
-        catch { /* historial no crítico */ }
+        catch (Exception ex)
+        {
+            ViewBag.HistoryError = ex.Message;
+        }
 
         return View();
     }
