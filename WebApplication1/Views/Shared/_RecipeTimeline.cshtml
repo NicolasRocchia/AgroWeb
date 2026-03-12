@@ -50,7 +50,61 @@
         }
     }
 
-    // 4. Messages
+    // 4. Ejecuciones de campo
+    if (recipe.Executions != null)
+    {
+        foreach (var exec in recipe.Executions)
+        {
+            // Asignación
+            var originLabel = exec.Origin == "DIRECTA" ? "asignación directa" : "bolsa de trabajo";
+            events.Add((
+                exec.AcceptedAt ?? recipe.CreatedAt, // fallback a createdAt si no hay AcceptedAt
+                "🚜",
+                "#0891b2",
+                $"Ejecución asignada a {exec.ApplicatorName}",
+                $"Origen: {originLabel}",
+                exec.ApplicatorName
+            ));
+
+            // Inicio
+            if (exec.StartedAt.HasValue)
+            {
+                events.Add((
+                    exec.StartedAt.Value,
+                    "▶️",
+                    "#16a34a",
+                    $"Aplicación iniciada — {exec.ApplicatorName}",
+                    null,
+                    exec.ApplicatorName
+                ));
+            }
+
+            // Finalización (completada o cancelada)
+            if (exec.CompletedAt.HasValue)
+            {
+                var (finIcon, finColor, finTitle) = exec.Status switch
+                {
+                    "COMPLETADA"       => ("✅", "#16a34a", "Aplicación completada"),
+                    "COMPLETADA_ADMIN" => ("🔒", "#64748b", "Aplicación cerrada manualmente"),
+                    "CANCELADA"        => ("❌", "#dc2626", "Aplicación cancelada"),
+                    _                  => ("⏹️", "#64748b", "Aplicación finalizada")
+                };
+                var finDetail = exec.TotalActiveMinutes.HasValue
+                    ? $"{exec.TotalActiveMinutes} min efectivos de aplicación"
+                    : exec.CancellationReason;
+                events.Add((
+                    exec.CompletedAt.Value,
+                    finIcon,
+                    finColor,
+                    finTitle,
+                    finDetail,
+                    exec.ApplicatorName
+                ));
+            }
+        }
+    }
+
+    // 5. Messages
     if (recipe.Messages != null)
     {
         foreach (var msg in recipe.Messages)

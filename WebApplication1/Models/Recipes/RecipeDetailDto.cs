@@ -63,6 +63,7 @@ public class RecipeDetailDto
     public DateTime? AssignedAt { get; set; }
     public List<RecipeReviewLogDto> ReviewLogs { get; set; } = new();
     public List<RecipeMessageDto> Messages { get; set; } = new();
+    public List<RecipeExecutionDto> Executions { get; set; } = new();
 }
 
 public class RequesterDto
@@ -147,6 +148,20 @@ public class RecipeMessageDto
     public string SenderRole { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
+}
+
+public class RecipeExecutionDto
+{
+    public long Id { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string Origin { get; set; } = string.Empty;
+    public string ApplicatorName { get; set; } = string.Empty;
+    public DateTime? AcceptedAt { get; set; }
+    public DateTime? StartedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public DateTime? CancelledAt { get; set; }
+    public string? CancellationReason { get; set; }
+    public int? TotalActiveMinutes { get; set; }
 }
 
 public class MunicipalityDto
