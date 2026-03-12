@@ -420,6 +420,12 @@
         </section>
     }
 
+    <!-- Timeline unificado -->
+    @{
+        ViewData["TimelineRecipe"] = Model.Recipe;
+    }
+    @await Html.PartialAsync("_RecipeTimeline")
+
     <!-- Auditoría -->
     <section class="detail-section">
         <h2 class="section-title">

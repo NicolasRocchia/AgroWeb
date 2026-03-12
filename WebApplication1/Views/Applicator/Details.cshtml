@@ -159,110 +159,32 @@
         </div>
     </section>
 
-    <!-- Estado Municipal -->
-    @if (Model.Recipe.AssignedMunicipalityId.HasValue)
-    {
-        <section class="detail-section" style="background: #eff6ff; border-left: 4px solid #3b82f6;">
-            <h2 class="section-title">
-                <span class="section-icon">🏛️</span> Control Municipal
-            </h2>
-            <div class="info-grid" style="grid-template-columns: 1fr 1fr;">
-                <div class="info-item">
-                    <span class="info-label">Municipio asignado</span>
-                    <span class="info-value">@Model.Recipe.AssignedMunicipalityName</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Enviada el</span>
-                    <span class="info-value">@DateHelper.FormatArg(Model.Recipe.AssignedAt)</span>
-                </div>
-            </div>
-
-            @if (Model.Recipe.ReviewLogs?.Any() == true)
-            {
-                <h3 style="margin: 16px 0 8px; font-size: 14px; color: #475569;">Historial de revisiones</h3>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    @foreach (var log in Model.Recipe.ReviewLogs)
-                    {
-                        var actionColor = log.Action switch
-                        {
-                                                                            "APROBADA" => "#16a34a",
-                                                                            "RECHAZADA" => "#dc2626",
-                                                                            "OBSERVADA" => "#d97706",
-                                                                            "REDIRIGIDA" => "#2563eb",
-                            _ => "#64748b"
-                        };
-                        var actionIcon = log.Action switch
-                        {
-                                                                            "APROBADA" => "✅",
-                                                                            "RECHAZADA" => "❌",
-                                                                            "OBSERVADA" => "💬",
-                                                                            "REDIRIGIDA" => "↪️",
-                            _ => "•"
-                        };
-                        <div style="padding: 10px 14px; background: white; border-radius: 8px; border-left: 3px solid @actionColor;">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span style="font-weight: 600; color: @actionColor;">@actionIcon @log.Action</span>
-                                <span style="font-size: 12px; color: #94a3b8;">@DateHelper.FormatArg(log.CreatedAt)</span>
-                            </div>
-                            <div style="font-size: 13px; color: #64748b;">@log.MunicipalityName</div>
-                            @if (log.Action == "REDIRIGIDA" && !string.IsNullOrEmpty(log.TargetMunicipalityName))
-                            {
-                                <div style="font-size: 13px; color: #2563eb;">→ @log.TargetMunicipalityName</div>
-                            }
-                            @if (!string.IsNullOrEmpty(log.Observation))
-                            {
-                                <div style="margin-top: 6px; font-size: 13px; color: #334155; background: #f8fafc; padding: 8px; border-radius: 6px;">@log.Observation</div>
-                            }
-                        </div>
-                    }
-                </div>
-            }
-        </section>
+    <!-- Timeline unificado -->
+    @{
+        ViewData["TimelineRecipe"] = Model.Recipe;
     }
+    @await Html.PartialAsync("_RecipeTimeline")
 
     <!-- Mensajes -->
-    @if (Model.Recipe.Messages?.Any() == true || st == "OBSERVADA" || st == "PENDIENTE")
+    @if (st == "OBSERVADA" || st == "PENDIENTE")
     {
         <section class="detail-section">
             <h2 class="section-title">
-                <span class="section-icon">💬</span> Mensajes
+                <span class="section-icon">💬</span> Enviar mensaje al municipio
             </h2>
-
-            @if (Model.Recipe.Messages?.Any() == true)
-            {
-                <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; max-height: 400px; overflow-y: auto;">
-                    @foreach (var msg in Model.Recipe.Messages)
-                    {
-                        var isMe = msg.SenderRole == "Productor";
-                        <div style="align-self: @(isMe ? "flex-end" : "flex-start"); max-width: 80%; padding: 10px 14px; border-radius: 12px; background: @(isMe ? "#dcfce7" : "#f1f5f9");">
-                            <div style="font-size: 12px; font-weight: 600; color: @(isMe ? "#166534" : "#1e40af"); margin-bottom: 4px;">
-                                @msg.SenderName (@msg.SenderRole)
-                            </div>
-                            <div style="font-size: 14px; color: #1e293b;">@msg.Message</div>
-                            <div style="font-size: 11px; color: #94a3b8; text-align: right; margin-top: 4px;">
-                                @DateHelper.FormatArg(msg.CreatedAt, "dd/MM HH:mm")
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
-
-            @if (st == "OBSERVADA" || st == "PENDIENTE")
-            {
-                <form asp-action="SendMessage" method="post" style="display: flex; gap: 8px;">
-                    <input type="hidden" name="id" value="@Model.Recipe.Id" />
-                    <input type="hidden" name="code" value="@Model.Recipe.PublicCode" />
-                    <input type="text" name="message" required maxlength="1000"
-                           placeholder="Escribí un mensaje al municipio..."
-                           style="flex: 1; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px;" />
-                    <button type="submit" class="btn-status btn-cerrar" style="white-space: nowrap;">
-                        Enviar 📩
-                    </button>
-                </form>
-                <p style="font-size: 12px; color: #94a3b8; margin-top: 6px;">
-                    Tu mensaje será enviado al municipio para su revisión.
-                </p>
-            }
+            <form asp-action="SendMessage" method="post" style="display: flex; gap: 8px;">
+                <input type="hidden" name="id" value="@Model.Recipe.Id" />
+                <input type="hidden" name="code" value="@Model.Recipe.PublicCode" />
+                <input type="text" name="message" required maxlength="1000"
+                       placeholder="Escribí un mensaje al municipio..."
+                       style="flex: 1; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 14px;" />
+                <button type="submit" class="btn-status btn-cerrar" style="white-space: nowrap;">
+                    Enviar 📩
+                </button>
+            </form>
+            <p style="font-size: 12px; color: #94a3b8; margin-top: 6px;">
+                Tu mensaje será enviado al municipio para su revisión.
+            </p>
         </section>
     }
 
