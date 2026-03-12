@@ -174,6 +174,7 @@ public class AgroApiClient
         string? dateFrom = null, string? dateTo = null,
         string? crop = null, string? toxClass = null,
         string? productName = null, string? advisorName = null,
+        string? requesterName = null,
         int? nearSensitivePointMeters = null)
     {
         var qs = new QueryBuilder()
@@ -184,6 +185,7 @@ public class AgroApiClient
             .Add("ToxClass", toxClass)
             .Add("ProductName", productName)
             .Add("AdvisorName", advisorName)
+            .Add("RequesterName", requesterName)
             .Add("NearSensitivePointMeters", nearSensitivePointMeters);
 
         return GetRawJsonAsync($"/api/recipes/geo-insights{qs}");

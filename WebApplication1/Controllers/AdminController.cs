@@ -404,7 +404,8 @@ public class AdminController : Controller
         long? municipalityId = null,
         string? dateFrom = null, string? dateTo = null,
         string? crop = null, string? toxClass = null,
-        string? productName = null, string? advisorName = null)
+        string? productName = null, string? advisorName = null,
+        string? requesterName = null)
     {
         // Cargar lista de municipios para el select
         var munResult = await _api.GetMunicipalitiesAsync();
@@ -415,7 +416,8 @@ public class AdminController : Controller
             municipalityId: municipalityId,
             dateFrom: dateFrom, dateTo: dateTo,
             crop: crop, toxClass: toxClass,
-            productName: productName, advisorName: advisorName);
+            productName: productName, advisorName: advisorName,
+            requesterName: requesterName);
 
         if (!result.Success)
             ViewBag.Error = $"No se pudieron obtener datos geoespaciales. {result.Error}";
@@ -435,13 +437,15 @@ public class AdminController : Controller
         long? municipalityId = null,
         string? dateFrom = null, string? dateTo = null,
         string? crop = null, string? toxClass = null,
-        string? productName = null, string? advisorName = null)
+        string? productName = null, string? advisorName = null,
+        string? requesterName = null)
     {
         var result = await _api.GetGeoInsightsAsync(
             municipalityId: municipalityId,
             dateFrom: dateFrom, dateTo: dateTo,
             crop: crop, toxClass: toxClass,
-            productName: productName, advisorName: advisorName);
+            productName: productName, advisorName: advisorName,
+            requesterName: requesterName);
 
         if (!result.Success)
         {

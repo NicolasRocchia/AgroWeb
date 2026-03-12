@@ -35,12 +35,14 @@ public class MunicipioController : Controller
         string? dateFrom = null, string? dateTo = null,
         string? crop = null, string? toxClass = null,
         string? productName = null, string? advisorName = null,
+        string? requesterName = null,
         int? nearSensitivePointMeters = null)
     {
         var result = await _api.GetGeoInsightsAsync(
             dateFrom: dateFrom, dateTo: dateTo,
             crop: crop, toxClass: toxClass,
             productName: productName, advisorName: advisorName,
+            requesterName: requesterName,
             nearSensitivePointMeters: nearSensitivePointMeters);
 
         if (!result.Success)
@@ -56,9 +58,9 @@ public class MunicipioController : Controller
     [HttpGet]
     public async Task<IActionResult> Index(
         int page = 1, int pageSize = 20,
-        string? status = null, string? searchText = null)
+        string? status = null, string? searchText = null, long? rfdNumber = null)
     {
-        var result = await _api.GetRecipesAsync(page, pageSize, status, searchText);
+        var result = await _api.GetRecipesAsync(page, pageSize, status, searchText, rfdNumber);
 
         if (!result.Success)
             ViewBag.Error = $"No se pudo obtener el listado de recetas. {result.Error}";
@@ -67,7 +69,8 @@ public class MunicipioController : Controller
         {
             Data = result.Data ?? new(),
             Status = status,
-            SearchText = searchText
+            SearchText = searchText,
+            RfdNumber = rfdNumber
         });
     }
 
@@ -292,8 +295,8 @@ public class MunicipioController : Controller
         if (data == null)
         {
             TempData["Error"] = error ?? "No se pudo generar el PDF.";
-            // Redirección limpia forzando el uso de 'code'
-            return RedirectToAction("Details", new { code });
+            // Redirección limpia forzando el uso de 'code'
+            return RedirectToAction("Details", new { code });
         }
 
         var fileName = $"Expediente_{code}_{DateTime.UtcNow:yyyyMMdd}.pdf";

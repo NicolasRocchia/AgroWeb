@@ -566,8 +566,8 @@ public class ApplicatorController : Controller
         TempData[result.Success ? "Success" : "Error"] =
           result.Success ? "Lote actualizado correctamente." : (result.Error ?? "Error al actualizar.");
 
-        // Redirección limpia forzando el uso de 'code'
-        return RedirectToAction("LotDetails", new { code });
+        // Redirección limpia forzando el uso de 'code'
+        return RedirectToAction("LotDetails", new { code });
     }
 
     [HttpPost]
