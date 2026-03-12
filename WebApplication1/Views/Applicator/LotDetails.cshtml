@@ -95,11 +95,47 @@
         </div>
     </div>
 
-    <!-- Recipes table -->
+    <!-- KPIs del lote -->
+    <div id="kpisSection" style="display:none; margin-top:20px;">
+        <div class="lot-kpis-grid">
+            <div class="lot-kpi-card">
+                <span class="lot-kpi-icon">📋</span>
+                <span class="lot-kpi-value" id="kpiRecipes">—</span>
+                <span class="lot-kpi-label">Recetas</span>
+            </div>
+            <div class="lot-kpi-card">
+                <span class="lot-kpi-icon">✅</span>
+                <span class="lot-kpi-value" id="kpiExecutions">—</span>
+                <span class="lot-kpi-label">Aplicaciones completadas</span>
+            </div>
+            <div class="lot-kpi-card">
+                <span class="lot-kpi-icon">📐</span>
+                <span class="lot-kpi-value" id="kpiHa">—</span>
+                <span class="lot-kpi-label">Ha tratadas</span>
+            </div>
+            <div class="lot-kpi-card">
+                <span class="lot-kpi-icon">🌿</span>
+                <span class="lot-kpi-value" id="kpiCrops">—</span>
+                <span class="lot-kpi-label">Cultivos</span>
+            </div>
+            <div class="lot-kpi-card">
+                <span class="lot-kpi-icon">⚗️</span>
+                <span class="lot-kpi-value lot-kpi-small" id="kpiToxClass">—</span>
+                <span class="lot-kpi-label">Clase tox. más usada</span>
+            </div>
+            <div class="lot-kpi-card">
+                <span class="lot-kpi-icon">📅</span>
+                <span class="lot-kpi-value lot-kpi-small" id="kpiFirstLast">—</span>
+                <span class="lot-kpi-label">Período de actividad</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de recetas -->
     <div class="lot-card" style="margin-top:20px;">
-        <h3 class="lot-card-title">📋 Recetas Asociadas</h3>
-        <div id="recipesTable">
-            <p style="color:#94a3b8; text-align:center; padding:2rem;">Cargando...</p>
+        <h3 class="lot-card-title">📋 Historial de Aplicaciones</h3>
+        <div id="historialContent">
+            <p style="color:#94a3b8; text-align:center; padding:2rem;">Cargando historial...</p>
         </div>
     </div>
 </div>
@@ -405,14 +441,204 @@
             color: #94a3b8;
         }
 
-        @@media (max-width: 768px) {
-            .lot-grid {
-                grid-template-columns: 1fr;
-            }
+        /* ── KPIs ── */
+        .lot-kpis-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+        }
 
-            .lot-map {
-                height: 300px;
-            }
+        .lot-kpi-card {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .lot-kpi-icon { font-size: 1.4rem; }
+
+        .lot-kpi-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #1e293b;
+            line-height: 1.2;
+        }
+
+        .lot-kpi-small { font-size: 1rem; }
+
+        .lot-kpi-label {
+            font-size: 0.72rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        /* ── Historial cards ── */
+        .hist-recipe-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .hist-recipe-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #f8fafc;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .hist-recipe-header:hover { background: #f1f5f9; }
+
+        .hist-recipe-code {
+            font-family: monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .hist-recipe-crop {
+            font-size: 0.9rem;
+            color: #1e293b;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .hist-recipe-date {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .hist-recipe-chevron {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            transition: transform 0.2s;
+        }
+
+        .hist-recipe-chevron.open { transform: rotate(180deg); }
+
+        .hist-recipe-body {
+            display: none;
+            padding: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .hist-recipe-body.open { display: block; }
+
+        .hist-section-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin: 0 0 8px;
+        }
+
+        .hist-section-title:not(:first-child) { margin-top: 16px; }
+
+        .hist-meta-row {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .hist-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .hist-meta-label {
+            font-size: 0.72rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .hist-meta-value {
+            font-size: 0.88rem;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .hist-products-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .hist-product-chip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+        }
+
+        .hist-tox-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .hist-tox-Ia  { background: #7c3aed; }
+        .hist-tox-Ib  { background: #dc2626; }
+        .hist-tox-II  { background: #ea580c; }
+        .hist-tox-III { background: #2563eb; }
+        .hist-tox-IV  { background: #16a34a; }
+        .hist-tox-    { background: #94a3b8; }
+
+        .hist-exec-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 0.83rem;
+        }
+
+        .hist-exec-status {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .hist-exec-COMPLETADA { background: #d1fae5; color: #065f46; }
+        .hist-exec-EN_CURSO   { background: #dbeafe; color: #1e40af; }
+        .hist-exec-PAUSADA    { background: #ffedd5; color: #9a3412; }
+        .hist-exec-CANCELADA  { background: #fee2e2; color: #991b1b; }
+        .hist-exec-PENDIENTE  { background: #f1f5f9; color: #475569; }
+        .hist-exec-ACEPTADA   { background: #ede9fe; color: #5b21b6; }
+        .hist-exec-EN_CAMINO  { background: #fef3c7; color: #92400e; }
+
+        .hist-no-exec {
+            font-size: 0.83rem;
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        @@media (max-width: 900px) {
+            .lot-kpis-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @@media (max-width: 768px) {
+            .lot-grid { grid-template-columns: 1fr; }
+            .lot-map { height: 300px; }
+            .lot-kpis-grid { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 }
@@ -425,8 +651,20 @@
     var isEditing = false;
     var lotId;
 
+    var statusLabels = {
+        'ABIERTA': 'Abierta', 'PENDIENTE': 'Pendiente', 'APROBADA': 'Aprobada',
+        'RECHAZADA': 'Rechazada', 'OBSERVADA': 'Observada',
+        'CERRADA': 'Cerrada', 'ANULADA': 'Anulada',
+        'COMPLETADA_MANUAL': 'Completada', 'CERRADA_MANUAL': 'Cerrada manual',
+        'COMPLETADA_ADMIN': 'Completada admin'
+    };
+
+    // Datos del servidor
+    var lot = @Html.Raw(ViewBag.LotJson ?? "null");
+    var _historyRaw = @Html.Raw(ViewBag.HistoryJson ?? "null");
+    var history = (_historyRaw && typeof _historyRaw === 'object') ? _historyRaw : null;
+
     (function() {
-        var lot = @Html.Raw(ViewBag.LotJson ?? "null");
         if (!lot) return;
 
         lotId = lot.id;
@@ -446,9 +684,9 @@
         document.getElementById('lotCreated').textContent = lot.createdAt
             ? new Date(lot.createdAt).toLocaleDateString('es-AR') : 'N/D';
 
-        // Stats
+        // Stats (del historial si está disponible, sino de lot.recipes)
         var recipes = lot.recipes || [];
-        document.getElementById('statRecipes').textContent = recipes.length;
+        document.getElementById('statRecipes').textContent = (history && history.kpis) ? history.kpis.totalRecipes : recipes.length;
         document.getElementById('statVertices').textContent = (lot.vertices || []).length;
 
         // Map
@@ -471,23 +709,176 @@
             map.fitBounds(polygon.getBounds(), { padding: [40, 40] });
         }
 
-        // Recipes table
-        var recipesDiv = document.getElementById('recipesTable');
-        if (recipes.length === 0) {
-            recipesDiv.innerHTML = '<div class="lot-no-recipes">🌾 No hay recetas asociadas a este lote.</div>';
+        // Renderizar historial o tabla simple de fallback
+        if (history && history.kpis) {
+            renderKpis(history.kpis);
+            renderHistorial(history.recipes);
+        } else {
+            renderSimpleRecipes(recipes);
+        }
+    })();
+
+    // ══════════════════════════════
+    // KPIs
+    // ══════════════════════════════
+
+    function renderKpis(kpis) {
+        document.getElementById('kpisSection').style.display = '';
+        document.getElementById('kpiRecipes').textContent = kpis.totalRecipes || 0;
+        document.getElementById('kpiExecutions').textContent = kpis.completedExecutions || 0;
+        document.getElementById('kpiHa').textContent = kpis.totalHaTreated ? kpis.totalHaTreated.toFixed(1) + ' ha' : '—';
+        document.getElementById('kpiCrops').textContent = (kpis.crops && kpis.crops.length > 0) ? kpis.crops.join(', ') : '—';
+        document.getElementById('kpiToxClass').textContent = kpis.mostUsedToxClass || '—';
+
+        if (kpis.firstApplicationDate && kpis.lastApplicationDate) {
+            var first = new Date(kpis.firstApplicationDate).toLocaleDateString('es-AR', {month:'short', year:'numeric'});
+            var last  = new Date(kpis.lastApplicationDate).toLocaleDateString('es-AR', {month:'short', year:'numeric'});
+            document.getElementById('kpiFirstLast').textContent = first === last ? first : first + ' — ' + last;
+        }
+    }
+
+    // ══════════════════════════════
+    // HISTORIAL
+    // ══════════════════════════════
+
+    var execStatusLabels = {
+        'COMPLETADA': 'Completada', 'EN_CURSO': 'En curso', 'PAUSADA': 'Pausada',
+        'CANCELADA': 'Cancelada', 'PENDIENTE': 'Pendiente',
+        'ACEPTADA': 'Aceptada', 'EN_CAMINO': 'En camino'
+    };
+
+    var riskColors = { 'ALTO': '#dc2626', 'MEDIO': '#f59e0b', 'BAJO': '#16a34a' };
+
+    function toxDotClass(cls) {
+        if (!cls) return 'hist-tox-';
+        var c = cls.trim().replace(/\s+/g, '');
+        if (c === 'Ia') return 'hist-tox-Ia';
+        if (c === 'Ib') return 'hist-tox-Ib';
+        if (c === 'II') return 'hist-tox-II';
+        if (c === 'III') return 'hist-tox-III';
+        if (c === 'IV') return 'hist-tox-IV';
+        return 'hist-tox-';
+    }
+
+    function renderHistorial(recipes) {
+        var container = document.getElementById('historialContent');
+        if (!recipes || recipes.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:3rem;color:#94a3b8;">🌾 No hay recetas asociadas a este lote.</div>';
             return;
         }
 
-        var statusLabels = {
-            'ABIERTA': 'Abierta', 'PENDIENTE': 'Pendiente', 'APROBADA': 'Aprobada',
-            'RECHAZADA': 'Rechazada', 'OBSERVADA': 'Observada', 'CERRADA': 'Cerrada', 'ANULADA': 'Anulada'
+        var html = '';
+        recipes.forEach(function(r, idx) {
+            var st = (r.status || '').toUpperCase();
+            var stLabel = statusLabels[st] || st;
+            var stClass = getStatusClass(st);
+            var dateStr = r.issueDate ? new Date(r.issueDate).toLocaleDateString('es-AR') : '—';
+            var infBadge = r.isInformal ? '<span style="background:#fef9c3;color:#713f12;font-size:0.7rem;padding:2px 7px;border-radius:10px;margin-left:6px;">Informal</span>' : '';
+            var riskBadge = r.riskLevel ? '<span style="background:' + (riskColors[r.riskLevel] || '#94a3b8') + '20;color:' + (riskColors[r.riskLevel] || '#64748b') + ';font-size:0.72rem;padding:2px 8px;border-radius:10px;font-weight:700;">' + r.riskLevel + '</span>' : '';
+
+            html += '<div class="hist-recipe-card">';
+
+            // Header colapsable
+            html += '<div class="hist-recipe-header" onclick="toggleCard(' + idx + ')">';
+            html += '<span class="hist-recipe-code">' + (r.isInformal ? '📝' : '📄') + ' ' + r.publicCode + '</span>';
+            html += '<span class="hist-recipe-crop">' + (r.crop || 'Sin cultivo') + infBadge + '</span>';
+            if (riskBadge) html += riskBadge;
+            html += '<span class="status-badge ' + stClass + '">' + stLabel + '</span>';
+            html += '<span class="hist-recipe-date">' + dateStr + '</span>';
+            html += '<span class="hist-recipe-chevron" id="chev-' + idx + '">▼</span>';
+            html += '</div>';
+
+            // Body
+            html += '<div class="hist-recipe-body" id="body-' + idx + '">';
+
+            // Meta
+            html += '<p class="hist-section-title">Información</p>';
+            html += '<div class="hist-meta-row">';
+            if (r.municipalityName) {
+                html += metaItem('Municipio', r.municipalityName);
+            }
+            if (r.surfaceHa) {
+                html += metaItem('Superficie', r.surfaceHa.toFixed(1) + ' ha');
+            }
+            html += metaItem('Emisión', dateStr);
+            html += '</div>';
+
+            // Productos
+            html += '<p class="hist-section-title">Productos aplicados</p>';
+            if (r.products && r.products.length > 0) {
+                html += '<div class="hist-products-list">';
+                r.products.forEach(function(p) {
+                    var doseStr = p.doseValue ? ' · ' + p.doseValue + (p.doseUnit ? ' ' + p.doseUnit : '') : '';
+                    html += '<div class="hist-product-chip">';
+                    html += '<span class="hist-tox-dot ' + toxDotClass(p.toxicologicalClass) + '"></span>';
+                    html += '<span>' + p.productName + doseStr + '</span>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            } else {
+                html += '<span class="hist-no-exec">Sin productos registrados.</span>';
+            }
+
+            // Ejecuciones
+            html += '<p class="hist-section-title">Ejecuciones de campo</p>';
+            if (r.executions && r.executions.length > 0) {
+                r.executions.forEach(function(e) {
+                    var eSt = (e.status || '').toUpperCase();
+                    var durStr = e.totalActiveMinutes ? ' · ' + Math.floor(e.totalActiveMinutes / 60) + 'h ' + (e.totalActiveMinutes % 60) + 'min' : '';
+                    var originStr = e.origin === 'BOLSA' ? '🏪 Bolsa' : '👤 Directa';
+                    var startStr = e.startedAt ? new Date(e.startedAt).toLocaleDateString('es-AR') : '—';
+
+                    html += '<div class="hist-exec-row">';
+                    html += '<span class="hist-exec-status hist-exec-' + eSt + '">' + (execStatusLabels[eSt] || eSt) + '</span>';
+                    html += '<span style="flex:1;font-weight:600;">' + e.applicatorName + '</span>';
+                    html += '<span style="color:#64748b;">' + originStr + '</span>';
+                    html += '<span style="color:#64748b;">' + startStr + durStr + '</span>';
+                    html += '</div>';
+                });
+            } else {
+                html += '<span class="hist-no-exec">Sin ejecuciones registradas para esta receta.</span>';
+            }
+
+            html += '</div></div>'; // body + card
+        });
+
+        container.innerHTML = html;
+    }
+
+    function metaItem(label, value) {
+        return '<div class="hist-meta-item"><span class="hist-meta-label">' + label + '</span><span class="hist-meta-value">' + value + '</span></div>';
+    }
+
+    function toggleCard(idx) {
+        var body = document.getElementById('body-' + idx);
+        var chev = document.getElementById('chev-' + idx);
+        if (!body) return;
+        var isOpen = body.classList.contains('open');
+        body.classList.toggle('open', !isOpen);
+        chev.classList.toggle('open', !isOpen);
+    }
+
+    function getStatusClass(st) {
+        var map = {
+            'ABIERTA':'status-draft','PENDIENTE':'status-pending','APROBADA':'status-approved',
+            'RECHAZADA':'status-rejected','OBSERVADA':'status-warning',
+            'CERRADA':'status-expired','ANULADA':'status-rejected',
+            'COMPLETADA_MANUAL':'status-approved','CERRADA_MANUAL':'status-expired',
+            'COMPLETADA_ADMIN':'status-approved'
         };
+        return map[st] || 'status-draft';
+    }
 
+    // Fallback: tabla simple si no hay historial
+    function renderSimpleRecipes(recipes) {
+        var container = document.getElementById('historialContent');
+        if (recipes.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:3rem;color:#94a3b8;">🌾 No hay recetas asociadas a este lote.</div>';
+            return;
+        }
         var html = '<table class="lot-recipes-table"><thead><tr>'
-            + '<th>RFD</th><th>Fecha</th><th>Cultivo</th>'
-            + '<th>Solicitante</th><th>Asesor</th><th>Estado</th>'
+            + '<th>RFD</th><th>Fecha</th><th>Cultivo</th><th>Solicitante</th><th>Asesor</th><th>Estado</th>'
             + '</tr></thead><tbody>';
-
         recipes.forEach(function(r) {
             var st = (r.status || '').toUpperCase();
             var date = r.issueDate ? new Date(r.issueDate).toLocaleDateString('es-AR') : '—';
@@ -498,8 +889,8 @@
                 + '<td><span class="lot-status lot-status-' + st + '">' + (statusLabels[st] || st) + '</span></td></tr>';
         });
         html += '</tbody></table>';
-        recipesDiv.innerHTML = html;
-    })();
+        container.innerHTML = html;
+    }
 
     // ══════════════════════════════
     // POLYGON EDITING

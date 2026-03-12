@@ -528,6 +528,21 @@ public class ApplicatorController : Controller
         }
 
         ViewBag.LotJson = result.Data;
+
+        // Cargar historial en paralelo usando el ID del lote
+        try
+        {
+            var lotDoc = JsonDocument.Parse(result.Data!);
+            if (lotDoc.RootElement.TryGetProperty("id", out var idProp))
+            {
+                var lotId = idProp.GetInt64();
+                var historyResult = await _api.GetLotHistoryAsync(lotId);
+                if (historyResult.Success)
+                    ViewBag.HistoryJson = historyResult.Data;
+            }
+        }
+        catch { /* historial no crítico */ }
+
         return View();
     }
 

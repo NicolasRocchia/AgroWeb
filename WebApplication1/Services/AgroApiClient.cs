@@ -309,6 +309,9 @@ public class AgroApiClient
     public Task<ApiResult<string>> CreateLotAsync(object body)
         => PostAsync("/api/lots", body);
 
+    public Task<ApiResult<string>> GetLotHistoryAsync(long id)
+        => GetRawJsonAsync($"/api/lots/{id}/history");
+
     public Task<ApiResult<string>> UpdateLotPolygonAsync(long id, object body)
        => PutAsync($"/api/lots/{id}/polygon", body);
 
