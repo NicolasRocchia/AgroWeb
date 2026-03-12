@@ -285,6 +285,9 @@
         </section>
     }
 
+    <!-- EIQ -->
+    @await Html.PartialAsync("_EiqCard", Model.Recipe)
+
     <!-- Productos -->
     @if (Model.Recipe.Products?.Any() == true)
     {
